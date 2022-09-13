@@ -1,19 +1,38 @@
 import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import LoginView from '../views/login-page.vue'
+import RoomListView from '../views/room-list.vue'
+import RoomView from '../views/room-page.vue'
+import store from '@/store';
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    name: 'home',
-    component: HomeView
+    name: 'LoginView',
+    component: LoginView,
   },
   {
-    path: '/about',
-    name: 'about',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue')
+    path: '/room-list',
+    name: "RoomListView",
+    component: RoomListView,
+    beforeEnter: (to, from, next) => {
+      if(store.state.userName == ''){
+        next('/')
+      } else {
+        next();
+      }
+    }
+  },
+  {
+    path: '/room-page',
+    name: "RoomView",
+    component: RoomView,
+    beforeEnter: (to, from, next) => {
+      if(store.state.userName == ''){
+        next('/')
+      } else {
+        next();
+      }
+    }
   }
 ]
 
