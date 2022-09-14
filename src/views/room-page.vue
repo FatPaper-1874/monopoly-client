@@ -34,7 +34,7 @@ const handleBack = () => {
 }
 
 const handleStartGame = () => {
-  router.replace('/game-page');
+  socketClient.startGame(roomInfo.value.roomId);
 }
 
 </script>

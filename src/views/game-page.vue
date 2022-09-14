@@ -2,15 +2,38 @@
   <div id="game_page">
     <div class="top_bar">
       <button id="go_back">退出游戏</button>
-      <span class="title">{{}}的房间</span>
+      <span class="title">{{roomInfo.owner}}的房间</span>
     </div>
     <div class="game_container">
+      <div class="map_items" v-for="(item, index) in gameFrameInfo.mapInfo.mapItemList" :key="item.id"
+        :style="{'grid-area': 'item'+index, 'border-color': item.color}">
+        <Popper :placement="(index > 13 && index< 21) || index > 34? 'right' : 'top'" hover="true">
+          <span>{{item.name}}</span>
+          <template #content>
+            <div class="map_item_info">
+              <p>买地价: {{item.costList?.buy}}</p>
+              <p>起楼价: {{item.costList?.build}}</p>
+              <p>过路费: {{item.costList?.pass}}</p>
+              <p>一栋房子过路费: {{item.costList?.oneHouse}}</p>
+              <p>两栋房子过路费: {{item.costList?.towHouse}}</p>
+              <p>别墅过路费: {{item.costList?.villa}}</p>
+              <p>拥有者:{{item.owner?.name}}</p>
+            </div>
+          </template>
+        </Popper>
+      </div>
       <div class="center_area"></div>
     </div>
   </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import store from '@/store';
+import { computed } from 'vue';
+
+const roomInfo = computed(() => store.state.roomInfo);
+const gameFrameInfo = computed(() => store.state.gameFrame);
+</script>
 
 <style lang="scss">
 #game_page {
@@ -73,6 +96,29 @@
 
   .center_area {
     grid-area: center;
+  }
+
+  .map_items {
+    text-align: center;
+    margin: 2.5px;
+    box-sizing: border-box;
+    padding: 5px;
+    border-bottom: 3px solid;
+    border-radius: 5px;
+    background-color: rgba($color: #ffffff, $alpha: 0.8);
+
+    span {
+      user-select: none;
+      cursor: pointer;
+    }
+  }
+
+  .map_item_info {
+    padding: 0 15px;
+    border-radius: 5px;
+    border: 4px solid #dadadab6;
+    background-color: #ffffff;
+    box-shadow: 0 2px 12px 0 rgb(0 0 0 / 10%);
   }
 }
 </style>

@@ -5,6 +5,7 @@ import { newUserId } from "@/utils";
 import MsgInterface from "./Interface/MsgInterface";
 import RoomInfoInterface from "./Interface/RoomInfoInterface";
 import { notify } from "@kyvg/vue3-notification";
+import router from "@/router";
 
 class SocketClient {
 	private socketClient: WebSocket;
@@ -78,6 +79,9 @@ class SocketClient {
 			case CommTypes.RoomMsgRadio:
 				this.handleRoomMsgRadioReply(receivedData.msg);
 				break;
+			case CommTypes.GameFrame:
+				this.handleGameFrameRadioReply(receivedData.msg);
+				break;
 			default:
 				break;
 		}
@@ -127,6 +131,14 @@ class SocketClient {
 		notify({ type: "success", text: msg.extra });
 	}
 
+	private handleGameFrameRadioReply(msg: MsgInterface) {
+		const gameFrameInfo = JSON.parse(msg.data);
+		console.log(gameFrameInfo);
+		store.dispatch("aSetGameFrameInfo", gameFrameInfo).then(() => {
+			router.replace("/game-page");
+		});
+	}
+
 	private sendMsg(msg: CommInterface) {
 		if (this.socketClient.OPEN) {
 			this.socketClient.send(JSON.stringify(msg));
@@ -151,6 +163,20 @@ class SocketClient {
 		const userId: string = store.state.userId;
 		const sendMsg: CommInterface = {
 			type: CommTypes.LeaveRoom,
+			msg: {
+				sourceId: userId,
+				targetId: roomId,
+				data: "",
+				extra: "",
+			},
+		};
+		this.sendMsg(sendMsg);
+	}
+
+	public startGame(roomId: string) {
+		const userId: string = store.state.userId;
+		const sendMsg: CommInterface = {
+			type: CommTypes.StartGame,
 			msg: {
 				sourceId: userId,
 				targetId: roomId,

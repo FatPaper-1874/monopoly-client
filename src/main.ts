@@ -15,8 +15,9 @@ import { fas } from "@fortawesome/free-solid-svg-icons";
 /* add icons to the library */
 library.add(fas);
 
-import Notifications from '@kyvg/vue3-notification'
+import Notifications from "@kyvg/vue3-notification";
+import Popper from "vue3-popper";
 
 const app = createApp(App);
 
-app.use(store).use(router).use(Notifications).component("font-awesome-icon", FontAwesomeIcon).mount("#app");
+app.use(store).use(router).use(Notifications).component("font-awesome-icon", FontAwesomeIcon).component("Popper", Popper).mount("#app");

@@ -1,5 +1,6 @@
 import { createStore } from "vuex";
 import RoomInfoInterface from "../class/Interface/RoomInfoInterface";
+import GameFrameInterface from "../class/Interface/game/GameFrameInterface";
 
 interface State {
 	userId: string;
@@ -7,6 +8,7 @@ interface State {
 	roomId: string;
 	roomList: RoomInfoInterface[];
 	roomInfo: RoomInfoInterface;
+	gameFrame: GameFrameInterface;
 }
 
 const state: State = {
@@ -19,6 +21,12 @@ const state: State = {
 		owner: "",
 		ownerId: "",
 		playerList: [],
+	},
+	gameFrame: {
+		playerInfoList: [],
+		mapInfo: {
+			mapItemList: [],
+		},
 	},
 };
 
@@ -41,11 +49,17 @@ export default createStore({
 		setRoomInfo: (state, data: RoomInfoInterface) => {
 			state.roomInfo = data;
 		},
+		SetGameFrameInfo: (state, data: GameFrameInterface) => {
+			state.gameFrame = data;
+		},
 	},
 	actions: {
-    aSetUserName: (context, data: string) => {
-			context.commit('setUserName', data);
+		aSetUserName: (context, data: string) => {
+			context.commit("setUserName", data);
 		},
-  },
+		aSetGameFrameInfo: (context, data: GameFrameInterface) => {
+			context.commit("SetGameFrameInfo", data);
+		},
+	},
 	modules: {},
 });
