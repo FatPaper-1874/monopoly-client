@@ -4,7 +4,11 @@
       <div class="title">欢迎你 {{userName}}</div>
       <button @click="handleCreateRoom">创建房间</button>
     </div>
-    <div id="list_container">
+    <div id="no_rooms" v-if="roomList.length == 0">
+      <font-awesome-icon icon="fa-solid fa-house-circle-exclamation" />
+      <span>芜！还没有房间诶，快去新建一个吧！</span>
+    </div>
+    <div v-else id="list_container">
       <div class="list_items" v-for="item in roomList" :key="item.owner" @click="handleJoinRoom(item.roomId)">
 
         <div class="info_container">
@@ -62,6 +66,16 @@ const handleCreateRoom = () => {
   flex-direction: column;
 }
 
+#no_rooms{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 3vw;
+    color: #ffa052;
+  }
+
 #list_container {
   display: grid;
   flex: 1;
@@ -117,6 +131,7 @@ const handleCreateRoom = () => {
   &:hover {
     margin: 12px;
   }
+
 
   .info_container {
     height: 100%;

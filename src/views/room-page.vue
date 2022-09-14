@@ -3,7 +3,7 @@
     <div class="top_bar">
       <button id="go_back" @click="handleBack">返回</button>
       <span class="title">{{roomInfo.owner}}的房间</span>
-      <button id="game_start">开始游戏</button>
+      <button id="game_start" @click="handleStartGame">开始游戏</button>
     </div>
     <div class="player_list">
       <div class="player_item" v-for="player in roomInfo.playerList" :key="player.id">
@@ -31,6 +31,10 @@ const socketClient = SocketClient.getInstance();
 const handleBack = () => {
   socketClient.leaveRoom(roomInfo.value.roomId);
   router.replace('/room-list');
+}
+
+const handleStartGame = () => {
+  router.replace('/game-page');
 }
 
 </script>
@@ -115,7 +119,7 @@ const handleBack = () => {
       align-items: center;
       color: #ffffff;
       background-color: rgba($color: #ffdd1e, $alpha: 0.7);
-      
+
     }
   }
 

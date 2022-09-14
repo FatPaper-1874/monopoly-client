@@ -2,6 +2,7 @@ enum CommTypes {
 	GameFrame = 1000,
 	ConnectSuccess,
 	GetRoomList,
+  RoomMsgRadio,
   RoomRadio,
 	JoinRoom,
 	LeaveRoom,

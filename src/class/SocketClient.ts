@@ -4,6 +4,7 @@ import store from "@/store";
 import { newUserId } from "@/utils";
 import MsgInterface from "./Interface/MsgInterface";
 import RoomInfoInterface from "./Interface/RoomInfoInterface";
+import { notify } from "@kyvg/vue3-notification";
 
 class SocketClient {
 	private socketClient: WebSocket;
@@ -23,7 +24,7 @@ class SocketClient {
 
 		console.log(userName);
 		console.log(userId);
-		
+
 		const webSocketClient = new WebSocket("ws://localhost:3010");
 		webSocketClient.onopen = () => {
 			const connectSuccessMsg: CommInterface = {
@@ -74,13 +75,17 @@ class SocketClient {
 			case CommTypes.RoomRadio:
 				this.handleRoomRadioReply(receivedData.msg);
 				break;
+			case CommTypes.RoomMsgRadio:
+				this.handleRoomMsgRadioReply(receivedData.msg);
+				break;
 			default:
 				break;
 		}
 	}
 
 	private handleConnectSuccessReply(msg: MsgInterface) {
-		console.log(msg.data);
+		// fatMessage({ text: msg.extra, type: FatMessageType.Success });
+		notify({ type: "success", text: msg.extra });
 	}
 
 	private handleGetRoomListReply(msg: MsgInterface) {
@@ -90,11 +95,13 @@ class SocketClient {
 	}
 
 	private handleJoinRoomReply(msg: MsgInterface) {
+		notify({ type: "success", text: msg.extra });
 		const roomId = msg.sourceId;
 		store.commit("setRoomId", roomId);
 	}
 
 	private handleLeaveRoomReply(msg: MsgInterface) {
+		notify({ type: "warn", text: msg.extra });
 		store.commit("setRoomId", "");
 		store.commit("setRoomInfo", {
 			userId: "",
@@ -114,6 +121,10 @@ class SocketClient {
 		const roomInfo: RoomInfoInterface = JSON.parse(msg.data);
 		console.log(roomInfo);
 		store.commit("setRoomInfo", roomInfo);
+	}
+
+	private handleRoomMsgRadioReply(msg: MsgInterface) {
+		notify({ type: "success", text: msg.extra });
 	}
 
 	private sendMsg(msg: CommInterface) {

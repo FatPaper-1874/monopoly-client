@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
 import LoginView from '../views/login-page.vue'
 import RoomListView from '../views/room-list.vue'
 import RoomView from '../views/room-page.vue'
+import GameView from '../views/game-page.vue'
 import store from '@/store';
 
 const routes: Array<RouteRecordRaw> = [
@@ -26,6 +27,18 @@ const routes: Array<RouteRecordRaw> = [
     path: '/room-page',
     name: "RoomView",
     component: RoomView,
+    beforeEnter: (to, from, next) => {
+      if(store.state.userName == ''){
+        next('/')
+      } else {
+        next();
+      }
+    }
+  },
+  {
+    path: '/game-page',
+    name: "GameVieww",
+    component: GameView,
     beforeEnter: (to, from, next) => {
       if(store.state.userName == ''){
         next('/')
