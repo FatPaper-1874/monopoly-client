@@ -1,16 +1,10 @@
+import PlayerInfoInterface from "./game/PlayerInfoInterface";
+
 interface RoomInfoInterface {
 	roomId: string;
 	owner: string;
   ownerId: string;
-	playerList: PlayerInterface[];
-}
-
-interface PlayerInterface {
-	id: string;
-	name: string;
-  color: string;
-  icon: string;
-	ready: boolean;
+	playerList: PlayerInfoInterface[];
 }
 
 export default RoomInfoInterface;

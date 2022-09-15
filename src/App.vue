@@ -13,7 +13,7 @@
       <span v-for="j in 40" :key="j">$</span>
     </div>
   </div>
-  <notifications position="top center" duration="1">
+  <notifications position="top center" :duration="2000">
     <template #body="props">
       <div class="fat-notification" :class="props.item.type">
         <font-awesome-icon class="icon" :icon="['fas', type[props.item.type as string]]" />
@@ -108,7 +108,7 @@ html {
       display: inline-block;
       width: 10vw;
       height: 8vw;
-      line-height: 8vw;
+      line-height: 7.5vw;
       text-align: center;
     }
 

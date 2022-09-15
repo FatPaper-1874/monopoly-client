@@ -6,6 +6,8 @@ import MsgInterface from "./Interface/MsgInterface";
 import RoomInfoInterface from "./Interface/RoomInfoInterface";
 import { notify } from "@kyvg/vue3-notification";
 import router from "@/router";
+import ArrivalEventTypes from "./enums/ArrivalEventTypes";
+import EventResultTypes from '@/class/enums/EventResultTypes';
 
 class SocketClient {
 	private socketClient: WebSocket;
@@ -82,6 +84,15 @@ class SocketClient {
 			case CommTypes.GameFrame:
 				this.handleGameFrameRadioReply(receivedData.msg);
 				break;
+			case CommTypes.RollDice:
+				this.handleRollDiceReply(receivedData.msg);
+				break;
+			case CommTypes.BuyRealEstate:
+				this.handleBuyRealEstate(receivedData.msg);
+				break;
+			case CommTypes.RoundEnd:
+				this.handleRoundEnd(receivedData.msg);
+				break;
 			default:
 				break;
 		}
@@ -128,7 +139,7 @@ class SocketClient {
 	}
 
 	private handleRoomMsgRadioReply(msg: MsgInterface) {
-		notify({ type: "success", text: msg.extra });
+		notify({ type: msg.data || "success", text: msg.extra });
 	}
 
 	private handleGameFrameRadioReply(msg: MsgInterface) {
@@ -137,6 +148,24 @@ class SocketClient {
 		store.dispatch("aSetGameFrameInfo", gameFrameInfo).then(() => {
 			router.replace("/game-page");
 		});
+	}
+
+	private handleRollDiceReply(msg: MsgInterface) {
+		const rollDiceResult = JSON.parse(msg.data);
+		store.dispatch("aSetRollResult", rollDiceResult);
+		console.log(rollDiceResult);
+	}
+
+	private handleBuyRealEstate(msg: MsgInterface) {
+		store.commit("setArrivalEventType", ArrivalEventTypes.Buy);
+		store.commit("setShowingRealEstateId", msg.data);
+		notify({ type: "success", text: msg.extra });
+	}
+
+	private handleRoundEnd(msg: MsgInterface) {
+		store.commit("setShowingRealEstateId", ""); //清除交易框的内容
+		store.commit("setArrivalEventType", ArrivalEventTypes.None); //重置交易状态
+		notify({ type: msg.data || "success", text: msg.extra });
 	}
 
 	private sendMsg(msg: CommInterface) {
@@ -185,6 +214,34 @@ class SocketClient {
 			},
 		};
 		this.sendMsg(sendMsg);
+	}
+
+	public rollDice() {
+		const userId: string = store.state.userId;
+		const sendMsg: CommInterface = {
+			type: CommTypes.RollDice,
+			msg: {
+				sourceId: userId,
+				targetId: "",
+				data: "",
+				extra: "",
+			},
+		};
+		this.sendMsg(sendMsg);
+	}
+
+	public sendBuyRealEstateResult(result: EventResultTypes){
+		const userId: string = store.state.userId;
+		const eventResultMsg:CommInterface = {
+			type: CommTypes.BuyRealEstate,
+			msg: {
+				sourceId: userId,
+				targetId: 'server',
+				data: JSON.stringify(result),
+				extra: '',
+			}
+		}
+		this.sendMsg(eventResultMsg);
 	}
 }
 

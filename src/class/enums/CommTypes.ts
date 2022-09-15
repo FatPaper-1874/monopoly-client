@@ -8,10 +8,12 @@ enum CommTypes {
 	LeaveRoom,
 	StartGame,
 	RollDice,
+	HandleEvent,
 	UseChanceCard,
 	BuyRealEstate,
 	BuildHouse,
 	PayToSomeOne,
+	RoundEnd,
 }
 
 export default CommTypes;

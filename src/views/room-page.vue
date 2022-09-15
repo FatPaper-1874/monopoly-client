@@ -6,15 +6,8 @@
       <button id="game_start" @click="handleStartGame">开始游戏</button>
     </div>
     <div class="player_list">
-      <div class="player_item" v-for="player in roomInfo.playerList" :key="player.id">
-        <div class="owner_tag" v-show="roomInfo.ownerId === player.id">
-          <font-awesome-icon icon="fa-solid fa-house-user" />
-        </div>
-        <div class="avatar" :style="{'background-color': player.color}">
-          <font-awesome-icon class="icon" :icon="['fas', player.icon]" />
-        </div>
-        <p class="name" :style="{'color': player.color}">{{player.name}}</p>
-      </div>
+      <playerContainer v-for="player in roomInfo.playerList" :key="player.id" :player="player"
+        :isRoomOwner="roomInfo.ownerId === player.id"></playerContainer>
     </div>
   </div>
 </template>
@@ -24,6 +17,7 @@ import store from '@/store';
 import { computed } from 'vue';
 import router from '../router/index';
 import SocketClient from '../class/SocketClient';
+import playerContainer from '@/components/player-container.vue';
 
 const roomInfo = computed(() => store.state.roomInfo);
 const socketClient = SocketClient.getInstance();
@@ -91,57 +85,7 @@ const handleStartGame = () => {
 .player_list {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(3, 33.3%);
-  grid-template-rows: repeat(2, 50%);
-
-  .player_item {
-    background-color: rgba($color: #ffffff, $alpha: 0.6);
-    margin: 10px;
-    border: 10px solid rgba($color: #ffffff, $alpha: 0.8);
-    border-radius: 20px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-
-    .owner_tag {
-      position: absolute;
-      top: -10px;
-      right: -10px;
-      width: 5vw;
-      height: 5vw;
-      border-radius: 0 20px 0 20px;
-      font-size: 2.5vw;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: #ffffff;
-      background-color: rgba($color: #ffdd1e, $alpha: 0.7);
-
-    }
-  }
-
-  .avatar {
-    width: 10vw;
-    height: 10vw;
-    border: 6px solid rgba($color: #ffffff, $alpha: 0.8);
-    box-sizing: border-box;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    .icon {
-      width: 5vw;
-      height: 5vw;
-      color: #ffffff;
-    }
-  }
-
-  .name {
-    font-size: 2vw;
-  }
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
 }
 </style>

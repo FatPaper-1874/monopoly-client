@@ -7,6 +7,7 @@ interface PlayerInfoInterface{
   money: number;
   currentGrid: number;
   stop: boolean;
+  ownRealEstate: string[]
 }
 
 export default PlayerInfoInterface;
