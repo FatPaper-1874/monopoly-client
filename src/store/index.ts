@@ -12,6 +12,7 @@ interface State {
 	roomInfo: RoomInfoInterface;
 	gameFrame: GameFrameInterface;
 	rollResult: number[];
+	afterRoll: boolean;
 	isShaking: boolean;
 	arrivalEventType: ArrivalEventTypes;
 	showingRealEstateId: string;
@@ -40,7 +41,7 @@ const state: State = {
 	},
 	rollResult: [1, 1],
 	//UI
-
+	afterRoll: false, //扭过骰子之后控制ui
 	isShaking: false,
 	arrivalEventType: ArrivalEventTypes.None,
 	showingRealEstateId: "",
@@ -79,6 +80,9 @@ export default createStore({
 		},
 		setShowingRealEstateId: (state, data: string) => {
 			state.showingRealEstateId = data;
+		},
+		setAfterRoll: (state, data: boolean) => {
+			state.afterRoll = data;
 		},
 	},
 	actions: {

@@ -16,7 +16,10 @@
       <div class="map_items" v-for="(item, index) in gameFrameInfo.mapInfo.mapItemList" :key="item.id"
         :style="{'grid-area': 'item'+index, 'border-color': item.color}">
         <Popper :placement="(index > 13 && index< 21) || index > 34? 'right' : 'top'" :hover="true">
-          <div class="map_item_name">{{item.name}}</div>
+          <div class="map_item_name" :style="{'color': item.owner?.color}">{{item.name}}</div>
+          <div  v-if="item.costList && (item.buildingNum || -1) > 0" class="map_item_building">
+            <font-awesome-icon class="icon" :style="{'color': item.owner?.color}" :icon="['fas', buildingNumIconIndex[(item.buildingNum || 1) -1]]" />
+          </div>
           <template #content v-if="item.costList">
             <div class="map_item_info" :style="{'border-color': item.color}">
               <span :style="{'background-color': item.color}" class="title">{{item.name}}</span>
@@ -26,6 +29,7 @@
               <p>一栋房子过路费: {{item.costList?.oneHouse || '—'}}¥</p>
               <p>两栋房子过路费: {{item.costList?.towHouse || '—'}}¥</p>
               <p>别墅过路费: {{item.costList?.villa || '—'}}¥</p>
+              <p>建筑数量: {{item.buildingNum || '—'}}</p>
               <p>拥有者:{{item.owner?.name}}</p>
             </div>
           </template>
@@ -33,7 +37,8 @@
       </div>
 
       <div class="control_area">
-        <div class="roll_dice control_area_item" :class="{'roll_dice_unable': !isOwnTrun}" @click="handleRollDice">
+        <div class="roll_dice control_area_item" :class="{'roll_dice_unable': !isOwnTrun || afterRoll}"
+          @click="handleRollDice">
           <font-awesome-icon icon="fa-solid fa-dice" />
           <span>摇骰子</span>
         </div>
@@ -46,13 +51,14 @@
         </div>
 
         <div class="deal_container control_area_item">
-          <div v-if="arrivalEventTypes === ArrivalEventTypes.Buy && showingRealEstateId !== '' && isOwnTrun">
+          <div v-if="arrivalEventTypes !== ArrivalEventTypes.None && showingRealEstateId !== '' && isOwnTrun">
             <span class="title">{{showingRealEstate.name}}</span>
             <p>买地价: {{showingRealEstate.costList.buy}}¥</p>
             <p>起楼价: {{showingRealEstate.costList.build}}¥</p>
             <p>过路费: {{showingRealEstate.costList.pass}}¥</p>
             <p>一栋房子过路费: {{showingRealEstate.costList.oneHouse}}¥</p>
             <p>两栋房子过路费: {{showingRealEstate.costList.towHouse}}¥</p>
+            <p>建筑数量: {{showingRealEstate.buildingNum}}</p>
             <p>别墅过路费: {{showingRealEstate.costList.villa}}¥</p>
           </div>
           <div v-else>
@@ -116,6 +122,7 @@ const roomInfo = computed(() => store.state.roomInfo);
 const gameFrameInfo = computed(() => store.state.gameFrame);
 const rollResult = computed(() => store.state.rollResult);
 const isShaking = computed(() => store.state.isShaking);
+const afterRoll = computed(() => store.state.afterRoll);
 const isOwnTrun = computed(() => store.state.gameFrame.gameInfo.currentRoundPlayerId == store.state.userId);
 const arrivalEventTypes = computed(() => store.state.arrivalEventType);
 const showingRealEstateId = computed(() => store.state.showingRealEstateId);
@@ -125,14 +132,21 @@ const showingRealEstate = computed(() => {
 })
 
 const diceNameIndex = ['one', 'two', 'three', 'four', 'five', 'six'];
+const buildingNumIconIndex = ['house', 'building', 'city'];
 const playerItemPosition = ['center start', 'center center', 'center end', 'end start', 'end center', 'end end'];
 
 const handleRollDice = () => {
   socketClient.rollDice();
+  store.commit('setAfterRoll', true);
 }
 
 const handleDeal = (result: EventResultTypes) => {  //处理交易函数
-  socketClient.sendBuyRealEstateResult(result);
+  const currentArrivalEventType = store.state.arrivalEventType;
+  if (currentArrivalEventType == ArrivalEventTypes.Buy) {
+    socketClient.sendBuyRealEstateResult(result);
+  } else if (currentArrivalEventType == ArrivalEventTypes.Building) {
+    socketClient.sendBuildHouseResult(result);
+  }
 }
 </script>
 
@@ -353,7 +367,7 @@ const handleDeal = (result: EventResultTypes) => {  //处理交易函数
     text-align: center;
     margin: 2.5px;
     box-sizing: border-box;
-    padding: 5px;
+    padding-top: 2.5px;
     border-bottom: 3px solid;
     border-radius: 5px;
     background-color: rgba($color: #ffffff, $alpha: 0.8);
@@ -363,10 +377,12 @@ const handleDeal = (result: EventResultTypes) => {  //处理交易函数
       cursor: pointer;
       display: block;
       width: 100%;
+      font-size: 1vw;
+      word-break: keep-all !important;
     }
   }
 
-  
+
 }
 
 @-webkit-keyframes shaking {
@@ -409,20 +425,20 @@ const handleDeal = (result: EventResultTypes) => {  //处理交易函数
 }
 
 .map_item_info {
-    padding: 0 15px;
-    border-radius: 20px;
-    border: 4px solid #dadadab6;
-    background-color: #ffffff;
-    box-shadow: 0 2px 12px 0 rgb(0 0 0 / 10%);
+  padding: 0 15px;
+  border-radius: 20px;
+  border: 4px solid #dadadab6;
+  background-color: #ffffff;
+  box-shadow: 0 2px 12px 0 rgb(0 0 0 / 10%);
 
-    .title {
-      font-size: large;
-      margin-top: 5px;
-      padding: 7px 20px;
-      border-radius: 5px;
-      color: #ffffff;
-    }
+  .title {
+    font-size: large;
+    margin-top: 5px;
+    padding: 7px 20px;
+    border-radius: 5px;
+    color: #ffffff;
   }
+}
 
 .avatar {
   width: 3.5vw;

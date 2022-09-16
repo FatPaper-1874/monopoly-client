@@ -13,7 +13,7 @@
       <span v-for="j in 40" :key="j">$</span>
     </div>
   </div>
-  <notifications position="top center" :duration="2000">
+  <notifications position="top center" :duration="1300">
     <template #body="props">
       <div class="fat-notification" :class="props.item.type">
         <font-awesome-icon class="icon" :icon="['fas', type[props.item.type as string]]" />

@@ -8,10 +8,11 @@ enum CommTypes {
 	LeaveRoom,
 	StartGame,
 	RollDice,
-	HandleEvent,
+	HandleArrivalEvent,
 	UseChanceCard,
 	BuyRealEstate,
 	BuildHouse,
+	SpecialEvent,
 	PayToSomeOne,
 	RoundEnd,
 }

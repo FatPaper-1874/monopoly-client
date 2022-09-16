@@ -7,7 +7,7 @@ import RoomInfoInterface from "./Interface/RoomInfoInterface";
 import { notify } from "@kyvg/vue3-notification";
 import router from "@/router";
 import ArrivalEventTypes from "./enums/ArrivalEventTypes";
-import EventResultTypes from '@/class/enums/EventResultTypes';
+import EventResultTypes from "@/class/enums/EventResultTypes";
 
 class SocketClient {
 	private socketClient: WebSocket;
@@ -90,6 +90,12 @@ class SocketClient {
 			case CommTypes.BuyRealEstate:
 				this.handleBuyRealEstate(receivedData.msg);
 				break;
+			case CommTypes.BuildHouse:
+				this.handleBuildingHouse(receivedData.msg);
+				break;
+			case CommTypes.SpecialEvent:
+				this.handleSpecialEvent(receivedData.msg);
+				break;
 			case CommTypes.RoundEnd:
 				this.handleRoundEnd(receivedData.msg);
 				break;
@@ -162,7 +168,29 @@ class SocketClient {
 		notify({ type: "success", text: msg.extra });
 	}
 
+	private handleBuildingHouse(msg: MsgInterface){
+		store.commit("setArrivalEventType", ArrivalEventTypes.Building);
+		store.commit("setShowingRealEstateId", msg.data);
+		notify({ type: "success", text: msg.extra });
+	}
+
+	private handleSpecialEvent(msg: MsgInterface) {
+		//收到走到特殊格子信息, 直接回复, 无需UI变化
+		const replySpecialEventMsg: CommInterface = {
+			type: CommTypes.SpecialEvent,
+			msg: {
+				sourceId: "",
+				targetId: "",
+				data: JSON.stringify(EventResultTypes.Agree),
+				extra: "",
+			},
+		};
+
+		this.sendMsg(replySpecialEventMsg);
+	}
+
 	private handleRoundEnd(msg: MsgInterface) {
+		store.commit("setAfterRoll", false);
 		store.commit("setShowingRealEstateId", ""); //清除交易框的内容
 		store.commit("setArrivalEventType", ArrivalEventTypes.None); //重置交易状态
 		notify({ type: msg.data || "success", text: msg.extra });
@@ -230,17 +258,31 @@ class SocketClient {
 		this.sendMsg(sendMsg);
 	}
 
-	public sendBuyRealEstateResult(result: EventResultTypes){
+	public sendBuyRealEstateResult(result: EventResultTypes) {
 		const userId: string = store.state.userId;
-		const eventResultMsg:CommInterface = {
+		const eventResultMsg: CommInterface = {
 			type: CommTypes.BuyRealEstate,
 			msg: {
 				sourceId: userId,
-				targetId: 'server',
+				targetId: "server",
 				data: JSON.stringify(result),
-				extra: '',
-			}
-		}
+				extra: "",
+			},
+		};
+		this.sendMsg(eventResultMsg);
+	}
+
+	public sendBuildHouseResult(result: EventResultTypes) {
+		const userId: string = store.state.userId;
+		const eventResultMsg: CommInterface = {
+			type: CommTypes.BuildHouse,
+			msg: {
+				sourceId: userId,
+				targetId: "server",
+				data: JSON.stringify(result),
+				extra: "",
+			},
+		};
 		this.sendMsg(eventResultMsg);
 	}
 }
