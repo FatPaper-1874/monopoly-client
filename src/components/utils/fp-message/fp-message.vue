@@ -1,0 +1,125 @@
+<script setup lang='ts'>
+import { computed, ref } from 'vue';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+
+const props = defineProps({
+  type: {
+    type: String,
+    default: 'success',
+    validator(value: string) {
+      return ['success', 'warning', 'error', 'message'].includes(value)
+    }
+  },
+  message: {
+    type: String,
+    default: 'Empty Message',
+  },
+  delay: {
+    type: Number,
+    default: 3000,
+  }
+})
+
+const iconList = {
+  "success": "circle-check",
+  "warning": "circle-exclamation",
+  "error": "circle-xmark",
+  "message": "circle-info"
+}
+
+const top = ref(0);
+
+const show = ref(false);
+
+const classType = computed(() => ['fp-message', props.type])
+
+//@ts-ignore
+const iconName = computed(() => `fa-solid fa-${iconList[props.type]}`)
+
+const setTop = (newValue: number) => {
+  top.value = newValue;
+}
+
+const setVisible = (newState: boolean) => {
+  return new Promise((resolve, reject) => {
+    show.value = newState;
+    let timer = setTimeout(() => {
+      clearTimeout(timer);
+      //@ts-ignore
+      timer = null;
+      resolve("");
+    }, 200)
+  })
+}
+
+defineExpose({
+  setVisible,
+  setTop
+})
+</script>
+
+<template>
+  <transition name="fp">
+    <div :style="{ 'top': top + 'px' }" v-show="show" :class="classType">
+      <font-awesome-icon class="icon" :icon="iconName" />{{ message }}
+    </div>
+  </transition>
+</template>
+
+<style lang='scss' scoped>
+.fp-message {
+  position: fixed;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  min-width: 320px;
+  height: 46px;
+  line-height: 46px;
+  padding: 0 10px;
+  border-radius: 7px;
+  border: 2px solid;
+  z-index: 9999;
+  transition: top 0.2s ease-in-out;
+
+  &>.icon {
+    margin-right: 8px;
+    font-size: 1.2em;
+    vertical-align: text-bottom;
+  }
+
+  &.success {
+    background-color: #e1f3d8;
+    border-color: #d1edc4;
+    color: #529b2e;
+  }
+
+  &.warning {
+    background-color: #faecd8;
+    border-color: #f8e3c5;
+    color: #b88230;
+  }
+
+  &.error {
+    background-color: #fde2e2;
+    border-color: #fcd3d3;
+    color: #c45656;
+  }
+
+  &.message {
+    background-color: #e9e9eb;
+    border-color: #dedfe0;
+    color: #73767a;
+  }
+}
+
+.fp-enter-active,
+.fp-leave-active {
+  transition: all 0.2s ease-out;
+}
+
+.fp-enter-from,
+.fp-leave-to {
+  transform: translate(-50%, -20px);
+  opacity: 0;
+}
+</style>

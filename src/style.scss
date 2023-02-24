@@ -1,0 +1,63 @@
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+* {
+  font-family: "ContentFont";
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  background-color: #ffb561;
+}
+
+.fp-input {
+  width: 100%;
+  outline-style: none;
+  border: 1px solid rgba($color: #ffffff, $alpha: 0.5);
+  border-radius: 10px;
+  padding: 0;
+  padding: 7px 10px;
+  box-sizing: border-box;
+  font-size: 1em;
+
+  &:focus {
+    outline: 0;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),
+      #ffb05c;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),
+      #ffb05c;
+  }
+}
+
+.fp-button {
+  margin: auto;
+  padding: 10px 20px;
+  border: 0;
+  color: #ffb05c;
+  font-size: 1em;
+  background-color: #ffffff;
+  box-shadow: 3px 3px 3px #ffb05c;
+  border-radius: 10px;
+
+  &:hover {
+    color: #ffffff;
+    cursor: pointer;
+    background-color: #ffb05c;
+  }
+}

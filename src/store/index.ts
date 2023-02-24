@@ -1,117 +1,52 @@
-import { createStore } from "vuex";
-import RoomInfoInterface from "../class/Interface/RoomInfoInterface";
-import GameFrameInterface from "../class/Interface/game/GameFrameInterface";
-import { roll } from "@/utils";
-import ArrivalEventTypes from "@/class/enums/ArrivalEventTypes";
+import { defineStore } from "pinia";
+import { User, Room } from "../interfaces/bace";
+import { MapItem } from '../../../monopoly-server/src/interfaces/bace';
 
-interface State {
-	userId: string;
-	userName: string;
-	roomId: string;
-	roomList: RoomInfoInterface[];
-	roomInfo: RoomInfoInterface;
-	gameFrame: GameFrameInterface;
-	rollResult: number[];
-	afterRoll: boolean;
-	isShaking: boolean;
-	arrivalEventType: ArrivalEventTypes;
-	showingRealEstateId: string;
-}
-
-const state: State = {
-	userId: "",
-	userName: "",
-	roomId: "",
-	roomList: [],
-	roomInfo: {
-		roomId: "",
-		owner: "",
-		ownerId: "",
-		playerList: [],
+export const useUserInfo = defineStore("userInfo", {
+	state: () => {
+		return {
+			userId: "",
+			username: "",
+			avatar: "user",
+			color: "",
+		};
 	},
-	gameFrame: {
-		gameInfo: {
-			currentRound: -1,
-			currentRoundPlayerId: "",
-		},
-		playerInfoList: [],
-		mapInfo: {
-			mapItemList: [],
-		},
-	},
-	rollResult: [1, 1],
-	//UI
-	afterRoll: false, //扭过骰子之后控制ui
-	isShaking: false,
-	arrivalEventType: ArrivalEventTypes.None,
-	showingRealEstateId: "",
-};
-
-export default createStore({
-	state: state,
-	getters: {},
-	mutations: {
-		setUserId: (state, data: string) => {
-			state.userId = data;
-		},
-		setUserName: (state, data: string) => {
-			state.userName = data;
-		},
-		setRoomId: (state, data: string) => {
-			state.roomId = data;
-		},
-		setRoomList: (state, data: RoomInfoInterface[]) => {
-			state.roomList = data;
-		},
-		setRoomInfo: (state, data: RoomInfoInterface) => {
-			state.roomInfo = data;
-		},
-		SetGameFrameInfo: (state, data: GameFrameInterface) => {
-			state.gameFrame = data;
-		},
-		SetRollResult: (state, data: number[]) => {
-			state.rollResult = data;
-		},
-		SetShaking: (state, data: boolean) => {
-			state.isShaking = data;
-		},
-		setArrivalEventType: (state, data: ArrivalEventTypes) => {
-			state.arrivalEventType = data;
-		},
-		setShowingRealEstateId: (state, data: string) => {
-			state.showingRealEstateId = data;
-		},
-		setAfterRoll: (state, data: boolean) => {
-			state.afterRoll = data;
-		},
-	},
-	actions: {
-		aSetUserName: (context, data: string) => {
-			context.commit("setUserName", data);
-		},
-		aSetGameFrameInfo: (context, data: GameFrameInterface) => {
-			context.commit("SetGameFrameInfo", data);
-		},
-		aSetRollResult: (context, data: number[]) => {
-			const rollPromise = new Promise<void>((resolve, reject) => {
-				//假装摇骰子:P
-				let count = 0;
-				context.commit("SetShaking", true);
-				const timer = setInterval(() => {
-					if (count < 10) {
-						context.commit("SetRollResult", roll(data.length));
-						count++;
-					} else {
-						clearInterval(timer);
-						resolve();
-					}
-				}, 100);
-			});
-			rollPromise.then(() => {
-				context.commit("SetShaking", false);
-				context.commit("SetRollResult", data);
-			});
-		},
-	},
-	modules: {},
 });
+
+export const useUserList = defineStore("userList", {
+	state: () => {
+		return {
+			userList: new Array<User>(),
+		};
+	},
+});
+
+export const useRoomList = defineStore("roomList", {
+	state: () => {
+		return {
+			roomList: new Array<Room>(),
+		};
+	},
+});
+
+export const useRoomInfo = defineStore("roomInfo", {
+	state: () => {
+		return {
+			roomId: "",
+			ownerId: "",
+			ownerName: "",
+			userList: new Array<User>(),
+		};
+	},
+});
+
+export const useMapData = defineStore("mapData", {
+	state: ()=> {
+		return {
+			data: {
+				name: "",
+				data: new Array<MapItem>(),
+			},
+		};
+	}
+})

@@ -1,57 +1,32 @@
-import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
-import LoginView from '../views/login-page.vue'
-import RoomListView from '../views/room-list.vue'
-import RoomView from '../views/room-page.vue'
-import GameView from '../views/game-page.vue'
-import store from '@/store';
+import { createRouter, createWebHashHistory } from "vue-router";
+import loginVue from "../view/login.vue";
+import roomListVue from "../view/room-list.vue";
+import roomVue from "../view/room.vue";
+import gameVue from '../view/game.vue';
 
-const routes: Array<RouteRecordRaw> = [
-  {
-    path: '/',
-    name: 'LoginView',
-    component: LoginView,
-  },
-  {
-    path: '/room-list',
-    name: "RoomListView",
-    component: RoomListView,
-    beforeEnter: (to, from, next) => {
-      if(store.state.userName == ''){
-        next('/')
-      } else {
-        next();
-      }
-    }
-  },
-  {
-    path: '/room-page',
-    name: "RoomView",
-    component: RoomView,
-    beforeEnter: (to, from, next) => {
-      if(store.state.userName == ''){
-        next('/')
-      } else {
-        next();
-      }
-    }
-  },
-  {
-    path: '/game-page',
-    name: "GameVieww",
-    component: GameView,
-    beforeEnter: (to, from, next) => {
-      if(store.state.userName == ''){
-        next('/')
-      } else {
-        next();
-      }
-    }
-  }
-]
+const routes = [
+	{ path: "/", name: "login", component: loginVue },
+	{ path: "/room-list", name: "room-list", component: roomListVue },
+	{ path: "/room", name: "room", component: roomVue },
+	{ path: "/game", name: "game", component: gameVue},
+];
 
 const router = createRouter({
-  history: createWebHashHistory(),
-  routes
+	history: createWebHashHistory(),
+	routes,
+});
+
+router.beforeEach((to, form)=>{
+	if (
+		// 检查用户是否已登录
+		!localStorage.getItem('token') &&
+		//  避免无限重定向
+		to.name !== 'login'
+	) {
+		// 将用户重定向到登录页面
+		return { name: 'login' }
+	}
 })
 
-export default router
+
+export default router;
