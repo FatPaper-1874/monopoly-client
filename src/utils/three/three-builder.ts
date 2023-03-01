@@ -1,4 +1,4 @@
-import { AmbientLight, AxesHelper, DirectionalLight, HemisphereLight, PerspectiveCamera, Scene, Vector3, WebGLRenderer, Group, Color } from "three";
+import { AmbientLight, AxesHelper, DirectionalLight, HemisphereLight, PerspectiveCamera, Scene, Vector3, WebGLRenderer, Group, Color, TextureLoader } from 'three';
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { MapItem } from "../../interfaces/bace";
 import { loadMapModules } from "./map-loader";
@@ -19,7 +19,10 @@ export class ThreeBuilder {
 		this.modules = {};
 		this.roles = {};
 
-		this.scene.background = new Color("#ffeaa7");
+		const bgTextureLoader = new TextureLoader();
+		const bgTexture = bgTextureLoader.load('bg.png');
+
+		this.scene.background = bgTexture;
 		this.scene.add(this.mapContainer);
 
 		this.camera.position.set(10.5, 30, 10.5);

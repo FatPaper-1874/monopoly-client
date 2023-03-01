@@ -1,4 +1,4 @@
-import { SocketMsgType } from "../../enums/bace";
+import { ChangeRoleOperate, SocketMsgType } from "../../enums/bace";
 import { Room, SocketMessage, User } from "../../interfaces/bace";
 import { useUserInfo, useUserList, useRoomList, useRoomInfo, useMapData } from "../../store/index";
 import FPMessage from "../../components/utils/fp-message/index";
@@ -87,6 +87,7 @@ export class GameSocketClient {
 			roomInfo.ownerId = roomInfoData.ownerId;
 			roomInfo.ownerName = roomInfoData.ownerName;
 			roomInfo.userList = roomInfoData.userList;
+			roomInfo.roleList = roomInfoData.roleList;
 		}
 	}
 
@@ -99,7 +100,7 @@ export class GameSocketClient {
 		} catch {}
 	}
 
-	private sendMsg(type: SocketMsgType, data: string, roomId?: string) {
+	private sendMsg(type: SocketMsgType, data: any, roomId?: string) {
 		const userInfo = useUserInfo();
 		const msgToSend: SocketMessage = {
 			type,
@@ -120,6 +121,10 @@ export class GameSocketClient {
 
 	public readyToggle(roomId: string) {
 		this.sendMsg(SocketMsgType.ReadyToggle, "", roomId);
+	}
+
+	public changeRole(roomId: string, operate: ChangeRoleOperate) {
+		this.sendMsg(SocketMsgType.ChangeRole, operate, roomId);
 	}
 
 	public startGame(roomId: string) {

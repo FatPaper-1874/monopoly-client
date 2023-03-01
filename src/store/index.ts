@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { User, Room } from "../interfaces/bace";
+import { User, Room, Role } from '../interfaces/bace';
 import { MapItem } from '../../../monopoly-server/src/interfaces/bace';
 
 export const useUserInfo = defineStore("userInfo", {
@@ -36,6 +36,7 @@ export const useRoomInfo = defineStore("roomInfo", {
 			ownerId: "",
 			ownerName: "",
 			userList: new Array<User>(),
+			roleList: new Array<Role>(),
 		};
 	},
 });

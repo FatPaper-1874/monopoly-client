@@ -1,4 +1,4 @@
-import { SocketMsgType } from '../enums/bace';
+import { SocketMsgType } from "../enums/bace";
 
 export interface SocketMessage {
 	type: SocketMsgType;
@@ -15,8 +15,9 @@ export interface User {
 	userId: string;
 	username: string;
 	isReady: boolean;
-	avatar: string,
-	color: string,
+	avatar: string;
+	color: string;
+	role: Role;
 }
 
 export interface Room {
@@ -26,14 +27,21 @@ export interface Room {
 	userNum: number;
 }
 
+export interface Role{
+	id: string,
+	rolename: string,
+	filename: string,
+	color: string,
+}
+
 export interface RoomInfo {
 	roomId: string;
 	userList: Array<{
 		userId: string;
 		username: string;
 		isReady: boolean;
-		color: string,
-		avatar: string,
+		color: string;
+		avatar: string;
 	}>;
 	isStarted: boolean;
 	ownerId: string;
