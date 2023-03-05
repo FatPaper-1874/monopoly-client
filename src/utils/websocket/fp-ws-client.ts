@@ -1,6 +1,6 @@
 import { ChangeRoleOperate, SocketMsgType } from "../../enums/bace";
-import { Room, SocketMessage, User } from "../../interfaces/bace";
-import { useUserInfo, useUserList, useRoomList, useRoomInfo, useMapData } from "../../store/index";
+import { GameInitInfo, Room, SocketMessage, User } from "../../interfaces/bace";
+import { useUserInfo, useUserList, useRoomList, useRoomInfo, useMap, useLoading, useGameInfo } from "../../store/index";
 import FPMessage from "../../components/utils/fp-message/index";
 import router from "../../router";
 
@@ -50,6 +50,13 @@ export class GameSocketClient {
 						break;
 					case SocketMsgType.GameStart:
 						this.handleGameStart(data);
+						break;
+					case SocketMsgType.GameInit:
+						this.handleGameInit(data);
+						break;
+					case SocketMsgType.GameInfo:
+						this.handleGameInfo(data);
+						break;
 				}
 			};
 		};
@@ -92,11 +99,33 @@ export class GameSocketClient {
 	}
 
 	private handleGameStart(data: SocketMessage) {
+		const loadingStore = useLoading();
+		loadingStore.loading = true;
+	}
+
+	private handleGameInit(data: SocketMessage) {
+		const loadingStore = useLoading();
+		loadingStore.loading = false;
 		if (data.data == "error") return;
-		const mapDataStore = useMapData();
+		const mapDataStore = useMap();
+		const gameInfoStore = useGameInfo();
+		const gameInitInfo: GameInitInfo = data.data;
 		try {
-			mapDataStore.data = JSON.parse(data.data);
-			router.replace({name: 'game'});
+			mapDataStore.mapData = gameInitInfo.mapData;
+			mapDataStore.mapIndex = gameInitInfo.mapIndex;
+			gameInfoStore.playerList = gameInitInfo.playerList;
+			gameInfoStore.properties = gameInitInfo.properties;
+			router.replace({ name: "game" });
+		} catch {}
+	}
+
+	private handleGameInfo(data: SocketMessage) {
+		if (data.data == "error") return;
+		const gameInfoStore = useGameInfo();
+		const gameInitInfo: GameInitInfo = data.data;
+		try {
+			gameInfoStore.playerList = gameInitInfo.playerList;
+			gameInfoStore.properties = gameInitInfo.properties;
 		} catch {}
 	}
 

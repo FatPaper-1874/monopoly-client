@@ -22,7 +22,6 @@ export async function loadMapModules(mapData: Array<MapItem>): Promise<{ [key: s
   const moduleNameList = Array.from(new Set(mapData.map(item => item.type.module)));
   const modules = await loadGLTFModules(moduleNameList.map(name => `modules/${name}.glb`));
   const modulesObj: { [key: string]: Group } = {};
-  console.log(modules);
   
   modules.forEach(gltf => {
     modulesObj[gltf.scene.name] = gltf.scene;

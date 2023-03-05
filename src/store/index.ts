@@ -1,6 +1,13 @@
 import { defineStore } from "pinia";
-import { User, Room, Role } from '../interfaces/bace';
-import { MapItem } from '../../../monopoly-server/src/interfaces/bace';
+import { User, Room, Role, MapItem, PlayerInfo, PropertyInfo } from '../interfaces/bace';
+
+export const useLoading = defineStore("loading", {
+	state: () => {
+		return {
+			loading: false,
+		};
+	},
+});
 
 export const useUserInfo = defineStore("userInfo", {
 	state: () => {
@@ -41,13 +48,20 @@ export const useRoomInfo = defineStore("roomInfo", {
 	},
 });
 
-export const useMapData = defineStore("mapData", {
-	state: ()=> {
+export const useMap = defineStore("map", {
+	state: () => {
 		return {
-			data: {
-				name: "",
-				data: new Array<MapItem>(),
-			},
+			mapData: new Array<MapItem>(),
+			mapIndex: new Array<string>(),
 		};
-	}
-})
+	},
+});
+
+export const useGameInfo = defineStore("gameInfo", {
+	state: () => {
+		return {
+			playerList: new Array<PlayerInfo>(),
+			properties: new Array<PropertyInfo>(),
+		};
+	},
+});

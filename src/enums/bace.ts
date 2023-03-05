@@ -8,6 +8,8 @@ export enum SocketMsgType {
 	ReadyToggle, //准备状态切换
 	ChangeRole, //切换角色
 	GameStart, //游戏开始
+	GameInit, //游戏初始化
+	GameInfo, //游戏信息广播
 }
 
 export enum ChangeRoleOperate {

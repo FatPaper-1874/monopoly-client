@@ -14,7 +14,6 @@ export const loadImg2mesh = async (path: string, depth: number, borderWidth: num
 
 			// 获取 Canvas 上每个像素的 RGBA 值，判断该像素是否是透明的，如果不是透明的，将其坐标加入到一个数组中
 			const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-			console.log(pixels.length);
 
 			const nonTransparentPixels: { x: number; y: number }[] = [];
 

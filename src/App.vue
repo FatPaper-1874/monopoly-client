@@ -1,14 +1,15 @@
 <script setup lang="ts">
+import Loading from "./components/common/loading.vue";
 </script>
 
 <template>
-  <!-- <div class="bg">
+	<!-- <div class="bg">
     <div class="dollar" v-for="i in 30" :key="i">
       <span v-for="j in 40" :key="j">$</span>
     </div>
   </div> -->
-
-  <RouterView></RouterView>
+	<Loading></Loading>
+	<RouterView></RouterView>
 </template>
 
 <style lang="scss" scoped>

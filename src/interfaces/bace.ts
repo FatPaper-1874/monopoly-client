@@ -27,11 +27,11 @@ export interface Room {
 	userNum: number;
 }
 
-export interface Role{
-	id: string,
-	rolename: string,
-	filename: string,
-	color: string,
+export interface Role {
+	id: string;
+	rolename: string;
+	filename: string;
+	color: string;
 }
 
 export interface RoomInfo {
@@ -61,4 +61,46 @@ export interface TypeItem {
 	name: string;
 	module: string;
 	size: number;
+}
+
+export interface PropertyInfo {
+	id: string;
+	name: string;
+	buildingLevel: number;
+	sellCost: number;
+	cost_lv0: number;
+	cost_lv1: number;
+	cost_lv2: number;
+	owner: {
+		id: string;
+		name: string;
+	};
+}
+
+export interface PlayerInfo {
+	user: User;
+	money: number;
+	properties: PropertyInfo[];
+	cards: ChanceCardInfo[];
+	positionIndex: number;
+}
+
+export interface ChanceCardInfo {
+	id: string;
+	name: string;
+	describe: string;
+	icon: string;
+}
+
+export interface GameInitInfo {
+	mapData: MapItem[];
+	mapIndex: string[];
+	playerList: PlayerInfo[];
+	properties: PropertyInfo[];
+	chanceCards: ChanceCardInfo[];
+}
+
+export interface GameInfo {
+	playerList: PlayerInfo[];
+	properties: PropertyInfo[];
 }
