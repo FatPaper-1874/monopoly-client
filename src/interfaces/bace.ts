@@ -83,6 +83,7 @@ export interface PlayerInfo {
 	properties: PropertyInfo[];
 	cards: ChanceCardInfo[];
 	positionIndex: number;
+	isStop: boolean;
 }
 
 export interface ChanceCardInfo {

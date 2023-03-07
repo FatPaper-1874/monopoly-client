@@ -10,6 +10,8 @@ export enum SocketMsgType {
 	GameStart, //游戏开始
 	GameInit, //游戏初始化
 	GameInfo, //游戏信息广播
+	RoundTurn, //更新当前回合轮到的玩家,
+	RollDice,	//掷骰子
 }
 
 export enum ChangeRoleOperate {

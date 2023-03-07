@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { onMounted, computed, onUnmounted, ref } from "vue";
 import { ThreeBuilder } from "../utils/three/three-builder";
-import { useMap } from "../store/index";
+import { useMap, useRoomInfo } from "../store/index";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import router from "../router/index";
+import { GameSocketClient } from "../utils/websocket/fp-ws-client";
+
+const roomInfoStore = useRoomInfo();
 
 const windowWidth = computed(() => window.innerWidth);
 const windowHeight = computed(() => window.innerHeight);
@@ -28,6 +31,10 @@ onUnmounted(() => {
 const handleToggleLockCamera = () => {
 	islockingCamera.value = threeBuilder.toggleLockCamera();
 };
+
+const handleRollDice = () => {
+	GameSocketClient.getInstance().rollDice(roomInfoStore.roomId);
+};
 </script>
 
 <template>
@@ -37,6 +44,10 @@ const handleToggleLockCamera = () => {
 			<div>
 				<button @click="handleToggleLockCamera">
 					<FontAwesomeIcon :icon="lockCameraIcon" />
+				</button>
+
+				<button @click="handleRollDice">
+					<FontAwesomeIcon icon="fa-dice" />
 				</button>
 			</div>
 		</div>

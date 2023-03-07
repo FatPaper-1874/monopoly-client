@@ -3,6 +3,7 @@ import { GameInitInfo, Room, SocketMessage, User } from "../../interfaces/bace";
 import { useUserInfo, useUserList, useRoomList, useRoomInfo, useMap, useLoading, useGameInfo } from "../../store/index";
 import FPMessage from "../../components/utils/fp-message/index";
 import router from "../../router";
+import { OperateType } from '../../../../monopoly-server/src/enums/game';
 
 export class GameSocketClient {
 	private socketClient: WebSocket;
@@ -56,6 +57,9 @@ export class GameSocketClient {
 						break;
 					case SocketMsgType.GameInfo:
 						this.handleGameInfo(data);
+						break;
+					case SocketMsgType.RoundTurn:
+						this.handleRoundTurn(data);
 						break;
 				}
 			};
@@ -129,6 +133,11 @@ export class GameSocketClient {
 		} catch {}
 	}
 
+	private handleRoundTurn(data: SocketMessage){
+		const gameInfoStore = useGameInfo();
+		gameInfoStore.isMyTurn = true;
+	}
+
 	private sendMsg(type: SocketMsgType, data: any, roomId?: string) {
 		const userInfo = useUserInfo();
 		const msgToSend: SocketMessage = {
@@ -158,5 +167,9 @@ export class GameSocketClient {
 
 	public startGame(roomId: string) {
 		this.sendMsg(SocketMsgType.GameStart, "", roomId);
+	}
+
+	public rollDice(roomId: string){
+		this.sendMsg(SocketMsgType.RollDice, OperateType.RollDice, roomId);
 	}
 }

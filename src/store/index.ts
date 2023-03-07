@@ -60,6 +60,7 @@ export const useMap = defineStore("map", {
 export const useGameInfo = defineStore("gameInfo", {
 	state: () => {
 		return {
+			isMyTurn: false,
 			playerList: new Array<PlayerInfo>(),
 			properties: new Array<PropertyInfo>(),
 		};

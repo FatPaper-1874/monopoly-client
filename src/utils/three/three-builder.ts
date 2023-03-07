@@ -149,7 +149,7 @@ export class ThreeBuilder {
 		for (let i = 1; i <= stepNum; i++) {
 			let { x, y, z } = this.getMapItemPosition((sourceIndex + i) % total);
 			console.log(((sourceIndex + i) % total) + "---");
-			timeLine.to(playerModule.position, { x, y: y + 1, z, duration: 1 });
+			timeLine.to(playerModule.position, { x, y: y + 1, z, duration: 0.6 });
 		}
 		await timeLine.play();
 	}
