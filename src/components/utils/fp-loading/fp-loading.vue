@@ -1,15 +1,21 @@
 <script setup lang="ts">
-import { useLoading } from "../../store/index";
-import { computed } from "vue";
+import { useLoading } from "../../../store/index";
+import { computed, watch } from "vue";
 
 const loadingStore = useLoading();
 const loading = computed(() => loadingStore.loading);
+const loadingText = computed(() => loadingStore.text);
+
+watch(loading, (newValue) => {
+	if (!newValue) loadingStore.text = "";
+});
 </script>
 
 <template>
 	<transition name="fade">
 		<div v-if="loading" class="loading">
 			<div class="spinner"></div>
+			<span>{{ loadingText }}</span>
 		</div>
 	</transition>
 </template>
@@ -22,10 +28,16 @@ const loading = computed(() => loadingStore.loading);
 	bottom: 0;
 	right: 0;
 	display: flex;
+	flex-direction: column;
 	justify-content: center;
 	align-items: center;
 	background-color: rgba(0, 0, 0, 0.5);
 	z-index: 9999;
+
+	& > span {
+		margin-top: 0.8em;
+		color: #eeeeee;
+	}
 }
 
 .spinner {

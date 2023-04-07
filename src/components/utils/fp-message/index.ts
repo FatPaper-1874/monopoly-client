@@ -13,18 +13,18 @@ const FPMessage = (options: OptionsType) => {
 const showMessage = (app: App, delay: number) => {
 	const container = document.createDocumentFragment();
 	const vm = app.mount(container);
-  itemQueue.value.push(vm);
+	itemQueue.value.push(vm);
 	document.body.appendChild(container);
-  
-  updateTop(vm);
+
+	updateTop(vm);
 	//@ts-ignore  获取组件的方法
 	vm.setVisible(true);
 
 	const stopHandle = watch(itemQueue, () => {
-    updateTop(vm);
+		updateTop(vm);
 	});
 
-	let timer = setTimeout(() => {
+	let timer: any = setTimeout(() => {
 		hideMessage(app, vm, stopHandle);
 		clearTimeout(timer);
 		timer = -1;
@@ -34,9 +34,9 @@ const showMessage = (app: App, delay: number) => {
 const hideMessage = async (app: App, vm: ComponentPublicInstance, stopHandle: WatchStopHandle) => {
 	//@ts-ignore 获取组件的方法
 	await vm.setVisible(false);
-  stopHandle();
-  app.unmount();
-  itemQueue.value = itemQueue.value.filter(item => item !== vm);
+	stopHandle();
+	app.unmount();
+	itemQueue.value = itemQueue.value.filter((item) => item !== vm);
 };
 
 const findIndex = (arr: Array<ComponentPublicInstance>, item: ComponentPublicInstance) => {
@@ -44,9 +44,9 @@ const findIndex = (arr: Array<ComponentPublicInstance>, item: ComponentPublicIns
 };
 
 const updateTop = (vm: ComponentPublicInstance) => {
-  const index = findIndex(itemQueue.value, vm);
-  //@ts-ignore
-  vm.setTop(index * 50 + (index + 1) * 10);
-}
+	const index = findIndex(itemQueue.value, vm);
+	//@ts-ignore
+	vm.setTop(index * 2.8 + (index + 1) * 1.2);
+};
 
 export default FPMessage;

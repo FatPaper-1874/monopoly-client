@@ -30,7 +30,7 @@ const handleLogin = async() => {
       <span>密码</span>
       <input class="fp-input" type="password" id="password" v-model="password" />
 
-      <button @click="handleLogin()" class="fp-button login-button">登录</button>
+      <button @click="handleLogin()" class="login-button">登录</button>
     </div>
   </div>
 
@@ -67,6 +67,7 @@ const handleLogin = async() => {
   &>.login-button {
     width: 100%;
     padding: 13px;
+    border-radius: 0.6em;
     margin-top: 35px;
     font-size: 1.6em;
   }

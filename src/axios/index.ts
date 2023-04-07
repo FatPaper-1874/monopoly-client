@@ -1,6 +1,6 @@
 import axios from "axios";
-import FPMessage from "../components/utils/fp-message";
-import router from "../router/index";
+import FPMessage from "@/components/utils/fp-message";
+import router from "@/router/index";
 
 axios.defaults.baseURL = "http://localhost:8000";
 axios.defaults.headers.common["Authorization"] = localStorage.getItem("token");
@@ -39,7 +39,7 @@ axios.interceptors.response.use(
 				});
 				localStorage.setItem("token", "");
 				router.replace({ name: "login" });
-			} else if (status == 403) {
+			} else if (status == 500) {
 				//用户输入数据错误
 				FPMessage({
 					type: "error",

@@ -4,15 +4,16 @@ import { useUserInfo } from "../../store/index";
 export const getUserInfo = async () => {
 	const res = await axios.get("/user/info");
 	if (res.status === 200) {
-		const userInfo = useUserInfo();
-		userInfo.$patch({
+		const userInfoStore = useUserInfo();
+		const user = {
 			userId: res.data.id,
 			username: res.data.username,
 			avatar: res.data.avatar,
 			color: res.data.color,
-		});
-		return true;
+		};
+		userInfoStore.$patch(user);
+		return user;
 	} else {
-		return false;
+		return null;
 	}
 };

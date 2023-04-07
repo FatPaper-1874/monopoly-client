@@ -12,8 +12,67 @@ body {
   border: 0;
 }
 
+html {
+  font-size: calc(1vmax + 2px);
+}
+
 * {
   font-family: "ContentFont";
+}
+
+:root {
+  --color-primary: #ff8f00;
+  --color-second: #ffa000;
+  --color-third: #ffc107;
+  --color-bg: #ffcc80;
+  --color-bg-light: #fff8e1;
+  --color-bg-disable: #c8c9cc;
+
+  --color-text-white: #ffffff;
+  --color-text-disable: #9fa3ac;
+
+  --box-shadow: 0px 0px 12px rgba(0, 0, 0, .12);
+  --text-shadow: 3px 3px 2px rgba(0, 0, 0, 0.1)
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  background-color: var(--color-bg-light);
+}
+
+/*定义滚动条轨道：内阴影+圆角*/
+::-webkit-scrollbar-track {
+  background-color: var(--color-bg-light);
+}
+
+/*定义滑块：内阴影+圆角*/
+::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background-color: var(--color-bg);
+}
+
+button {
+  border: 0;
+  font-size: 1.1rem;
+  color: var(--color-text-white);
+  background-color: var(--color-second);
+  text-shadow: var(--text-shadow);
+
+  &:hover {
+    color: var(--color-text-white);
+    cursor: pointer;
+    background-color: var(--color-primary);
+  }
+
+  &:disabled {
+    color: var(--color-text-disable);
+    cursor: not-allowed;
+    background-color: var(--color-bg-disable);
+  }
+
+  &:focus {
+    outline: none;
+  }
 }
 
 #app {
@@ -23,7 +82,7 @@ body {
   overflow: hidden;
   display: flex;
   justify-content: center;
-  background-color: #ffb561;
+  background-color: var(--color-bg);
 }
 
 .fp-input {
@@ -45,19 +104,19 @@ body {
   }
 }
 
-.fp-button {
-  margin: auto;
-  padding: 10px 20px;
-  border: 0;
-  color: #ffb05c;
-  font-size: 1em;
-  background-color: #ffffff;
-  box-shadow: 3px 3px 3px #ffb05c;
-  border-radius: 10px;
+// .fp-button {
+//   margin: auto;
+//   padding: 10px 20px;
+//   border: 0;
+//   color: #ffb05c;
+//   font-size: 1em;
+//   background-color: #ffffff;
+//   box-shadow: 3px 3px 3px #ffb05c;
+//   border-radius: 10px;
 
-  &:hover {
-    color: #ffffff;
-    cursor: pointer;
-    background-color: #ffb05c;
-  }
-}
+//   &:hover {
+//     color: #ffffff;
+//     cursor: pointer;
+//     background-color: #ffb05c;
+//   }
+// }

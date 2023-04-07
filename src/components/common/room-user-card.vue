@@ -4,7 +4,7 @@ import { lightenColor } from "../../utils";
 import { computed, ref, reactive } from "vue";
 import { Role } from "../../interfaces/bace";
 import { useRoomInfo } from "../../store/index";
-import { ChangeRoleOperate } from "../../../../monopoly-server/src/enums/bace";
+import { ChangeRoleOperate } from "../../enums/bace";
 import { GameSocketClient } from "../../utils/websocket/fp-ws-client";
 const props = defineProps({
 	username: {
@@ -41,13 +41,12 @@ const props = defineProps({
 	},
 });
 
-const roomInfo = useRoomInfo();
 const lightColor = computed(() => lightenColor(props.color));
-const roleImgSrc = computed(()=> `/roles/${props.role?.filename}.png`);
+const roleImgSrc = computed(() => (props.role ? `/roles/${props.role?.filename}.png` : ""));
 
 const handleChangeRole = (operate: ChangeRoleOperate) => {
 	const serverClient = GameSocketClient.getInstance();
-	serverClient.changeRole(roomInfo.roomId, operate);
+	serverClient.changeRole(operate);
 };
 </script>
 
@@ -82,33 +81,35 @@ const handleChangeRole = (operate: ChangeRoleOperate) => {
 		</div>
 
 		<div class="role-contianer">
-			<img :src="roleImgSrc" alt="">
+			<font-awesome-icon class="no-role" v-if="!roleImgSrc && username" icon="fa-solid fa-circle-question" />
+			<img v-else :src="roleImgSrc" alt="" />
 		</div>
 	</div>
 </template>
 
 <style lang="scss" scoped>
 .room-user-card {
+	width: auto;
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	position: relative;
-	border-radius: 20px;
+	border-radius: 0.8rem;
 	overflow: hidden;
 	background-color: rgba(255, 255, 255, 0.7);
 	backdrop-filter: blur(3px);
-	padding: 20px 10px;
+	padding: 1rem 0.7rem;
 	box-sizing: border-box;
-	box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+	box-shadow: var(--box-shadow);
 
 	& > .ready-tag,
 	.choose-role {
 		position: absolute;
 		bottom: 10%;
 		width: 100%;
-		font-size: 1.5em;
-		height: 1.8em;
-		line-height: 1.8em;
+		font-size: 1.5rem;
+		height: 2.6rem;
+		line-height: 2.6rem;
 		color: #ffffff;
 		background-color: rgb(255, 221, 25);
 		text-align: center;
@@ -124,7 +125,7 @@ const handleChangeRole = (operate: ChangeRoleOperate) => {
 		line-height: 0;
 		user-select: none;
 		background-color: rgba(185, 185, 185, 0.8);
-		padding: 0 10px;
+		padding: 0 0.6rem;
 		box-sizing: border-box;
 
 		& > span {
@@ -133,7 +134,7 @@ const handleChangeRole = (operate: ChangeRoleOperate) => {
 	}
 
 	& > .ban {
-		font-size: 5em;
+		font-size: 5rem;
 		color: rgba(196, 196, 196, 0.6);
 	}
 
@@ -142,43 +143,47 @@ const handleChangeRole = (operate: ChangeRoleOperate) => {
 		display: flex;
 		justify-content: space-between;
 		position: absolute;
-		left: 0px;
-		top: 0px;
+		left: 0;
+		top: 0;
 
 		& > .avatar {
-			$icon-size: 40px;
+			$icon-size: 2.4rem;
 			min-width: $icon-size;
 			min-height: $icon-size;
 			width: $icon-size;
 			height: $icon-size;
 			text-align: center;
 			line-height: $icon-size;
-			padding: 0px 4px;
+			padding: 0px 0.2rem;
 			// border: 4px solid #ffffff;
-			font-size: 1.3em;
+			font-size: 1.2rem;
 			color: #ffffff;
-			box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+			box-shadow: var(--box-shadow);
 			z-index: 101;
 		}
 
 		& > .info {
-			height: 40px;
+			height: 2.4rem;
 			text-align: center;
 			flex: 1;
 			// border: 4px solid #ffffff;
 			border-left: 0px;
-			box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+			box-shadow: var(--box-shadow);
 			& > .username {
-				line-height: 40px;
+				line-height: 2.4rem;
 				color: #ffffff;
-				font-size: 1.3em;
-				text-shadow: 3px 3px 2px rgba(0, 0, 0, 0.2);
+				font-size: 1.1rem;
+				text-shadow: var(--text-shadow);
 			}
 		}
 	}
 }
 
 .role-contianer {
+	& > .no-role {
+		font-size: 10rem;
+		color: rgba($color: #777777, $alpha: 0.2);
+	}
 	& > img {
 		max-width: 100%;
 	}

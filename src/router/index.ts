@@ -2,7 +2,7 @@ import { createRouter, createWebHashHistory } from "vue-router";
 import loginVue from "../view/login.vue";
 import roomListVue from "../view/room-list.vue";
 import roomVue from "../view/room.vue";
-import gameVue from '../view/game.vue';
+import gameVue from '../view/game/game.vue';
 
 const routes = [
 	{ path: "/", name: "login", component: loginVue },

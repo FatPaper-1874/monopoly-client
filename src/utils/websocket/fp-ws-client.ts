@@ -1,38 +1,55 @@
-import { ChangeRoleOperate, SocketMsgType } from "../../enums/bace";
-import { GameInitInfo, Room, SocketMessage, User } from "../../interfaces/bace";
-import { useUserInfo, useUserList, useRoomList, useRoomInfo, useMap, useLoading, useGameInfo } from "../../store/index";
+import PropertyInfoVue from "@/components/common/property-info.vue";
+import { FPMessageBox } from "@/components/utils/fp-message-box";
+import { Store } from "pinia";
+import { createVNode } from "vue";
 import FPMessage from "../../components/utils/fp-message/index";
+import { ChangeRoleOperate, SocketMsgType } from "../../enums/bace";
+import { OperateType } from "../../enums/game";
+import { GameInfo, GameInitInfo, PropertyInfo, Room, SocketMessage, User, GameSetting } from "../../interfaces/bace";
 import router from "../../router";
-import { OperateType } from '../../../../monopoly-server/src/enums/game';
+import {
+	useGameInfo,
+	useLoading,
+	useMapData,
+	usePlayerWalk,
+	useRoomInfo,
+	useRoomList,
+	useUserInfo,
+	useUserList,
+	useUtil,
+} from "../../store/index";
+
+interface UserInfo {
+	username: string;
+	userId: string;
+	avatar: string;
+	color: string;
+}
 
 export class GameSocketClient {
 	private socketClient: WebSocket;
 	private static instance: GameSocketClient;
+	private roomInfoStore = useRoomInfo();
 
-	static getInstance(): GameSocketClient {
-		if (!this.instance) {
-			this.instance = new GameSocketClient();
+	static getInstance(user?: UserInfo): GameSocketClient {
+		if (!this.instance && user) {
+			this.instance = new GameSocketClient(user);
 		}
 		return this.instance;
 	}
 
-	constructor() {
-		const userInfo = useUserInfo();
+	constructor(user: UserInfo) {
 		this.socketClient = new WebSocket("ws://127.0.0.1:8001");
+		this.socketClient.onclose = () => {};
 		this.socketClient.onopen = () => {
 			console.log("客户端socket开启连接成功");
-			const user = {
-				username: userInfo.username,
-				userId: userInfo.userId,
-				avatar: userInfo.avatar,
-				color: userInfo.color,
-			};
 			this.sendMsg(SocketMsgType.ConfirmIdentity, JSON.stringify(user));
 			this.socketClient.onmessage = (e) => {
 				const data: SocketMessage = JSON.parse(e.data);
 				if (data.msg) {
 					FPMessage({ type: data.msg.type, message: data.msg.content });
 				}
+
 				switch (data.type) {
 					case SocketMsgType.UserList:
 						this.handleUserListReply(data.data);
@@ -58,8 +75,22 @@ export class GameSocketClient {
 					case SocketMsgType.GameInfo:
 						this.handleGameInfo(data);
 						break;
+					case SocketMsgType.RemainingTime:
+						this.handleRemainingTime(data);
+						break;
 					case SocketMsgType.RoundTurn:
 						this.handleRoundTurn(data);
+						break;
+					case SocketMsgType.RollDice:
+						this.handleRollDice(data);
+						break;
+					case SocketMsgType.BuyProperty:
+						this.handleBuyProperty(data);
+						break;
+					case SocketMsgType.BuildHouse:
+						this.handleBuildHouse(data);
+						break;
+					default:
 						break;
 				}
 			};
@@ -67,7 +98,6 @@ export class GameSocketClient {
 	}
 
 	private handleUserListReply(data: User[]) {
-		console.log(data);
 		const userListStore = useUserList();
 		userListStore.userList = data;
 	}
@@ -93,12 +123,12 @@ export class GameSocketClient {
 	private handleRoomInfoReply(data: SocketMessage) {
 		const roomInfoData = data.data;
 		if (roomInfoData) {
-			const roomInfo = useRoomInfo();
-			roomInfo.roomId = roomInfoData.roomId;
-			roomInfo.ownerId = roomInfoData.ownerId;
-			roomInfo.ownerName = roomInfoData.ownerName;
-			roomInfo.userList = roomInfoData.userList;
-			roomInfo.roleList = roomInfoData.roleList;
+			this.roomInfoStore.roomId = roomInfoData.roomId;
+			this.roomInfoStore.ownerId = roomInfoData.ownerId;
+			this.roomInfoStore.ownerName = roomInfoData.ownerName;
+			this.roomInfoStore.userList = roomInfoData.userList;
+			this.roomInfoStore.roleList = roomInfoData.roleList;
+			this.roomInfoStore.gameSetting = roomInfoData.gameSetting;
 		}
 	}
 
@@ -108,43 +138,115 @@ export class GameSocketClient {
 	}
 
 	private handleGameInit(data: SocketMessage) {
-		const loadingStore = useLoading();
-		loadingStore.loading = false;
-		if (data.data == "error") return;
-		const mapDataStore = useMap();
-		const gameInfoStore = useGameInfo();
-		const gameInitInfo: GameInitInfo = data.data;
-		try {
-			mapDataStore.mapData = gameInitInfo.mapData;
-			mapDataStore.mapIndex = gameInitInfo.mapIndex;
-			gameInfoStore.playerList = gameInitInfo.playerList;
-			gameInfoStore.properties = gameInitInfo.properties;
+		if (data.data) {
+			const loadingStore = useLoading();
+			loadingStore.text = "获取数据成功，加载中...";
+
+			const gameInitInfo: GameInitInfo = data.data;
+
+			const mapDataStore = useMapData();
+			mapDataStore.$patch(gameInitInfo);
+
+			const gameInfoStore = useGameInfo();
+			gameInfoStore.currentRound = gameInitInfo.currentRound;
+			gameInfoStore.currentPlayerInRound = gameInitInfo.currentPlayerInRound;
+			gameInfoStore.currentMultiplier = gameInitInfo.currentMultiplier;
+
 			router.replace({ name: "game" });
-		} catch {}
+		} else {
+			FPMessage({ type: "error", message: "获取地图初始数据失败" });
+		}
 	}
 
 	private handleGameInfo(data: SocketMessage) {
 		if (data.data == "error") return;
+
 		const gameInfoStore = useGameInfo();
-		const gameInitInfo: GameInitInfo = data.data;
+		const gameInfo: GameInfo = data.data;
 		try {
-			gameInfoStore.playerList = gameInitInfo.playerList;
-			gameInfoStore.properties = gameInitInfo.properties;
+			gameInfoStore.currentPlayerInRound = gameInfo.currentPlayerInRound;
+			gameInfoStore.currentRound = gameInfo.currentRound;
+			gameInfoStore.currentMultiplier = gameInfo.currentMultiplier;
+			gameInfoStore.playersList = gameInfo.playerList;
+			gameInfoStore.propertiesList = gameInfo.properties;
 		} catch {}
 	}
 
-	private handleRoundTurn(data: SocketMessage){
-		const gameInfoStore = useGameInfo();
-		gameInfoStore.isMyTurn = true;
+	private handleRemainingTime(data: SocketMessage) {
+		const remainingTime = data.data;
+		const utilStore = useUtil();
+		utilStore.remainingTime = remainingTime;
+		utilStore.timeOut = remainingTime <= 0;
+		if (remainingTime <= 0) {
+			utilStore.canRoll = false;
+		}
 	}
 
-	private sendMsg(type: SocketMsgType, data: any, roomId?: string) {
+	private handleRoundTurn(data: SocketMessage) {
+		const gameInfoStore = useGameInfo();
+		gameInfoStore.isMyTurn = true;
+		const utilStore = useUtil();
+		utilStore.canRoll = true;
+	}
+
+	private handleRollDice(data: SocketMessage) {
+		const rollDicePlayerId: string = data.data.rollDicePlayerId;
+		const rollDiceResult: number[] = data.data.rollDiceResult;
+		const rollDiveCount: number = data.data.rollDiveCount;
+
+		const playerWalkStore = usePlayerWalk();
+		playerWalkStore.updatePlayWalk(rollDicePlayerId, rollDiveCount);
+
+		const utilStore = useUtil();
+		utilStore.rollDiceResult = rollDiceResult;
+	}
+
+	private handleBuyProperty(data: SocketMessage) {
+		const property: PropertyInfo = data.data;
+
+		const vnode = createVNode(PropertyInfoVue, { property });
+
+		FPMessageBox({
+			title: "购买地皮",
+			content: vnode,
+			cancleText: "不买",
+			confirmText: "买！",
+		})
+			.then(() => {
+				this.sendMsg(SocketMsgType.BuyProperty, OperateType.BuyProperty, undefined, true);
+			})
+			.catch(() => {
+				this.sendMsg(SocketMsgType.BuyProperty, OperateType.BuyProperty, undefined, false);
+			});
+	}
+
+	private handleBuildHouse(data: SocketMessage) {
+		const property: PropertyInfo = data.data;
+
+		const vnode = createVNode(PropertyInfoVue, { property });
+
+		FPMessageBox({
+			title: "升级房子",
+			content: vnode,
+			cancleText: "不升级",
+			confirmText: "升级！",
+		})
+			.then(() => {
+				this.sendMsg(SocketMsgType.BuildHouse, OperateType.BuildHouse, undefined, true);
+			})
+			.catch(() => {
+				this.sendMsg(SocketMsgType.BuildHouse, OperateType.BuildHouse, undefined, false);
+			});
+	}
+
+	private sendMsg(type: SocketMsgType, data: any, roomId: string = this.roomInfoStore.roomId, extra: any = undefined) {
 		const userInfo = useUserInfo();
 		const msgToSend: SocketMessage = {
 			type,
 			source: userInfo.userId,
 			roomId,
 			data,
+			extra,
 		};
 		this.socketClient.send(JSON.stringify(msgToSend));
 	}
@@ -153,23 +255,40 @@ export class GameSocketClient {
 		this.sendMsg(SocketMsgType.JoinRoom, "", roomId);
 	}
 
-	public leaveRoom(roomId: string) {
-		this.sendMsg(SocketMsgType.LeaveRoom, "", roomId);
+	public leaveRoom() {
+		this.sendMsg(SocketMsgType.LeaveRoom, "");
+		this.roomInfoStore.$reset();
 	}
 
-	public readyToggle(roomId: string) {
-		this.sendMsg(SocketMsgType.ReadyToggle, "", roomId);
+	public readyToggle() {
+		this.sendMsg(SocketMsgType.ReadyToggle, "");
 	}
 
-	public changeRole(roomId: string, operate: ChangeRoleOperate) {
-		this.sendMsg(SocketMsgType.ChangeRole, operate, roomId);
+	public changeRole(operate: ChangeRoleOperate) {
+		this.sendMsg(SocketMsgType.ChangeRole, operate);
 	}
 
-	public startGame(roomId: string) {
-		this.sendMsg(SocketMsgType.GameStart, "", roomId);
+	public changeGameSetting(gameSetting: GameSetting) {
+		this.sendMsg(SocketMsgType.ChangeGameSetting, gameSetting);
 	}
 
-	public rollDice(roomId: string){
-		this.sendMsg(SocketMsgType.RollDice, OperateType.RollDice, roomId);
+	public startGame() {
+		this.sendMsg(SocketMsgType.GameStart, "");
+	}
+
+	public rollDice() {
+		this.sendMsg(SocketMsgType.RollDice, OperateType.RollDice);
+		const gameInfoStore = useGameInfo();
+		gameInfoStore.isMyTurn = false;
+		const utilStore = useUtil();
+		utilStore.canRoll = false;
+	}
+
+	public useChanceCard(cardId: string, target?: string | string[]) {
+		this.sendMsg(SocketMsgType.UseChanceCard, cardId, undefined, target);
+	}
+
+	public AnimationComplete() {
+		this.sendMsg(SocketMsgType.Animation, OperateType.Animation);
 	}
 }
