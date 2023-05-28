@@ -1,65 +1,25 @@
-export const lightenColor = (color: string): string => {
-	// 匹配 RGB 颜色字符串中的小数值
-	const regex = /([\d\.]+)\s*,\s*([\d\.]+)\s*,\s*([\d\.]+)/;
-	const match = color.match(regex);
-	if (match) {
-		// 将字符串转换为数字并减少 10%
-		const r = Math.round(parseFloat(match[1]));
-		const g = Math.round(parseFloat(match[2]));
-		const b = Math.round(parseFloat(match[3]));
+export const lightenColor = (hexColor: string, amount: number): string => {
+	// Remove the '#' character from the beginning of the string
+	hexColor = hexColor.slice(1);
 
-		const newR = Math.round(r * 0.95);
-		const newG = Math.round(g * 0.95);
-		const newB = Math.round(b * 0.95);
+	// Convert the hex color to RGB
+	const r = parseInt(hexColor.slice(0, 2), 16);
+	const g = parseInt(hexColor.slice(2, 4), 16);
+	const b = parseInt(hexColor.slice(4, 6), 16);
 
-		// 确保每个通道值在 0-255 之间
-		const clampedR = Math.min(255, Math.max(0, newR));
-		const clampedG = Math.min(255, Math.max(0, newG));
-		const clampedB = Math.min(255, Math.max(0, newB));
+	// Calculate the new RGB values by decreasing each by the specified amount
+	const newR = Math.max(r - amount, 0);
+	const newG = Math.max(g - amount, 0);
+	const newB = Math.max(b - amount, 0);
 
-		// 返回新的 RGB 颜色值
-		return `rgb(${clampedR}, ${clampedG}, ${clampedB})`;
-	} else {
-		return "rgb(0, 0, 0)";
-	}
+	// Convert the new RGB values back to hex
+	const newHexColor = `#${newR.toString(16).padStart(2, "0")}${newG.toString(16).padStart(2, "0")}${newB
+		.toString(16)
+		.padStart(2, "0")}`;
+
+	return newHexColor;
 };
-
-export function modifyColor(color: string, s: number): string {
-	// 匹配 RGB 颜色字符串中的小数值
-	const regex = /([\d\.]+)\s*,\s*([\d\.]+)\s*,\s*([\d\.]+)/;
-	const match = color.match(regex);
-	if (match) {
-		// 将字符串转换为数字并减少 10%
-		const r = Math.round(parseFloat(match[1]));
-		const g = Math.round(parseFloat(match[2]));
-		const b = Math.round(parseFloat(match[3]));
-
-		const newR = Math.round(r * s);
-		const newG = Math.round(g * s);
-		const newB = Math.round(b * s);
-
-		// 确保每个通道值在 0-255 之间
-		const clampedR = Math.min(255, Math.max(0, newR));
-		const clampedG = Math.min(255, Math.max(0, newG));
-		const clampedB = Math.min(255, Math.max(0, newB));
-
-		// 返回新的 RGB 颜色值
-		return `rgb(${clampedR}, ${clampedG}, ${clampedB})`;
-	} else {
-		return "rgb(255, 255, 255)";
-	}
-}
 
 export const getRandomInteger = (min: number, max: number) => {
 	return Math.floor(Math.random() * (max - min + 1)) + min;
-};
-
-export const rgb2hex = (rgb: string) => {
-	const regex = /([\d\.]+)\s*,\s*([\d\.]+)\s*,\s*([\d\.]+)/;
-	const match = rgb.match(regex);
-	if (!match) return "#FFFFFF";
-	const r = Math.round(parseFloat(match[1]));
-	const g = Math.round(parseFloat(match[2]));
-	const b = Math.round(parseFloat(match[3]));
-	return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 };

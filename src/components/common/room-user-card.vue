@@ -6,6 +6,7 @@ import { Role } from "../../interfaces/bace";
 import { useRoomInfo } from "../../store/index";
 import { ChangeRoleOperate } from "../../enums/bace";
 import { GameSocketClient } from "../../utils/websocket/fp-ws-client";
+import { _BASEURL_ } from "@/bace";
 const props = defineProps({
 	username: {
 		type: String,
@@ -41,8 +42,8 @@ const props = defineProps({
 	},
 });
 
-const lightColor = computed(() => lightenColor(props.color));
-const roleImgSrc = computed(() => (props.role ? `/roles/${props.role?.filename}.png` : ""));
+const lightColor = computed(() => lightenColor(props.color, 15));
+const roleImgSrc = computed(() => (props.role ? `${_BASEURL_}/static/roles/${props.role?.filename}` : ""));
 
 const handleChangeRole = (operate: ChangeRoleOperate) => {
 	const serverClient = GameSocketClient.getInstance();

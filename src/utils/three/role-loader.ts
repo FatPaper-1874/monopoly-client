@@ -1,7 +1,13 @@
 import { ExtrudeGeometry, Group, Mesh, MeshBasicMaterial, Shape, TextureLoader, Vector2 } from "three";
 
-export const loadImg2mesh = async (path: string, depth: number, borderWidth: number, borderColor: number = 0xffffff): Promise<Group> => {
+export const loadImg2mesh = async (
+	path: string,
+	depth: number,
+	borderWidth: number,
+	borderColor: number = 0xffffff
+): Promise<Group> => {
 	const img = new Image() as HTMLImageElement;
+	img.crossOrigin = "anonymous";
 	img.src = path;
 	const promise = new Promise<Group>((resolve, reject) => {
 		img.onload = async () => {
@@ -33,7 +39,14 @@ export const loadImg2mesh = async (path: string, depth: number, borderWidth: num
 			for (let i = 0; i < nonTransparentPixels.length; i++) {
 				const pixel = nonTransparentPixels[i];
 				const isBoundaryPixel =
-					pixel.x === 0 || pixel.y === 0 || pixel.x === canvas.width - 1 || pixel.y === canvas.height - 1 || isPixelTransparent(pixel.x - 1, pixel.y) || isPixelTransparent(pixel.x + 1, pixel.y) || isPixelTransparent(pixel.x, pixel.y - 1) || isPixelTransparent(pixel.x, pixel.y + 1);
+					pixel.x === 0 ||
+					pixel.y === 0 ||
+					pixel.x === canvas.width - 1 ||
+					pixel.y === canvas.height - 1 ||
+					isPixelTransparent(pixel.x - 1, pixel.y) ||
+					isPixelTransparent(pixel.x + 1, pixel.y) ||
+					isPixelTransparent(pixel.x, pixel.y - 1) ||
+					isPixelTransparent(pixel.x, pixel.y + 1);
 				if (isBoundaryPixel) {
 					boundaryPixels.push(pixel);
 				}
@@ -102,7 +115,12 @@ export const loadImg2mesh = async (path: string, depth: number, borderWidth: num
 			const edgeMesh = mesh.clone();
 			mesh.scale.set(1 - borderWidth, 1 - borderWidth, 1);
 			// polygonOffset: true, polygonOffsetFactor: 1.0, polygonOffsetUnits: 4.0 解决重叠模型贴图闪烁的问题
-			edgeMesh.material = new MeshBasicMaterial({ color: borderColor, polygonOffset: true, polygonOffsetFactor: 1.0, polygonOffsetUnits: 4.0 });
+			edgeMesh.material = new MeshBasicMaterial({
+				color: borderColor,
+				polygonOffset: true,
+				polygonOffsetFactor: 1.0,
+				polygonOffsetUnits: 4.0,
+			});
 
 			const group = new Group();
 			group.add(mesh);

@@ -48,6 +48,14 @@ const handleJoinRoom = (roomId: string) => {
 		socketClient.joinRoom(roomId);
 	}
 };
+
+const handleLogout = () => {
+	if (socketClient) {
+		socketClient.disConnect();
+	}
+	localStorage.removeItem("token");
+	router.replace({ name: "login" });
+};
 </script>
 
 <template>
@@ -55,6 +63,10 @@ const handleJoinRoom = (roomId: string) => {
 		<div class="left-container">
 			<div class="user-container">
 				<userCard :icon="avatar" :username="username" :color="color" />
+
+				<div class="side-bar">
+					<button class="quit" @click="handleLogout">登出</button>
+				</div>
 			</div>
 			<div class="player-list-container">
 				<div class="player-list-title">玩家列表({{ userList.length }})</div>
@@ -122,6 +134,25 @@ const handleJoinRoom = (roomId: string) => {
 			display: flex;
 			flex-direction: column;
 			justify-content: space-between;
+			position: relative;
+			overflow: hidden;
+
+			& > .side-bar {
+				position: absolute;
+				right: 0;
+				top: 0;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+
+				& > button {
+					width: 100%;
+					height: 1.8rem;
+					border-radius: 0.2rem 1rem 0.2rem 0.6rem;
+					font-size: 0.8rem;
+					padding: 0 0.6rem;
+				}
+			}
 		}
 
 		& > .player-list-container {

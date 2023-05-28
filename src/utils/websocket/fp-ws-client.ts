@@ -28,14 +28,18 @@ interface UserInfo {
 
 export class GameSocketClient {
 	private socketClient: WebSocket;
-	private static instance: GameSocketClient;
+	private static instance: GameSocketClient | null;
 	private roomInfoStore = useRoomInfo();
 
 	static getInstance(user?: UserInfo): GameSocketClient {
-		if (!this.instance && user) {
-			this.instance = new GameSocketClient(user);
+		if (!this.instance) {
+			if (user) {
+				this.instance = new GameSocketClient(user);
+			} else {
+				throw Error("必须在首次使用GameSocketClient时提供user信息");
+			}
 		}
-		return this.instance;
+		return <GameSocketClient>this.instance;
 	}
 
 	constructor(user: UserInfo) {
@@ -290,5 +294,10 @@ export class GameSocketClient {
 
 	public AnimationComplete() {
 		this.sendMsg(SocketMsgType.Animation, OperateType.Animation);
+	}
+
+	public disConnect() {
+		this.socketClient.close();
+		GameSocketClient.instance = null;
 	}
 }

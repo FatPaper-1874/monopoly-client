@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { modifyColor } from "@/utils";
 import { findIconDefinition, IconName } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
-import { computed, watch } from "vue";
+import { computed } from "vue";
 
 const props = defineProps({
 	id: { type: String, default: "" },
@@ -22,10 +21,10 @@ const legalIconName = computed(() => {
 </script>
 
 <template>
-	<div class="chance-card" :style="{ border: `0.4em solid ${modifyColor(props.color, 1.15)}` }">
+	<div class="chance-card" :style="{ border: `0.4em solid ${props.color}` }">
 		<div class="icon" :style="{ color }"><FontAwesomeIcon :icon="['fas', legalIconName]"></FontAwesomeIcon></div>
 		<div class="name" :style="{ color }">{{ name }}</div>
-		<div class="describe" :style="{ color: modifyColor(props.color, 0.95) }">{{ describe }}</div>
+		<div class="describe" :style="{ color: props.color }">{{ describe }}</div>
 	</div>
 </template>
 

@@ -17,6 +17,7 @@ const utilStore = useUtil();
 const windowWidth = computed(() => window.innerWidth);
 const windowHeight = computed(() => window.innerHeight);
 
+let socketClient: GameSocketClient;
 let threeBuilder: ThreeBuilder;
 const islockingCamera = ref(true);
 const lockCameraIcon = computed(() => (islockingCamera.value ? "fa-video" : "fa-video-slash"));
@@ -35,10 +36,13 @@ const handleToggleLockCamera = () => {
 };
 
 const handleRollDice = () => {
-	GameSocketClient.getInstance().rollDice();
+	if (socketClient) {
+		socketClient.rollDice();
+	}
 };
 
 onMounted(async () => {
+	socketClient = GameSocketClient.getInstance();
 	const mapDataStore = useMapData();
 	if (mapDataStore.mapItemsList.length === 0) router.replace("room");
 	const loadingStore = useLoading();
@@ -49,6 +53,13 @@ onMounted(async () => {
 	threeBuilder = new ThreeBuilder(canvas, container);
 	await threeBuilder.init();
 	loadingStore.loading = false;
+});
+
+onBeforeMount(() => {
+	if (!useRoomInfo().roomId) {
+		router.replace({ name: "room-list" });
+		return;
+	}
 });
 
 onBeforeUnmount(() => {

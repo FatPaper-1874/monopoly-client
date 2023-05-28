@@ -27,8 +27,8 @@ import { GameSocketClient } from "../websocket/fp-ws-client";
 import { CSS2DObject, CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
 import PropertyInfoCard from "@/components/common/property-info-card.vue";
 import { loadHouseModels } from "./house-loader";
-import { rgb2hex } from "..";
 import { MeshBasicMaterial } from "three";
+import { _BASEURL_ } from "@/bace";
 
 export class ThreeBuilder {
 	private canvas: HTMLCanvasElement;
@@ -296,7 +296,7 @@ export class ThreeBuilder {
 			if (meshName.includes("color-block")) {
 				const basicMaterial = new MeshBasicMaterial();
 				if (newProperty.owner) {
-					basicMaterial.color.set(rgb2hex(newProperty.owner.color));
+					basicMaterial.color.set(newProperty.owner.color);
 				} else {
 					basicMaterial.color.set("#cccccc");
 				}
@@ -364,7 +364,10 @@ export class ThreeBuilder {
 		for await (const player of playerList) {
 			try {
 				this.playerPosition.set(player.id, toRaw(player.positionIndex));
-				this.playerModules.set(player.id, await loadImg2mesh(`/roles/${player.user.role.filename}.png`, 0.05, 0.1));
+				this.playerModules.set(
+					player.id,
+					await loadImg2mesh(`${_BASEURL_}/static/roles/${player.user.role.filename}`, 0.05, 0.1)
+				);
 				this.scene.add(this.playerModules.get(player.user.userId)!);
 			} catch (e) {
 				console.log(e);

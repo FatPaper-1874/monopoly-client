@@ -57,6 +57,8 @@ onBeforeMount(() => {
 	if (!useRoomInfo().roomId) {
 		router.replace({ name: "room-list" });
 		return;
+	} else {
+		socketClient = GameSocketClient.getInstance();
 	}
 });
 
@@ -79,23 +81,31 @@ onBeforeUnmount(() => {
 	if (mapPreview) mapPreview.distory();
 });
 
-const socketClient = GameSocketClient.getInstance();
+let socketClient: GameSocketClient;
 
 const handleLeaveRoom = () => {
-	socketClient.leaveRoom();
+	if (socketClient) {
+		socketClient.leaveRoom();
+	}
 };
 
 const handleReadyToggle = () => {
-	socketClient.readyToggle();
+	if (socketClient) {
+		socketClient.readyToggle();
+	}
 };
 
 const handleGameStart = () => {
-	socketClient.startGame();
+	if (socketClient) {
+		socketClient.startGame();
+	}
 };
 
 const handleChangeMap = () => {
-	_tempGameSettingFrom.mapId = _tempMapSelectedId.value;
-	socketClient.changeGameSetting(toRaw(_tempGameSettingFrom));
+	if (socketClient) {
+		_tempGameSettingFrom.mapId = _tempMapSelectedId.value;
+		socketClient.changeGameSetting(toRaw(_tempGameSettingFrom));
+	}
 };
 </script>
 
