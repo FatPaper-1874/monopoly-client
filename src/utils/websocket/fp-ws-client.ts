@@ -1,5 +1,6 @@
 import PropertyInfoVue from "@/components/common/property-info.vue";
 import { FPMessageBox } from "@/components/utils/fp-message-box";
+import { log } from "console";
 import { Store } from "pinia";
 import { createVNode } from "vue";
 import FPMessage from "../../components/utils/fp-message/index";
@@ -55,6 +56,9 @@ export class GameSocketClient {
 				}
 
 				switch (data.type) {
+					case SocketMsgType.Heart:
+						this.handleHeart(data);
+						break;
 					case SocketMsgType.UserList:
 						this.handleUserListReply(data.data);
 						break;
@@ -94,11 +98,21 @@ export class GameSocketClient {
 					case SocketMsgType.BuildHouse:
 						this.handleBuildHouse(data);
 						break;
+					case SocketMsgType.GameOver:
+						this.handleGameOver(data);
 					default:
 						break;
 				}
 			};
 		};
+	}
+
+	private handleHeart(data: SocketMessage) {
+		const gameInfoStore = useGameInfo();
+		const date = new Date();
+		console.log(date.getTime() - data.data);
+		
+		gameInfoStore.ping = date.getTime() - data.data;
 	}
 
 	private handleUserListReply(data: User[]) {
@@ -241,6 +255,11 @@ export class GameSocketClient {
 			.catch(() => {
 				this.sendMsg(SocketMsgType.BuildHouse, OperateType.BuildHouse, undefined, false);
 			});
+	}
+
+	private handleGameOver(data: SocketMessage) {
+		const gameInfoStore = useGameInfo();
+		gameInfoStore.isGameOver = true;
 	}
 
 	private sendMsg(type: SocketMsgType, data: any, roomId: string = this.roomInfoStore.roomId, extra: any = undefined) {

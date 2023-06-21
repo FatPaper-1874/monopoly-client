@@ -1,5 +1,6 @@
 export enum SocketMsgType {
 	ConfirmIdentity = 1000, //确认身份(websocket从客户端获取id)
+	Heart, //心跳信息
 	MsgNotify, //纯信息广播
 	UserList, //大厅玩家信息广播
 	RoomList, //房间列表广播
@@ -20,6 +21,8 @@ export enum SocketMsgType {
 	Animation, //前端动画完成回馈
 	BuyProperty, //购买地皮
 	BuildHouse, //升级房子
+	Bankrupt, //破产
+	GameOver, //游戏结束
 }
 
 export enum ChangeRoleOperate {

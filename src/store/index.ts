@@ -88,12 +88,14 @@ export const useMapData = defineStore("map", {
 export const useGameInfo = defineStore("gameInfo", {
 	state: () => {
 		return {
+			ping: 0,
 			isMyTurn: false,
 			currentPlayerInRound: "",
 			currentRound: 0,
 			currentMultiplier: 0,
 			playersList: new Array<PlayerInfo>(),
 			propertiesList: new Array<PropertyInfo>(),
+			isGameOver: false,
 		};
 	},
 });

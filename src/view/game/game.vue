@@ -9,6 +9,7 @@ import Dice from "./components/dice.vue";
 import PlayerCard from "./components/player-card.vue";
 import ChanceCardContainer from "./components/chance-card-container.vue";
 import CountdownTimer from "./components/countdown-timer.vue";
+import scoreboard from "./components/scoreboard.vue";
 
 //pinia仓库
 const gameInfoStore = useGameInfo();
@@ -98,6 +99,8 @@ onBeforeUnmount(() => {
 		<div class="countdown-timer">
 			<CountdownTimer />
 		</div>
+
+		<scoreboard />
 	</div>
 </template>
 

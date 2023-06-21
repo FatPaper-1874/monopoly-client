@@ -104,6 +104,7 @@ export interface PlayerInfo {
 	chanceCards: ChanceCardInfo[];
 	positionIndex: number;
 	isStop: boolean;
+	isBankrupted: boolean;
 }
 
 export interface ChanceCardInfo {
