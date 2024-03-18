@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { GameMap } from "@/utils/three/interfaces";
 import { onMounted, onUnmounted } from "vue";
-import { MapPreviewer } from "../../utils/three/map-previewer";
+import { MapPreviewer } from "@/utils/three/map-previewer";
 
 const { map } = defineProps<{ map: GameMap }>();
 

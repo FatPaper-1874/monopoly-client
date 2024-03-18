@@ -54,7 +54,7 @@ const closeDialog = () => {
 	left: 0;
 	width: 100%;
 	height: 100vh;
-	z-index: 5500;
+	z-index: 99999;
 	display: flex;
 	align-items: center;
 	justify-content: center;

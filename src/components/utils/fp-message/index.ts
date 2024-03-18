@@ -1,16 +1,21 @@
-type OptionsType = { type: string; message: string; delay?: number };
+type MessageOptions = {
+	type: "info" | "success" | "warning" | "error";
+	message: string;
+	onClosed?: Function;
+	delay?: number;
+};
 
 import fpMessageVue from "./fp-message.vue";
 import { App, ComponentPublicInstance, createApp, ref, watch, WatchStopHandle } from "vue";
 
 let itemQueue = ref([] as Array<ComponentPublicInstance>);
 
-const FPMessage = (options: OptionsType) => {
+const FPMessage = (options: MessageOptions) => {
 	const fpMessage = createApp(fpMessageVue, options);
-	showMessage(fpMessage, options.delay || 3000);
+	showMessage(fpMessage, options.delay || 3000, options.onClosed);
 };
 
-const showMessage = (app: App, delay: number) => {
+const showMessage = (app: App, delay: number, onClosedFn: Function | undefined) => {
 	const container = document.createDocumentFragment();
 	const vm = app.mount(container);
 	itemQueue.value.push(vm);
@@ -24,8 +29,9 @@ const showMessage = (app: App, delay: number) => {
 		updateTop(vm);
 	});
 
-	let timer: any = setTimeout(() => {
-		hideMessage(app, vm, stopHandle);
+	let timer: any = setTimeout(async () => {
+		await hideMessage(app, vm, stopHandle);
+		if (onClosedFn) onClosedFn();
 		clearTimeout(timer);
 		timer = -1;
 	}, delay);

@@ -5,9 +5,9 @@ import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 const props = defineProps({
 	type: {
 		type: String,
-		default: "success",
+		default: "info",
 		validator(value: string) {
-			return ["success", "warning", "error", "message"].includes(value);
+			return ["success", "warning", "error", "info"].includes(value);
 		},
 	},
 	message: {
@@ -24,7 +24,7 @@ const iconList = {
 	success: "circle-check",
 	warning: "circle-exclamation",
 	error: "circle-xmark",
-	message: "circle-info",
+	info: "circle-info",
 };
 
 const top = ref(0);
@@ -81,7 +81,7 @@ defineExpose({
 	z-index: 9999;
 	transition: top 0.2s ease-in-out;
 
-	& > .icon {
+	&>.icon {
 		margin-right: 0.5rem;
 		font-size: 1.2rem;
 		vertical-align: text-bottom;
@@ -105,7 +105,7 @@ defineExpose({
 		color: #c45656;
 	}
 
-	&.message {
+	&.info {
 		background-color: #cedfff;
 		border-color: #a8d4ff;
 		color: #095fce;

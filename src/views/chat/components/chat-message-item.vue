@@ -1,0 +1,70 @@
+<script setup lang="ts">
+import { __USERSERVER__ } from "@/global.config";
+import { ChatMessage } from "@/interfaces/bace";
+import { computed } from "vue";
+
+const props = defineProps<{ chatMessage: ChatMessage }>();
+const { user, type, content } = props.chatMessage;
+const avatarSrc = computed(() => {
+	return user.avatar ? `${__USERSERVER__}/static/avatars/${user.avatar}` : "";
+});
+</script>
+
+<template>
+	<div class="chat_message-item">
+		<div class="avatar">
+			<img :src="avatarSrc" />
+		</div>
+		<div class="right-container">
+			<span class="name" :style="{ color: user.color }">{{ user.username }}</span>
+			<span class="content">{{ content }}</span>
+		</div>
+	</div>
+</template>
+
+<style lang="scss" scoped>
+.chat_message-item {
+	width: auto;
+	max-width: 100%;
+	display: flex;
+	margin-bottom: 0.5rem;
+
+	& > .avatar {
+		$avatar_size: 2rem;
+		width: $avatar_size;
+		height: $avatar_size;
+		border-radius: 50%;
+		border: 0.15rem solid #ffffff;
+		overflow: hidden;
+
+		& > img {
+			$avatar_size: 2rem;
+			width: $avatar_size;
+			height: $avatar_size;
+		}
+	}
+
+	.right-container {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		margin-left: 0.4rem;
+
+		& > .name {
+			font-size: 0.7rem;
+		}
+
+		& > .content {
+			width: fit-content;
+			background-color: #ffffff;
+			word-wrap: normal;
+			word-break: break-word;
+			margin-top: 0.1rem;
+			padding: 0.2rem 0.4rem;
+			border-radius: 0.3rem;
+			box-shadow: var(--box-shadow);
+		}
+	}
+}
+</style>
+@/global.config

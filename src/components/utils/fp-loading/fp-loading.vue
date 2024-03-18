@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useLoading } from "../../../store/index";
+import { useLoading } from "@/store/index";
 import { computed, watch } from "vue";
 
 const loadingStore = useLoading();
@@ -13,7 +13,7 @@ watch(loading, (newValue) => {
 
 <template>
 	<transition name="fade">
-		<div v-if="loading" class="loading">
+		<div v-if="loading" class="page-loading">
 			<div class="spinner"></div>
 			<span>{{ loadingText }}</span>
 		</div>
@@ -21,7 +21,7 @@ watch(loading, (newValue) => {
 </template>
 
 <style lang="scss" scoped>
-.loading {
+.page-loading {
 	position: fixed;
 	top: 0;
 	left: 0;
@@ -32,7 +32,7 @@ watch(loading, (newValue) => {
 	justify-content: center;
 	align-items: center;
 	background-color: rgba(0, 0, 0, 0.5);
-	z-index: 9999;
+	z-index: 99999;
 
 	& > span {
 		margin-top: 0.8em;

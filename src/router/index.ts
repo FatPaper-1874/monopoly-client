@@ -1,8 +1,8 @@
 import { createRouter, createWebHashHistory } from "vue-router";
-import loginVue from "../view/login.vue";
-import roomListVue from "../view/room-list.vue";
-import roomVue from "../view/room.vue";
-import gameVue from "../view/game/game.vue";
+import loginVue from "@/views/login/login.vue";
+import roomListVue from "@/views/hall/room-list.vue";
+import roomVue from "@/views/room/room.vue";
+import gameVue from "@/views/game/game.vue";
 import { useUserInfo } from "@/store";
 
 const routes = [

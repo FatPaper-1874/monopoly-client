@@ -1,25 +1,16 @@
 <script setup lang="ts">
-import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
-const props = defineProps({
-	username: {
-		type: String,
-		default: "",
-	},
-	color: {
-		type: String,
-		default: "#ffb24e",
-	},
-	icon: {
-		type: String,
-		default: "user",
-	},
+import { __USERSERVER__ } from "@/global.config";
+import { computed } from "vue";
+const props = defineProps<{ username: string; color: string; avatar: string }>();
+const avatarSrc = computed(() => {
+	return props.avatar ? `${__USERSERVER__}/static/avatars/${props.avatar}` : "";
 });
 </script>
 
 <template>
 	<div class="user-list-item">
 		<div class="avatar" :style="{ 'background-color': color }">
-			<font-awesome-icon class="icon" :icon="icon" />
+			<img :src="avatarSrc" alt="" />
 		</div>
 		<p class="username" :style="{ color: color }">{{ username }}</p>
 	</div>
@@ -27,7 +18,7 @@ const props = defineProps({
 
 <style lang="scss" scoped>
 .user-list-item {
-	height: 2rem;
+	height: 2.5rem;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
@@ -38,13 +29,19 @@ const props = defineProps({
 	box-shadow: var(--box-shadow);
 
 	& > .avatar {
-		width: 3rem;
+		width: 2.5rem;
 		height: 100%;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		color: #ffffff;
 		font-size: 1rem;
+		overflow: hidden;
+
+		& > img {
+			width: 2.5rem;
+			height: 2.5rem;
+		}
 	}
 
 	& > .username {
@@ -53,3 +50,4 @@ const props = defineProps({
 	}
 }
 </style>
+@/global.config

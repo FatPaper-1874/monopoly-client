@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { PropertyInfo } from "../../interfaces/bace";
+import { PropertyInfo } from "@/interfaces/bace";
 import { PropertyLevel } from "@/utils/var";
+import { computed, ref } from "vue";
 
 const { property } = defineProps<{ property: PropertyInfo | null }>();
 

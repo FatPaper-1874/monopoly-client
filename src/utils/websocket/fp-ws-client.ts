@@ -3,25 +3,38 @@ import { FPMessageBox } from "@/components/utils/fp-message-box";
 import { log } from "console";
 import { Store } from "pinia";
 import { createVNode } from "vue";
-import FPMessage from "../../components/utils/fp-message/index";
-import { ChangeRoleOperate, SocketMsgType } from "../../enums/bace";
-import { OperateType } from "../../enums/game";
-import { GameInfo, GameInitInfo, PropertyInfo, Room, SocketMessage, User, GameSetting } from "../../interfaces/bace";
-import router from "../../router";
+import FPMessage from "@/components/utils/fp-message/index";
+import { ChangeRoleOperate, SocketMsgType } from "@/enums/bace";
+import { OperateType } from "@/enums/game";
 import {
+	GameInfo,
+	GameInitInfo,
+	PropertyInfo,
+	Room,
+	SocketMessage,
+	User,
+	GameSetting,
+	ChatMessage,
+	RoomInfo,
+} from "@/interfaces/bace";
+import router from "@/router";
+import {
+	useChat,
 	useGameInfo,
 	useLoading,
 	useMapData,
-	usePlayerWalk,
+	usePlayerWalkAnimation,
 	useRoomInfo,
 	useRoomList,
 	useUserInfo,
 	useUserList,
 	useUtil,
-} from "../../store/index";
+} from "@/store/index";
+import {randomString} from "@/utils";
 
 interface UserInfo {
 	username: string;
+	useraccount: string;
 	userId: string;
 	avatar: string;
 	color: string;
@@ -30,34 +43,36 @@ interface UserInfo {
 export class GameSocketClient {
 	private socketClient: WebSocket;
 	private static instance: GameSocketClient | null;
-	private roomInfoStore = useRoomInfo();
 
-	static getInstance(user?: UserInfo): GameSocketClient {
+	static getInstance(token?: string): GameSocketClient {
 		if (!this.instance) {
-			if (user) {
-				this.instance = new GameSocketClient(user);
+			if (token) {
+				this.instance = new GameSocketClient(token);
 			} else {
-				throw Error("必须在首次使用GameSocketClient时提供user信息");
+				throw Error("必须在首次使用GameSocketClient时提供token");
 			}
 		}
 		return <GameSocketClient>this.instance;
 	}
 
-	constructor(user: UserInfo) {
+	constructor(token: string) {
 		this.socketClient = new WebSocket("ws://127.0.0.1:8001");
 		this.socketClient.onclose = () => {};
 		this.socketClient.onopen = () => {
 			console.log("客户端socket开启连接成功");
-			this.sendMsg(SocketMsgType.ConfirmIdentity, JSON.stringify(user));
+			this.sendMsg(SocketMsgType.ConfirmIdentity, JSON.stringify({ token }));
 			this.socketClient.onmessage = (e) => {
 				const data: SocketMessage = JSON.parse(e.data);
 				if (data.msg) {
-					FPMessage({ type: data.msg.type, message: data.msg.content });
+					FPMessage({ type: data.msg.type as "info" | "success" | "warning" | "error", message: data.msg.content });
 				}
 
 				switch (data.type) {
 					case SocketMsgType.Heart:
 						this.handleHeart(data);
+						break;
+					case SocketMsgType.ConfirmIdentity:
+						this.handleConfirmIdentity(data.data);
 						break;
 					case SocketMsgType.UserList:
 						this.handleUserListReply(data.data);
@@ -74,6 +89,9 @@ export class GameSocketClient {
 					case SocketMsgType.RoomInfo:
 						this.handleRoomInfoReply(data);
 						break;
+					case SocketMsgType.RoomChat:
+						this.handleRoomChatReply(data);
+						break;
 					case SocketMsgType.GameStart:
 						this.handleGameStart(data);
 						break;
@@ -89,8 +107,11 @@ export class GameSocketClient {
 					case SocketMsgType.RoundTurn:
 						this.handleRoundTurn(data);
 						break;
-					case SocketMsgType.RollDice:
-						this.handleRollDice(data);
+					case SocketMsgType.RollDiceStart:
+						this.handleRollDiceAnimationPlay();
+						break;
+					case SocketMsgType.RollDiceResult:
+						this.handleRollDiceResult(data);
 						break;
 					case SocketMsgType.BuyProperty:
 						this.handleBuyProperty(data);
@@ -109,10 +130,15 @@ export class GameSocketClient {
 
 	private handleHeart(data: SocketMessage) {
 		const gameInfoStore = useGameInfo();
-		const date = new Date();
-		console.log(date.getTime() - data.data);
-		
-		gameInfoStore.ping = date.getTime() - data.data;
+
+		gameInfoStore.ping = Date.now() - data.data;
+	}
+
+	private handleConfirmIdentity(userDataRes: UserInfo) {
+		if (!userDataRes) {
+			localStorage.removeItem("token");
+			router.replace({ name: "login" });
+		}
 	}
 
 	private handleUserListReply(data: User[]) {
@@ -139,15 +165,22 @@ export class GameSocketClient {
 	}
 
 	private handleRoomInfoReply(data: SocketMessage) {
-		const roomInfoData = data.data;
-		if (roomInfoData) {
-			this.roomInfoStore.roomId = roomInfoData.roomId;
-			this.roomInfoStore.ownerId = roomInfoData.ownerId;
-			this.roomInfoStore.ownerName = roomInfoData.ownerName;
-			this.roomInfoStore.userList = roomInfoData.userList;
-			this.roomInfoStore.roleList = roomInfoData.roleList;
-			this.roomInfoStore.gameSetting = roomInfoData.gameSetting;
-		}
+		const roomInfoData = data.data as RoomInfo;
+		const roomInfoStore = useRoomInfo();
+		roomInfoData &&
+			roomInfoStore.$patch({
+				roomId: roomInfoData.roomId,
+				ownerId: roomInfoData.ownerId,
+				ownerName: roomInfoData.ownerName,
+				userList: roomInfoData.userList,
+				roleList: roomInfoData.roleList,
+				gameSetting: roomInfoData.gameSetting,
+			});
+	}
+
+	private handleRoomChatReply(res: SocketMessage) {
+		const message = res.data as ChatMessage;
+		useChat().addNewMessage(message);
 	}
 
 	private handleGameStart(data: SocketMessage) {
@@ -160,15 +193,18 @@ export class GameSocketClient {
 			const loadingStore = useLoading();
 			loadingStore.text = "获取数据成功，加载中...";
 
-			const gameInitInfo: GameInitInfo = data.data;
+			const gameInitInfo = data.data as GameInitInfo;
 
 			const mapDataStore = useMapData();
 			mapDataStore.$patch(gameInitInfo);
 
 			const gameInfoStore = useGameInfo();
-			gameInfoStore.currentRound = gameInitInfo.currentRound;
-			gameInfoStore.currentPlayerInRound = gameInitInfo.currentPlayerInRound;
-			gameInfoStore.currentMultiplier = gameInitInfo.currentMultiplier;
+			gameInitInfo &&
+				gameInfoStore.$patch({
+					currentRound: gameInitInfo.currentRound,
+					currentPlayerInRound: gameInitInfo.currentPlayerInRound,
+					currentMultiplier: gameInitInfo.currentMultiplier,
+				});
 
 			router.replace({ name: "game" });
 		} else {
@@ -178,16 +214,17 @@ export class GameSocketClient {
 
 	private handleGameInfo(data: SocketMessage) {
 		if (data.data == "error") return;
-
 		const gameInfoStore = useGameInfo();
 		const gameInfo: GameInfo = data.data;
-		try {
-			gameInfoStore.currentPlayerInRound = gameInfo.currentPlayerInRound;
-			gameInfoStore.currentRound = gameInfo.currentRound;
-			gameInfoStore.currentMultiplier = gameInfo.currentMultiplier;
-			gameInfoStore.playersList = gameInfo.playerList;
-			gameInfoStore.propertiesList = gameInfo.properties;
-		} catch {}
+		console.log(gameInfo)
+		gameInfo &&
+			gameInfoStore.$patch({
+				currentPlayerInRound: gameInfo.currentPlayerInRound,
+				currentRound: gameInfo.currentRound,
+				currentMultiplier: gameInfo.currentMultiplier,
+				playersList: gameInfo.playerList,
+				propertiesList: gameInfo.properties,
+			});
 	}
 
 	private handleRemainingTime(data: SocketMessage) {
@@ -201,22 +238,26 @@ export class GameSocketClient {
 	}
 
 	private handleRoundTurn(data: SocketMessage) {
-		const gameInfoStore = useGameInfo();
-		gameInfoStore.isMyTurn = true;
 		const utilStore = useUtil();
 		utilStore.canRoll = true;
 	}
 
-	private handleRollDice(data: SocketMessage) {
+	private handleRollDiceAnimationPlay() {
+		const utilStore = useUtil();
+		utilStore.isRollDiceAnimationPlay = true;
+	}
+
+	private handleRollDiceResult(data: SocketMessage) {
 		const rollDicePlayerId: string = data.data.rollDicePlayerId;
 		const rollDiceResult: number[] = data.data.rollDiceResult;
 		const rollDiveCount: number = data.data.rollDiveCount;
 
-		const playerWalkStore = usePlayerWalk();
+		const playerWalkStore = usePlayerWalkAnimation();
 		playerWalkStore.updatePlayWalk(rollDicePlayerId, rollDiveCount);
 
 		const utilStore = useUtil();
 		utilStore.rollDiceResult = rollDiceResult;
+		utilStore.isRollDiceAnimationPlay = false;
 	}
 
 	private handleBuyProperty(data: SocketMessage) {
@@ -262,16 +303,8 @@ export class GameSocketClient {
 		gameInfoStore.isGameOver = true;
 	}
 
-	private sendMsg(type: SocketMsgType, data: any, roomId: string = this.roomInfoStore.roomId, extra: any = undefined) {
-		const userInfo = useUserInfo();
-		const msgToSend: SocketMessage = {
-			type,
-			source: userInfo.userId,
-			roomId,
-			data,
-			extra,
-		};
-		this.socketClient.send(JSON.stringify(msgToSend));
+	public sendRoomChatMessage(message: string, roomId: string) {
+		this.sendMsg(SocketMsgType.RoomChat, message, roomId);
 	}
 
 	public joinRoom(roomId: string) {
@@ -280,7 +313,9 @@ export class GameSocketClient {
 
 	public leaveRoom() {
 		this.sendMsg(SocketMsgType.LeaveRoom, "");
-		this.roomInfoStore.$reset();
+		const roomInfoStore = useRoomInfo();
+		roomInfoStore.$reset();
+		useChat().$reset();
 	}
 
 	public readyToggle() {
@@ -300,9 +335,7 @@ export class GameSocketClient {
 	}
 
 	public rollDice() {
-		this.sendMsg(SocketMsgType.RollDice, OperateType.RollDice);
-		const gameInfoStore = useGameInfo();
-		gameInfoStore.isMyTurn = false;
+		this.sendMsg(SocketMsgType.RollDiceResult, OperateType.RollDice);
 		const utilStore = useUtil();
 		utilStore.canRoll = false;
 	}
@@ -318,5 +351,17 @@ export class GameSocketClient {
 	public disConnect() {
 		this.socketClient.close();
 		GameSocketClient.instance = null;
+	}
+
+	private sendMsg(type: SocketMsgType, data: any, roomId: string = useRoomInfo().roomId, extra: any = undefined) {
+		const userInfo = useUserInfo();
+		const msgToSend: SocketMessage = {
+			type,
+			source: userInfo.userId,
+			roomId,
+			data,
+			extra,
+		};
+		this.socketClient.send(JSON.stringify(msgToSend));
 	}
 }

@@ -7,6 +7,7 @@ export enum SocketMsgType {
 	JoinRoom, //加入房间
 	LeaveRoom, //离开房间
 	RoomInfo, //房间信息广播
+	RoomChat,	//房间聊天
 	ReadyToggle, //准备状态切换
 	ChangeRole, //切换角色
 	ChangeGameSetting, //修改游戏设置信息
@@ -14,7 +15,8 @@ export enum SocketMsgType {
 	GameInit, //游戏初始化
 	GameInfo, //游戏信息广播
 	RoundTurn, //更新当前回合轮到的玩家,
-	RollDice, //掷骰子
+	RollDiceStart, //开始摇骰子
+	RollDiceResult, //掷骰子
 	UseChanceCard, //使用机会卡
 	RemainingTime, //回合剩余时间
 	RoundTimeOut, //回合超时
@@ -28,4 +30,9 @@ export enum SocketMsgType {
 export enum ChangeRoleOperate {
 	Prev, //上一个角色
 	Next, //下一个角色
+}
+
+export enum ChatMessageType {
+	Emoticon, //表情
+	Text, //文字
 }

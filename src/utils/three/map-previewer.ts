@@ -1,7 +1,8 @@
 import { AmbientLight, PerspectiveCamera, Scene, Vector3, WebGLRenderer, Group, Object3D, Box3, Color } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GameMap, MapItem, ItemType } from "./interfaces";
-import { loadItemTypeModules } from "./model-loader";
+import { loadItemTypeModules } from "./itemtype-loader";
+import { debounce } from "..";
 
 export class MapPreviewer {
 	private renderer: WebGLRenderer;
@@ -14,13 +15,13 @@ export class MapPreviewer {
 
 	private requestAnimationFrameId: number;
 
-	constructor(canvas: HTMLCanvasElement) {
-		this.renderer = new WebGLRenderer({ canvas });
+	constructor(el: HTMLCanvasElement) {
+		this.renderer = new WebGLRenderer({ canvas: el });
 		this.scene = new Scene();
 		this.scene.background = new Color(0xeeeeee);
-		this.camera = new PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+		this.camera = new PerspectiveCamera(45, el.clientWidth / el.clientHeight, 0.1, 1000);
 
-		this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+		this.renderer.setSize(el.clientWidth, el.clientHeight);
 		this.mapContainer = new Group();
 		this.models = {};
 		this.mapItemList = [];
@@ -37,7 +38,7 @@ export class MapPreviewer {
 		this.scene.add(light);
 
 		// 创建轨道控制器
-		this.controls = new OrbitControls(this.camera, canvas);
+		this.controls = new OrbitControls(this.camera, el);
 
 		const loop = () => {
 			this.requestAnimationFrameId = requestAnimationFrame(loop);
@@ -46,6 +47,15 @@ export class MapPreviewer {
 
 			this.renderer.render(this.scene, this.camera);
 		};
+
+		window.addEventListener(
+			"resize",
+			debounce(() => {
+				this.camera.aspect = el.clientWidth / el.clientHeight; //相机视角长宽比
+				this.camera.updateProjectionMatrix();
+				this.renderer.setSize(el.clientWidth, el.clientHeight);
+			}, 1000)
+		);
 
 		loop();
 	}
@@ -61,7 +71,6 @@ export class MapPreviewer {
 	}
 
 	public async loadMapItems(mapItemList: MapItem[]) {
-
 		mapItemList.forEach((item) => {
 			const tempModule = this.models[item.type.id].clone();
 			tempModule.scale.set(0.5, 0.5, 0.5);
