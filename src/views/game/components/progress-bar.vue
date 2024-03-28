@@ -14,6 +14,7 @@ function getBlockHeight(money: number) {
 
 <template>
   <div class="progress-bar">
+    <div class="target-bar">￥{{ 100000 }}</div>
     <div :style="{height: getBlockHeight(player.money), backgroundColor: player.user.color}"
          class="player-block" v-for="player in playerList"
          :key="player.id">
@@ -21,7 +22,7 @@ function getBlockHeight(money: number) {
         <div class="avatar">
           <img alt="" :src="`${__USERSERVER__}/static/avatars/${player.user.avatar}`"/>
         </div>
-        <div class="money">￥{{player.money}}</div>
+        <div class="money">￥{{ player.money }}</div>
       </div>
     </div>
   </div>
@@ -33,10 +34,23 @@ function getBlockHeight(money: number) {
   width: 1.3rem;
   height: 30rem;
   background-color: var(--color-bg);
-  border-radius: 0 .8rem .8rem 0;
+  border-radius: 0 0 .8rem 0;
   box-sizing: border-box;
   border: .45rem solid rgba(255, 255, 255, .7);
   border-left: 0;
+}
+
+.target-bar {
+  position: absolute;
+  top: -2rem;
+  height: 2rem;
+  background-color: var(--color-third);
+  color: var(--color-text-white);
+  padding: .45rem;
+  font-size: .8rem;
+  border-radius: 0 .3rem .3rem 0;
+  box-sizing: border-box;
+  box-shadow: var(--box-shadow);
 }
 
 .player-block {
@@ -83,7 +97,7 @@ function getBlockHeight(money: number) {
       }
     }
 
-    & > .money{
+    & > .money {
       font-size: $font-size;
       line-height: $font-size;
       height: $font-size;

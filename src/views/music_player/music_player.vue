@@ -113,14 +113,14 @@ onMounted(async () => {
   <div class="music-player">
     <audio ref="musicPlayerEl" :src="currentMusic ? currentMusic.url:''"></audio>
     <div class="icon_container">
-      <FontAwesomeIcon @click="toggleMusic" :beat-fade="!currentMusic" :spin="isPlaying || isLoadingMusicList"
+      <FontAwesomeIcon :beat-fade="!currentMusic" :spin="isPlaying || isLoadingMusicList"
                        class="icon"
                        :icon="controlIcon"/>
     </div>
     <div class="info-container">
       <div :style="{'width': `${ musicCurrentTime / musicDurationTime * 100}%`}" class="progress_bar"></div>
       <span class="common">{{ currentMusic ? '正在播放：' : '' }}</span>
-      <span class="music_name">{{ currentMusic ? currentMusic.name : '点击左边唱片播放' }}</span>
+      <span class="music_name">{{ currentMusic ? currentMusic.name : '不知道放什么音乐好' }}</span>
     </div>
     <div class="music_list-toggle">
       <FontAwesomeIcon @click="isMusicListVisible = !isMusicListVisible"

@@ -1,13 +1,9 @@
 <script setup lang="ts">
-import {FPMessageBox} from "@/components/utils/fp-message-box";
 import {useGameInfo, useUserInfo} from "@/store/index";
-import {computed, createVNode, provide, ref, watch, toRaw} from "vue";
+import {computed, provide, ref, watch, toRaw} from "vue";
 import {ChanceCardInfo} from "@/interfaces/bace";
 import ChanceCard from "./chance-card.vue";
-import UseChanceCard from "./use-chance-card.vue";
 import {GameSocketClient} from "@/utils/websocket/fp-ws-client";
-import FpDialog from "@/components/utils/fp-dialog/fp-dialog.vue";
-import {ChanceCardType} from "@/enums/game";
 import {useUtil} from "@/store/index";
 
 const gameInfoStore = useGameInfo();
@@ -49,18 +45,6 @@ const handleCancleChanceCard = () => {
   _currentChanceCard.value = null;
 };
 
-const _dialogSubmitBtnDisable = computed(() => {
-  if (_currentChanceCard.value) {
-    switch (_currentChanceCard.value.type) {
-      case ChanceCardType.ToSelf:
-        return false;
-      default:
-        if (_selectedId.value) return false;
-        else return true;
-    }
-  }
-});
-
 watch(
     () => utilStore.timeOut,
     (newVal) => {
@@ -83,13 +67,6 @@ provide("selectedId", _selectedId);
                   :disable="!_canUseChanceCard"/>
     </TransitionGroup>
   </div>
-  <FpDialog @cancel="handleCancleChanceCard" @submit="handleUseChanceCard" v-model:visible="_useChanceCardVisible"
-            :sumbit-disable="_dialogSubmitBtnDisable">
-    <template #title>使用道具卡</template>
-    <template #default>
-      <UseChanceCard :chance-card="_currentChanceCard"/>
-    </template>
-  </FpDialog>
 </template>
 
 <style lang="scss" scoped>
