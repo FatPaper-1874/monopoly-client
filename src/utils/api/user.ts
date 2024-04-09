@@ -1,4 +1,4 @@
-import { __USERSERVER__ } from "@/global.config";
+import { __USERSERVER__ } from "../../../global.config";
 import axios from "axios";
 
 interface UserInfo {

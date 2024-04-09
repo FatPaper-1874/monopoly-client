@@ -2,7 +2,7 @@
 import {computed} from "vue";
 import {useGameInfo} from "@/store";
 import {lightenColor} from "@/utils";
-import {__USERSERVER__} from "@/global.config";
+import {__USERSERVER__} from "../../../../global.config";
 
 const playerList = computed(() => useGameInfo().playersList);
 

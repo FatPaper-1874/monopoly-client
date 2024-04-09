@@ -29,7 +29,7 @@ import PropertyInfoCard from "../components/property-info-card.vue";
 import moneyPopTip from "../components/money-pop-tip.vue";
 import {loadHouseModels} from "./house-loader";
 import {MeshBasicMaterial} from "three";
-import {__MONOPOLYSERVER__} from "@/global.config";
+import {__MONOPOLYSERVER__} from "../../../../global.config";
 import {debounce, getScreenPosition} from "@/utils";
 import {EffectComposer} from "three/examples/jsm/postprocessing/EffectComposer";
 import {RenderPass} from "three/examples/jsm/postprocessing/RenderPass";

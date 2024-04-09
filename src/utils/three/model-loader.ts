@@ -1,4 +1,4 @@
-import { __MONOPOLYSERVER__ } from "@/global.config";
+import { __MONOPOLYSERVER__ } from "../../../global.config";
 import { GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 const gltfLoader = new GLTFLoader();

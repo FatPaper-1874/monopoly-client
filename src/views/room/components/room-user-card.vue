@@ -6,7 +6,7 @@ import {Role, User} from "@/interfaces/bace";
 import {useRoomInfo, useUserInfo} from "@/store";
 import {ChangeRoleOperate} from "@/enums/bace";
 import {GameSocketClient} from "@/utils/websocket/fp-ws-client";
-import {__USERSERVER__, __MONOPOLYSERVER__} from "@/global.config";
+import {__USERSERVER__, __MONOPOLYSERVER__} from "../../../../global.config";
 import {RolePreviewer} from "@/views/room/utils/RolePreviewer";
 
 const props = defineProps<{ user: User | undefined }>();

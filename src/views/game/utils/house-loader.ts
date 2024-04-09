@@ -1,6 +1,6 @@
 import { GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { ItemType } from "../../../utils/three/interfaces";
-import { __MONOPOLYSERVER__ } from "@/global.config";
+import { __MONOPOLYSERVER__ } from "../../../../global.config";
 
 export const loadHouseModels = async (houseNamearr: string[]): Promise<{ name: string; glft: GLTF }[]> => {
 	// const houseArr = ["house_lv0", "house_lv1", "house_lv2"];

@@ -1,7 +1,7 @@
 import axios from "axios";
 import FPMessage from "@/components/utils/fp-message";
 import router from "@/router/index";
-import {__MONOPOLYSERVER__} from "@/global.config";
+import {__MONOPOLYSERVER__} from "../../global.config";
 
 axios.defaults.baseURL = __MONOPOLYSERVER__;
 axios.defaults.headers.common["Authorization"] = localStorage.getItem("token");

@@ -31,6 +31,7 @@ import {
 	useUtil,
 } from "@/store/index";
 import {randomString} from "@/utils";
+import {FATPAPER_HOST, MONOPOLY_SOCKET_PORT} from "../../../../global.config";
 
 interface UserInfo {
 	username: string;
@@ -56,7 +57,7 @@ export class GameSocketClient {
 	}
 
 	constructor(token: string) {
-		this.socketClient = new WebSocket("ws://127.0.0.1:8001");
+		this.socketClient = new WebSocket(`ws://${FATPAPER_HOST}:${MONOPOLY_SOCKET_PORT}`);
 		this.socketClient.onclose = () => {};
 		this.socketClient.onopen = () => {
 			console.log("客户端socket开启连接成功");

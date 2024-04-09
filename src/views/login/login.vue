@@ -2,7 +2,7 @@
 import { ref, onBeforeMount, onBeforeUnmount, reactive, onMounted } from "vue";
 import router from "@/router";
 import LoginDice from "./login-dice.vue";
-import { __LOGINPAGEURL__ } from "@/global.config";
+import { __LOGINPAGEURL__ } from "../../../global.config";
 import { getUserByToken } from "@/utils/api/user";
 import FPMessage from "@/components/utils/fp-message/index";
 import { useUserInfo } from "@/store";

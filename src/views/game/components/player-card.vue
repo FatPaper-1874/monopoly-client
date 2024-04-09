@@ -2,7 +2,7 @@
 import { PlayerInfo } from "@/interfaces/bace";
 import { PropType, computed } from "vue";
 import { useGameInfo } from "@/store/index";
-import { __USERSERVER__ } from "@/global.config";
+import { __USERSERVER__ } from "../../../../global.config";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 
 // const props = defineProps({

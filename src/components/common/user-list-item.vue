@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { __USERSERVER__ } from "@/global.config";
+import { __USERSERVER__ } from "../../../global.config";
 import { computed } from "vue";
 const props = defineProps<{ username: string; color: string; avatar: string }>();
 const avatarSrc = computed(() => {

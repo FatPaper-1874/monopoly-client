@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { __USERSERVER__ } from "@/global.config";
+import { __USERSERVER__ } from "../../../../global.config";
 import { ChatMessage } from "@/interfaces/bace";
 import { computed } from "vue";
 
