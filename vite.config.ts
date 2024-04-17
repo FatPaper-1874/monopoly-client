@@ -23,6 +23,8 @@ export default defineConfig({
 			plugins: [
 				externalGlobals({
 					vue: "Vue",
+					three: "THREE",
+					gsap: "gsap"
 				}),
 			],
 		},
