@@ -10,7 +10,7 @@ import DanmakuContainer from "@/views/danmaku/danmaku_container.vue";
 
 const isInGame = computed(() => useRoute().name === 'game');
 const canChat = computed(() => useRoute().name === 'room' || useRoute().name === 'game');
-const isLogin = computed(() => useRoute().name === 'login');
+// const isLogin = computed(() => useRoute().name === 'login');
 </script>
 
 <template>
@@ -20,7 +20,7 @@ const isLogin = computed(() => useRoute().name === 'login');
   <Loading/>
   <RouterView></RouterView>
   <Ping></Ping>
-  <MusicPlayer v-show="!isLogin"/>
+<!--  <MusicPlayer v-show="!isLogin"/>-->
 </template>
 
 <style lang="scss" scoped></style>
