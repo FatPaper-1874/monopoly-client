@@ -150,7 +150,7 @@ export class DiceRenderer {
 	}
 
 	private async loadDiceModel(dicenum: number) {
-		const gltf = await loadModel("https://fatpaper-1304992673.cos.ap-guangzhou.myqcloud.com/monopoly/static/dice.glb");
+		const gltf = await loadModel("dice.glb");
 		for (let index = 0; index < dicenum; index++) {
 			const dice = new THREE.Group();
 			dice.copy(gltf.scene);

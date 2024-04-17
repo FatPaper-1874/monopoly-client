@@ -6,7 +6,7 @@ const gltfLoader = new GLTFLoader();
 export function loadModel(name: string): Promise<GLTF> {
 	return new Promise<GLTF>((resolve, reject) => {
 		gltfLoader.load(
-			`/models/${name}`,
+			`https://fatpaper-1304992673.cos.ap-guangzhou.myqcloud.com/monopoly/static/${name}`,
 			(glft: GLTF) => {
 				resolve(glft);
 			},
