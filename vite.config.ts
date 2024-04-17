@@ -23,7 +23,7 @@ export default defineConfig({
             plugins: [
                 externalGlobals({
                     vue: "Vue",
-                    'vue-router': 'VueRouter ',
+                    'vue-router': 'VueRouter',
                     three: "THREE",
                     gsap: "gsap"
                 }),
