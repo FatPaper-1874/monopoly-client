@@ -24,6 +24,8 @@ export default defineConfig({
                 externalGlobals({
                     vue: "Vue",
                     'vue-router': 'VueRouter',
+                    'vue-demi': 'VueDemi',
+                    pinia: "Pinia",
                     three: "THREE",
                     gsap: "gsap"
                 }),
