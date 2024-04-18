@@ -9,7 +9,7 @@ export const loadHouseModels = async (houseNamearr: string[]): Promise<{ name: s
 	houseNamearr.forEach((itemName) => {
 		const promise = new Promise<{ name: string; glft: GLTF }>((resolve, reject) => {
 			gltfLoader.load(
-				`/models/${itemName}.glb`,
+				`https://fatpaper-1304992673.cos.ap-guangzhou.myqcloud.com/monopoly/static/${itemName}.glb`,
 				(glft: GLTF) => {
 					glft.userData = { name: itemName };
 					resolve({ name: itemName, glft: glft });
