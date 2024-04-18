@@ -29,6 +29,10 @@ onBeforeMount(async () => {
 	loadingStore.loading = false;
 });
 
+onMounted(()=>{
+  useLoading().$patch({loading: false, text: "正在离开房间"})
+})
+
 const user = computed(() => userInfoStore);
 
 const userList = computed(() => userListStore.userList);

@@ -27,7 +27,7 @@ export default defineConfig({
                     'vue-demi': 'VueDemi',
                     pinia: "Pinia",
                     three: "THREE",
-                    gsap: "gsap"
+                    gsap: ""
                 }),
             ],
         },

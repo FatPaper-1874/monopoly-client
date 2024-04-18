@@ -114,7 +114,7 @@ function toRoomList() {
 	& > span {
 		font-size: 6em;
 		color: #ffffff;
-		letter-spacing: 0.3em;
+		letter-spacing: 0.1em;
 		display: block;
 		position: relative;
 		user-select: none;

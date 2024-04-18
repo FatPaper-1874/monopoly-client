@@ -6,7 +6,7 @@ import FPMessage from "@/components/utils/fp-message";
 import ItemSelector from "@/components/utils/item-selector/item-selector.vue";
 import {GameSetting} from "@/interfaces/bace";
 import router from "@/router";
-import {useRoomInfo} from "@/store";
+import {useLoading, useRoomInfo} from "@/store";
 import {useUserInfo} from "@/store";
 import {getMapsList} from "@/utils/api/map";
 import {GameMap} from "@/utils/three/interfaces";
@@ -77,6 +77,7 @@ onMounted(async () => {
     }
     mapPreview.lockCamera(true);
   }
+  useLoading().$patch({loading: false, text: "正在尝试进入房间"})
 });
 
 onBeforeUnmount(() => {
