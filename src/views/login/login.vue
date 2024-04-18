@@ -74,7 +74,7 @@ function toRoomList() {
 <template>
 	<div class="login-page">
 		<div class="title">
-			<span>天上人间大富翁</span>
+			<span>FatPaper的大富翁</span>
 		</div>
 		<div class="login-code-container">
 			<!-- <img class="login-code loading" :src="imgUrl" alt=""> -->
@@ -121,7 +121,7 @@ function toRoomList() {
 
 		&::before,
 		&::after {
-			content: "天上人间大富翁";
+			content: "FatPaper的大富翁";
 		}
 
 		&:before,
