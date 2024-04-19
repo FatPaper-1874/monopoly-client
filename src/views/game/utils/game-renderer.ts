@@ -428,7 +428,7 @@ export class GameRenderer {
         const targetMapItemModel = this.mapItems.get(targetMapItem?.id);
         if (!targetMapItemModel) return;
 
-        const buildModel = this.housesModules.get(`https://fatpaper-1304992673.cos.ap-guangzhou.myqcloud.com/monopoly/static/house_lv${newProperty.buildingLevel}.glb`)?.clone();
+        const buildModel = this.housesModules.get(`house_lv${newProperty.buildingLevel}`)?.clone();
         if (!buildModel) return;
 
         buildModel.position.copy(targetMapItemModel.position);
