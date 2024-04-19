@@ -13,6 +13,7 @@ export enum SocketMsgType {
 	ChangeGameSetting, //修改游戏设置信息
 	GameStart, //游戏开始
 	GameInit, //游戏初始化
+	GameInitFinished,	//游戏初始化完成
 	GameInfo, //游戏信息广播
 	RoundTurn, //更新当前回合轮到的玩家,
 	RollDiceStart, //开始摇骰子

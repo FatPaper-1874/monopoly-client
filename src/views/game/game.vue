@@ -44,13 +44,14 @@ onMounted(async () => {
   const mapDataStore = useMapData();
   if (mapDataStore.mapItemsList.length === 0) router.replace("room");
   const loadingStore = useLoading();
-  loadingStore.text = "加载模型中...";
+  loadingStore.text = "加载数据中...";
 
   const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
   const container = document.getElementsByClassName("game-page")[0] as HTMLDivElement;
   gameRenderer = new GameRenderer(canvas, container);
   await gameRenderer.init();
-  loadingStore.loading = false;
+  socketClient.gameInitFinished();
+  loadingStore.text = "数据加载完成，等待其他玩家加载...";
 });
 
 onBeforeMount(() => {

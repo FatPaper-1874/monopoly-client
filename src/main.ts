@@ -25,7 +25,10 @@ import {
     faCircleCheck,
     faCircleExclamation,
     faCircleXmark,
-    faCircleInfo
+    faCircleInfo,
+    faQuestionCircle,
+    faLinkSlash,
+    faClose
 } from "@fortawesome/free-solid-svg-icons";
 import {chanceCardSource, chanceCardTarget} from "./directives/chanceCardDrag";
 // "bolt", "bomb", "heart", "house", "palette", "sack-dollar", "wand-magic-sparkles"
@@ -40,7 +43,10 @@ library.add(faBolt,
     faCircleCheck,
     faCircleExclamation,
     faCircleXmark,
-    faCircleInfo);
+    faCircleInfo,
+    faQuestionCircle,
+    faLinkSlash,
+    faClose);
 
 createApp(App)
     .directive("chanceCardSource", chanceCardSource)

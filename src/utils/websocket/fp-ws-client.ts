@@ -99,6 +99,9 @@ export class GameSocketClient {
 					case SocketMsgType.GameInit:
 						this.handleGameInit(data);
 						break;
+					case SocketMsgType.GameInitFinished:
+						this.handleGameInitFinished();
+						break;
 					case SocketMsgType.GameInfo:
 						this.handleGameInfo(data);
 						break;
@@ -211,6 +214,10 @@ export class GameSocketClient {
 		} else {
 			FPMessage({ type: "error", message: "获取地图初始数据失败" });
 		}
+	}
+
+	private handleGameInitFinished(){
+		useLoading().$patch({loading: false, text: "加载结束"})
 	}
 
 	private handleGameInfo(data: SocketMessage) {
@@ -335,6 +342,10 @@ export class GameSocketClient {
 
 	public startGame() {
 		this.sendMsg(SocketMsgType.GameStart, "");
+	}
+
+	public gameInitFinished() {
+		this.sendMsg(SocketMsgType.GameInitFinished, "");
 	}
 
 	public rollDice() {
