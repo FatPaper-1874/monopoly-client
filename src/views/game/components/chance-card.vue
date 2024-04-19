@@ -20,7 +20,7 @@ const legalIconName = computed(() => {
 	<div v-chanceCardSource="chanceCard" class="chance-card" :style="{ border: `0.4em solid ${chanceCard.color}` }"
 		:class="{ disable }">
 		<div class="icon" :style="{ 'color': chanceCard.color }">
-			<FontAwesomeIcon :icon="['fas', legalIconName]"></FontAwesomeIcon>
+			<FontAwesomeIcon :icon="['fas', 'circle-question']"></FontAwesomeIcon>
 		</div>
 		<div class="name" :style="{ 'color': chanceCard.color }">{{ chanceCard.name }}</div>
 		<div class="describe" :style="{ 'color': chanceCard.color }">{{ chanceCard.describe }}</div>
