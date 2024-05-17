@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onBeforeMount, watch, onBeforeUnmount } from "vue";
 import { LoginCodeRenderer } from "@/utils/three/login-code-renderer";
-import { __USERSERVER__ } from "../../../global.config";
 
 const props = withDefaults(defineProps<{ img_data: string }>(), {});
 
@@ -13,7 +12,7 @@ watch(
 	(newImgData) => {
 		if (!loginCodeRenderer) return;
 		if (newImgData) {
-			loginCodeRenderer.showImage(`${__USERSERVER__}/static/avatars/${newImgData}`);
+			loginCodeRenderer.showImage(`http://${newImgData}`);
 		} else {
 			loginCodeRenderer.cleanImage();
 		}

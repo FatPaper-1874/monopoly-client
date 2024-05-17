@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { GameMap } from "@/utils/three/interfaces";
+import { GameMap } from "@/interfaces/game";
 import { onMounted, onUnmounted } from "vue";
 import { MapPreviewer } from "@/utils/three/map-previewer";
 

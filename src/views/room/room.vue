@@ -9,7 +9,7 @@ import router from "@/router";
 import {useLoading, useRoomInfo} from "@/store";
 import {useUserInfo} from "@/store";
 import {getMapsList} from "@/utils/api/map";
-import {GameMap} from "@/utils/three/interfaces";
+import {GameMap} from "@/interfaces/game";
 import {MapPreviewer} from "@/utils/three/map-previewer";
 import {GameSocketClient} from "@/utils/websocket/fp-ws-client";
 import {computed, onBeforeMount, onBeforeUnmount, onMounted, reactive, ref, toRaw, watch} from "vue";

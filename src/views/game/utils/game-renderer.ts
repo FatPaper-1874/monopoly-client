@@ -82,9 +82,10 @@ export class GameRenderer {
         );
         const pixelRatio = this.renderer.getPixelRatio();
         // width、height是canva画布的宽高度
-        const smaaPass = new SMAAPass(canvas.clientWidth * pixelRatio, canvas.clientHeight * pixelRatio);
 
-        this.composer.addPass(smaaPass);
+        // const smaaPass = new SMAAPass(canvas.clientWidth * pixelRatio, canvas.clientHeight * pixelRatio);
+        //
+        // this.composer.addPass(smaaPass);
         this.composer.addPass(this.renderPass);
         this.composer.addPass(this.chanceCardTargetOutlinePass);
 
@@ -196,7 +197,7 @@ export class GameRenderer {
     private initBackground() {
         const bgTextureLoader = new TextureLoader();
         const mapData = useMapData();
-        const bgTexture = bgTextureLoader.load(`${__MONOPOLYSERVER__}/static/backgrounds/${mapData.mapBackground}`);
+        const bgTexture = bgTextureLoader.load(`http://${mapData.mapBackground}`);
 
         this.scene.background = bgTexture;
         this.scene.add(this.mapContainer);
@@ -552,7 +553,7 @@ export class GameRenderer {
         for await (const player of playerList) {
             try {
                 this.playerPosition.set(player.id, toRaw(player.positionIndex));
-                const playerEntity = new PlayerEntity(1, `${__MONOPOLYSERVER__}/static/roles/`, player.user.role.filename, player);
+                const playerEntity = new PlayerEntity(1, `http://${player.user.role.baseUrl}/`, player.user.role.fileName, player);
                 await playerEntity.load();
                 this.playerEntites.set(player.id, playerEntity);
                 this.scene.add(playerEntity.model);

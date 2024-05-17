@@ -2,7 +2,6 @@
 import { PlayerInfo } from "@/interfaces/bace";
 import { PropType, computed } from "vue";
 import { useGameInfo } from "@/store/index";
-import { __USERSERVER__ } from "../../../../global.config";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 
 // const props = defineProps({
@@ -17,7 +16,7 @@ const gameInfoStroe = useGameInfo();
 const _userInfo = computed(() => props.player.user);
 const _isMyTrun = computed(() => gameInfoStroe.currentPlayerInRound === props.player.id);
 const avatarSrc = computed(() => {
-	return _userInfo.value.avatar ? `${__USERSERVER__}/static/avatars/${_userInfo.value.avatar}` : "";
+	return _userInfo.value.avatar ? `http://${_userInfo.value.avatar}` : "";
 });
 </script>
 

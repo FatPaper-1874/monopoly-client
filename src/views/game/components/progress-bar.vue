@@ -2,7 +2,6 @@
 import {computed} from "vue";
 import {useGameInfo} from "@/store";
 import {lightenColor} from "@/utils";
-import {__USERSERVER__} from "../../../../global.config";
 
 const playerList = computed(() => useGameInfo().playersList);
 
@@ -20,7 +19,7 @@ function getBlockHeight(money: number) {
          :key="player.id">
       <div class="avatar-container" :style="{'--c': lightenColor(player.user.color, 15)}">
         <div class="avatar">
-          <img alt="" :src="`${__USERSERVER__}/static/avatars/${player.user.avatar}`"/>
+          <img alt="" :src="`http://${player.user.avatar}`"/>
         </div>
         <div class="money">￥{{ player.money }}</div>
       </div>

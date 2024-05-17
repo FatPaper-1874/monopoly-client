@@ -41,8 +41,9 @@ export interface Room {
 
 export interface Role {
     id: string;
-    rolename: string;
-    filename: string;
+    baseUrl: string;
+    roleName: string;
+    fileName: string;
     color: string;
 }
 
@@ -152,6 +153,7 @@ export interface ItemType {
 export interface Model {
     id: string;
     name: string;
+    fileUrl: string;
     fileName: string;
 }
 

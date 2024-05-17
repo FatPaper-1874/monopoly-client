@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { __USERSERVER__ } from "../../../../global.config";
 import { ChatMessage } from "@/interfaces/bace";
 import { computed } from "vue";
 
 const props = defineProps<{ chatMessage: ChatMessage }>();
 const { user, type, content } = props.chatMessage;
 const avatarSrc = computed(() => {
-	return user.avatar ? `${__USERSERVER__}/static/avatars/${user.avatar}` : "";
+	return user.avatar ? `http://${user.avatar}` : "";
 });
 </script>
 

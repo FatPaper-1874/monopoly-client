@@ -6,14 +6,13 @@ import {Role, User} from "@/interfaces/bace";
 import {useRoomInfo, useUserInfo} from "@/store";
 import {ChangeRoleOperate} from "@/enums/bace";
 import {GameSocketClient} from "@/utils/websocket/fp-ws-client";
-import {__USERSERVER__, __MONOPOLYSERVER__} from "../../../../global.config";
 import {RolePreviewer} from "@/views/room/utils/RolePreviewer";
 
 const props = defineProps<{ user: User | undefined }>();
 
 const user = computed(() => props.user);
 const lightColor = computed(() => user.value ? lightenColor(user.value.color, 15) : "#ffffff");
-const avatarSrc = computed(() => user.value ? `${__USERSERVER__}/static/avatars/${user.value.avatar}` : "");
+const avatarSrc = computed(() => user.value ? `http://${user.value.avatar}` : "");
 const isMe = computed(() => user.value ? user.value.userId === useUserInfo().userId : false)
 
 const handleChangeRole = (operate: ChangeRoleOperate) => {
@@ -30,7 +29,7 @@ onMounted(() => {
     rolePreviewer = new RolePreviewer(canvasEl, true);
     watch(() => props.user, (newUser, oldUser) => {
       if (rolePreviewer && newUser && newUser.role.id !== (oldUser?.role.id || "")) {
-        rolePreviewer.loadRole(`${__MONOPOLYSERVER__}/static/roles/`, newUser.role.filename);
+        rolePreviewer.loadRole(`http://${newUser.role.baseUrl}/`, newUser.role.fileName);
       }
     }, {immediate: true, deep: true})
   })
@@ -42,7 +41,7 @@ onMounted(() => {
     <div class="ready-tag" v-if="user && user.isReady">准备</div>
     <div class="choose-role" v-else-if="user && user.role" :style="{ 'background-color': user.role.color }">
       <font-awesome-icon v-if="isMe" @click="handleChangeRole(ChangeRoleOperate.Prev)" class="icon" icon="angle-left"/>
-      <span>{{ user.role.rolename }}</span>
+      <span>{{ user.role.roleName }}</span>
       <font-awesome-icon
           v-if="isMe"
           @click="handleChangeRole(ChangeRoleOperate.Next)"
