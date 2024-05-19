@@ -1,8 +1,8 @@
 import axios from "axios";
 import {__MONOPOLYSERVER__} from "../../../global.config";
-import {MusicType} from "@/interfaces/bace";
+import {Music} from "@/interfaces/bace";
 
-export async function getMusicList() {
-    const res = await axios.get(`${__MONOPOLYSERVER__}/music/list`);
-    return res.data as MusicType[];
-}
+export const getMusicList = async (page: number, size: number) => {
+    const { total, musicList, current } = (await axios.get(`${__MONOPOLYSERVER__}/music/list`, { params: { page, size } })).data as any;
+    return { total, musicList, current };
+};

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import {MusicType} from "@/interfaces/bace";
+import {Music} from "@/interfaces/bace";
 import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
 
-const props = defineProps<{ music: MusicType, isPlaying: boolean }>()
+const props = defineProps<{ music: Music, isPlaying: boolean }>()
 </script>
 
 <template>

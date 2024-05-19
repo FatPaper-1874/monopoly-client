@@ -11,6 +11,12 @@ export interface GameSetting {
     diceNum: number;
 }
 
+export interface Music {
+    id: string,
+    name: string,
+    url: string,
+}
+
 export interface SocketMessage {
     type: SocketMsgType;
     source: string;
@@ -169,12 +175,4 @@ export interface ChatMessage {
     user: User;
     content: string;
     time: number;
-}
-
-export interface MusicType {
-    id: string,
-    name: string,
-    url: string,
-    exp: number,
-    picUrl: string
 }

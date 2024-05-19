@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import {computed, onMounted, ref} from "vue";
 import {getMusicList} from "@/utils/api/music";
-import {MusicType} from "@/interfaces/bace";
+import {Music} from "@/interfaces/bace";
 import {throttle} from "@/utils";
 import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
 import MusicListItem from "@/views/music_player/components/music_list_item.vue";
 
-const musicList = ref<MusicType[]>([]);
+const musicList = ref<Music[]>([]);
 
 //播放器状态
-const currentMusic = ref<MusicType>();
+const currentMusic = ref<Music | undefined>();
 const musicPlayerEl = ref<HTMLAudioElement | null>(null);
 const isLoadingMusicList = ref(false);
 const isPlaying = ref(false);
@@ -25,17 +25,20 @@ function selectMusic(id: string) {
   const musicToPlay = musicList.value.find((m) => m.id === id);
   const _musicPlayerEl = musicPlayerEl.value
   if (musicToPlay && _musicPlayerEl) {
-    if (musicToPlay.exp < Date.now()) {
-      loadMusicList().then((_musicList) => {
-        musicList.value = _musicList;
-        selectMusic(id);
-      })
-      return;
-    } else {
-      _musicPlayerEl.src = musicToPlay.url;
-      currentMusic.value = musicToPlay;
-      isPlaying.value = true;
-    }
+    // if (musicToPlay.exp < Date.now()) {
+    //   loadMusicList().then((_musicList) => {
+    //     musicList.value = _musicList;
+    //     selectMusic(id);
+    //   })
+    //   return;
+    // } else {
+    //   _musicPlayerEl.src = musicToPlay.url;
+    //   currentMusic.value = musicToPlay;
+    //   isPlaying.value = true;
+    // }
+    _musicPlayerEl.src = musicToPlay.url;
+    currentMusic.value = musicToPlay;
+    isPlaying.value = true;
   }
 }
 
@@ -50,12 +53,13 @@ function toggleMusic() {
 }
 
 function playMusic() {
-  if (currentMusic.value && musicPlayerEl.value) {
-    musicPlayerEl.value.play();
-  } else {
-    if (musicList.value?.length > 0) {
-      selectMusic(musicList.value[0].id);
+  if (musicPlayerEl.value) {
+    if (!currentMusic.value) {
+      if (musicList.value?.length > 0) {
+        selectMusic(musicList.value[0].id);
+      }
     }
+    musicPlayerEl.value.play();
   }
 }
 
@@ -93,9 +97,9 @@ function initMusicPlayer() {
 
 async function loadMusicList() {
   isLoadingMusicList.value = true;
-  const res = await getMusicList();
+  const {musicList} = await getMusicList(1, 1000);
   isLoadingMusicList.value = false;
-  return res;
+  return musicList;
 }
 
 const isMusicListVisible = ref(false);
@@ -111,8 +115,8 @@ onMounted(async () => {
 
 <template>
   <div class="music-player">
-    <audio ref="musicPlayerEl" :src="currentMusic ? currentMusic.url:''"></audio>
-    <div class="icon_container">
+    <audio ref="musicPlayerEl" :src="currentMusic ? `http://${currentMusic.url}`:''"></audio>
+    <div @click="toggleMusic()" class="icon_container">
       <FontAwesomeIcon :beat-fade="!currentMusic" :spin="isPlaying || isLoadingMusicList"
                        class="icon"
                        :icon="controlIcon"/>
@@ -120,7 +124,7 @@ onMounted(async () => {
     <div class="info-container">
       <div :style="{'width': `${ musicCurrentTime / musicDurationTime * 100}%`}" class="progress_bar"></div>
       <span class="common">{{ currentMusic ? '正在播放：' : '' }}</span>
-      <span class="music_name">{{ currentMusic ? currentMusic.name : '不知道放什么音乐好' }}</span>
+      <span class="music_name">{{ currentMusic ? currentMusic.name : '点击唱片播放音乐' }}</span>
     </div>
     <div class="music_list-toggle">
       <FontAwesomeIcon @click="isMusicListVisible = !isMusicListVisible"

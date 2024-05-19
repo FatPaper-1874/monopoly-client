@@ -29,7 +29,13 @@ import {
     faQuestionCircle,
     faLinkSlash,
     faClose,
-    faWifi
+    faWifi,
+    faCompactDisc,
+    faSpinner,
+    faAngleUp,
+    faAngleLeft,
+    faAngleRight,
+    faBars,
 } from "@fortawesome/free-solid-svg-icons";
 import {chanceCardSource, chanceCardTarget} from "./directives/chanceCardDrag";
 // "bolt", "bomb", "heart", "house", "palette", "sack-dollar", "wand-magic-sparkles"
@@ -48,7 +54,13 @@ library.add(faBolt,
     faQuestionCircle,
     faLinkSlash,
     faClose,
-    faWifi);
+    faWifi,
+    faCompactDisc,
+    faSpinner,
+    faAngleUp,
+    faAngleLeft,
+    faAngleRight,
+    faBars,);
 
 createApp(App)
     .directive("chanceCardSource", chanceCardSource)
