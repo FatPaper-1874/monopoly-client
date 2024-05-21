@@ -36,6 +36,7 @@ import {
     faAngleLeft,
     faAngleRight,
     faBars,
+    faExpand
 } from "@fortawesome/free-solid-svg-icons";
 import {chanceCardSource, chanceCardTarget} from "./directives/chanceCardDrag";
 // "bolt", "bomb", "heart", "house", "palette", "sack-dollar", "wand-magic-sparkles"
@@ -60,12 +61,14 @@ library.add(faBolt,
     faAngleUp,
     faAngleLeft,
     faAngleRight,
-    faBars,);
+    faBars,
+    faExpand
+    );
 
 createApp(App)
-    .directive("chanceCardSource", chanceCardSource)
-    .directive("chanceCardTarget", chanceCardTarget)
     .use(router)
     .use(createPinia())
+    .directive("chanceCardSource", chanceCardSource)
+    .directive("chanceCardTarget", chanceCardTarget)
     .component("font-awesome-icon", FontAwesomeIcon)
     .mount("#app");
