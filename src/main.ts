@@ -66,7 +66,7 @@ library.add(faBolt,
     faBars,
     faExpand,
     faRotate
-    );
+);
 const pinia = createPinia()
 createApp(App)
     .use(router)
@@ -78,8 +78,10 @@ createApp(App)
 
 initDeviceStatusListener();
 
-function initDeviceStatusListener(){
+function initDeviceStatusListener() {
     const deviceStatus = useDeviceStatus();
+    deviceStatus.isFullScreen = _isFullScreen();
+    deviceStatus.isLandscape = _isLandscape();
 
     window.addEventListener('fullscreenchange', (e) => {
         deviceStatus.isFullScreen = _isFullScreen();
