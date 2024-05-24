@@ -28,7 +28,7 @@ export class LoginCodeRenderer extends DiceRenderer {
                 resolve(texture);
             });
         });
-        //获取到二维码后，停止转动;
+        //获取图片后，停止转动;
 
         await super.stopRotate([1]);
         const material = new THREE.MeshBasicMaterial({

@@ -36,11 +36,13 @@ import {
     faAngleLeft,
     faAngleRight,
     faBars,
-    faExpand
+    faExpand,
+    faRotate
 } from "@fortawesome/free-solid-svg-icons";
 import {chanceCardSource, chanceCardTarget} from "./directives/chanceCardDrag";
-// "bolt", "bomb", "heart", "house", "palette", "sack-dollar", "wand-magic-sparkles"
-/* add icons to the library */
+import {useDeviceStatus} from "@/store";
+import {isFullScreen as _isFullScreen, isLandscape as _isLandscape} from "@/utils";
+
 library.add(faBolt,
     faBomb,
     faHeart,
@@ -62,13 +64,28 @@ library.add(faBolt,
     faAngleLeft,
     faAngleRight,
     faBars,
-    faExpand
+    faExpand,
+    faRotate
     );
-
+const pinia = createPinia()
 createApp(App)
     .use(router)
-    .use(createPinia())
+    .use(pinia)
     .directive("chanceCardSource", chanceCardSource)
     .directive("chanceCardTarget", chanceCardTarget)
     .component("font-awesome-icon", FontAwesomeIcon)
     .mount("#app");
+
+initDeviceStatusListener();
+
+function initDeviceStatusListener(){
+    const deviceStatus = useDeviceStatus();
+
+    window.addEventListener('fullscreenchange', (e) => {
+        deviceStatus.isFullScreen = _isFullScreen();
+    })
+
+    window.addEventListener('resize', (e) => {
+        deviceStatus.isLandscape = _isLandscape();
+    })
+}
