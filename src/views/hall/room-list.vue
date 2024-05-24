@@ -162,9 +162,11 @@ const handleLogout = () => {
 			flex: 1;
 			box-sizing: border-box;
 			overflow: hidden;
+      display: flex;
 
 			& > .player-list {
 				flex: 1;
+        overflow-y: scroll;
 				padding: 0.5rem 0.7rem;
 			}
 		}
