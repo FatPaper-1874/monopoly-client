@@ -11,9 +11,10 @@ import DanmakuContainer from "@/views/danmaku/danmaku_container.vue";
 import {isMobileDevice} from "@/utils";
 
 const isMobile = isMobileDevice();
-const isInGame = computed(() => useRoute() ? useRoute().name === 'game' : false);
-const canChat = computed(() => useRoute() ? (useRoute().name === 'room' || useRoute().name === 'game') : false);
-const isLogin = computed(() => useRoute() ? useRoute().name === 'login' : true);
+const router = useRoute();
+const isInGame = computed(() => router.name === 'game');
+const canChat = computed(() => router.name === 'room' || router.name === 'game');
+const isLogin = computed(() => router.name === 'login');
 </script>
 
 <template>
@@ -23,7 +24,7 @@ const isLogin = computed(() => useRoute() ? useRoute().name === 'login' : true);
   <Background v-if="!isInGame"/>
   <Loading/>
   <RouterView></RouterView>
-  <Ping />
+  <Ping/>
   <MusicPlayer v-show="!isLogin"/>
 </template>
 
