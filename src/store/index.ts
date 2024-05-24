@@ -12,6 +12,7 @@ import {
 } from "../interfaces/bace";
 import {GameOverRule} from "@/enums/game";
 import {ChatMessage} from "../interfaces/bace";
+import {isFullScreen, isLandscape} from "@/utils";
 
 export const useLoading = defineStore("loading", {
     state: () => {
@@ -108,7 +109,7 @@ export const useGameInfo = defineStore("gameInfo", {
     },
 });
 
-export const useUtil = defineStore("uitl", {
+export const useUtil = defineStore("util", {
     state: () => {
         return {
             isRollDiceAnimationPlay: false,
@@ -168,3 +169,13 @@ export const useChat = defineStore("chat", {
         },
     },
 });
+
+export const useDeviceStatus = defineStore('deviceStatus',{
+    state: ()=>{
+        return{
+            isFullScreen: false,
+            isLandscape: false,
+            isMobile: false,
+        }
+    }
+})

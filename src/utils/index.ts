@@ -77,3 +77,56 @@ export function getScreenPosition(object3D: THREE.Object3D, camera: THREE.Camera
     tempPosition.project(camera)
     return new THREE.Vector2(tempPosition.x, -tempPosition.y);
 }
+
+
+export async function requestFullScreen() {
+    const element = document.documentElement
+    if (element.requestFullscreen) {
+        await element.requestFullscreen();
+        //@ts-ignore
+    } else if (element.mozRequestFullScreen) { // 兼容Firefox
+        //@ts-ignore
+        await element.mozRequestFullScreen();
+        //@ts-ignore
+    } else if (element.webkitRequestFullscreen) { // 兼容Chrome和Safari
+        //@ts-ignore
+        await element.webkitRequestFullscreen();
+    }
+}
+
+export async function exitFullScreen() {
+    if (document.exitFullscreen) {
+        await document.exitFullscreen();
+        //@ts-ignore
+    } else if (document.mozCancelFullScreen) { // 兼容Firefox
+        //@ts-ignore
+        await document.mozCancelFullScreen();
+        //@ts-ignore
+    } else if (document.webkitExitFullscreen) { // 兼容Chrome和Safari
+        //@ts-ignore
+        await document.webkitExitFullscreen();
+    }
+}
+
+
+export function setTimeOutAsync(delay: number = 1000, fn?: Function) {
+    return new Promise((reslove) => {
+        setTimeout(() => {
+            if (fn) fn();
+            reslove("");
+        }, delay);
+    });
+}
+
+export function isMobileDevice() {
+    return /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+export function isFullScreen() {
+    return document.fullscreenElement !== null
+}
+
+export function isLandscape() {
+    return window.matchMedia("(orientation: landscape)").matches;
+}
+
