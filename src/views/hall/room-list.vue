@@ -163,6 +163,7 @@ const handleLogout = () => {
 			box-sizing: border-box;
 			overflow: hidden;
       display: flex;
+			flex-direction: column;
 
 			& > .player-list {
 				flex: 1;
