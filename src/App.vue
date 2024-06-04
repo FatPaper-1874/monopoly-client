@@ -25,7 +25,7 @@ const isLogin = computed(() => router.name === 'login');
   <Loading/>
   <RouterView></RouterView>
   <Ping/>
-  <MusicPlayer v-show="!isLogin"/>
+  <MusicPlayer v-if="!isLogin"/>
 </template>
 
 <style lang="scss" scoped></style>

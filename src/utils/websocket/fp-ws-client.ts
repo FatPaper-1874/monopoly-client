@@ -317,11 +317,9 @@ export class GameSocketClient {
 
 	public joinRoom(roomId: string) {
 		this.sendMsg(SocketMsgType.JoinRoom, "", roomId);
-		useLoading().$patch({loading: true, text: "正在尝试进入房间"})
 	}
 
 	public leaveRoom() {
-		useLoading().$patch({loading: true, text: "正在离开房间"})
 		this.sendMsg(SocketMsgType.LeaveRoom, "");
 		const roomInfoStore = useRoomInfo();
 		roomInfoStore.$reset();

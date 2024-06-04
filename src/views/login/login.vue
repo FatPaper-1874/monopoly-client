@@ -16,6 +16,7 @@ onBeforeMount(async () => {});
 
 function doLogin() {
 	firstClick.value = true;
+	const url = new URL(window.location.href);
 	const _URLSearchParams = new URLSearchParams(location.search);
 	const tokenFromURL = _URLSearchParams.get("token") || "";
 	const tokenFromLocal = localStorage.getItem("token") || "";
@@ -26,7 +27,6 @@ function doLogin() {
 		if (tokenFromURL) {
 			localStorage.setItem("token", tokenFromURL);
 			token = tokenFromURL;
-			location.search = "";
 		}
 		nextTick(() => {
 			const canvasEl = document.getElementById("dice-canvas") as HTMLCanvasElement;

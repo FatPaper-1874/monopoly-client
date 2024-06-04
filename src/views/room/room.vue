@@ -77,7 +77,6 @@ onMounted(async () => {
     }
     mapPreview.lockCamera(true);
   }
-  useLoading().$patch({loading: false, text: "正在尝试进入房间"})
 });
 
 onBeforeUnmount(() => {
