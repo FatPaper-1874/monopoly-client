@@ -1,5 +1,9 @@
-export default class EventEmitter {
-	private static instance: EventEmitter | undefined;
+export default function useEventBus(){
+	return EventBus.getInstance();
+}
+
+class EventBus {
+	private static instance: EventBus | undefined;
 	private eventMap: Map<string, { fn: Function; isOnce: boolean }[]>;
 
 	constructor() {
@@ -8,7 +12,7 @@ export default class EventEmitter {
 
 	static getInstance() {
 		if (!this.instance) {
-			this.instance = new EventEmitter();
+			this.instance = new EventBus();
 		}
 		return this.instance;
 	}

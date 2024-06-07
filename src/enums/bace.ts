@@ -7,13 +7,13 @@ export enum SocketMsgType {
 	JoinRoom, //加入房间
 	LeaveRoom, //离开房间
 	RoomInfo, //房间信息广播
-	RoomChat,	//房间聊天
+	RoomChat, //房间聊天
 	ReadyToggle, //准备状态切换
 	ChangeRole, //切换角色
 	ChangeGameSetting, //修改游戏设置信息
 	GameStart, //游戏开始
 	GameInit, //游戏初始化
-	GameInitFinished,	//游戏初始化完成
+	GameInitFinished, //游戏初始化完成
 	GameInfo, //游戏信息广播
 	RoundTurn, //更新当前回合轮到的玩家,
 	RollDiceStart, //开始摇骰子
@@ -36,4 +36,9 @@ export enum ChangeRoleOperate {
 export enum ChatMessageType {
 	Emoticon, //表情
 	Text, //文字
+}
+
+export enum NormalEvents {
+	WebSocketConnected = "WebSocketConnected", //ws链接成功
+	WebSocketDisconnected = "WebSocketDisconnected", //ws断开
 }

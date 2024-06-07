@@ -1,10 +1,14 @@
 import { GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { ItemType } from "@/interfaces/bace";
 import { __MONOPOLYSERVER__ } from "../../../global.config";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 
 export const loadItemTypeModules = async (itemTypeList: ItemType[]): Promise<{ id: string; glft: GLTF }[]> => {
 	const promiseArr: Promise<{ id: string; glft: GLTF }>[] = new Array<Promise<{ id: string; glft: GLTF }>>();
 	const gltfLoader = new GLTFLoader();
+	const draco = new DRACOLoader();
+	draco.setDecoderPath('./draco/');
+	gltfLoader.setDRACOLoader(draco);
 	itemTypeList.forEach((itemType) => {
 		const promise = new Promise<{ id: string; glft: GLTF }>((resolve, reject) => {
 			gltfLoader.load(

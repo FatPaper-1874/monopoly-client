@@ -114,6 +114,7 @@ function toRoomList() {
 		color: #ffffff;
 		text-shadow: var(--text-shadow);
 		animation: blink infinite 1.8s;
+		cursor: pointer;
 
 		@keyframes blink {
 			0% {
@@ -133,7 +134,7 @@ function toRoomList() {
 
 		width: $img_size;
 		height: $img_size;
-		cursor: pointer;
+		user-select: none;
 	}
 }
 

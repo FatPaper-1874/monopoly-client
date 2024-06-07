@@ -4,7 +4,7 @@ import { log } from "console";
 import { Store } from "pinia";
 import { createVNode } from "vue";
 import FPMessage from "@/components/utils/fp-message/index";
-import { ChangeRoleOperate, SocketMsgType } from "@/enums/bace";
+import { ChangeRoleOperate, NormalEvents, SocketMsgType } from "@/enums/bace";
 import { OperateType } from "@/enums/game";
 import {
 	GameInfo,
@@ -30,8 +30,9 @@ import {
 	useUserList,
 	useUtil,
 } from "@/store/index";
-import {randomString} from "@/utils";
-import {FATPAPER_HOST, MONOPOLY_SOCKET_PORT} from "../../../../global.config";
+import { randomString } from "@/utils";
+import { FATPAPER_HOST, MONOPOLY_SOCKET_PORT } from "../../../../global.config";
+import useEventBus from "../event-bus";
 
 interface UserInfo {
 	username: string;
@@ -57,6 +58,7 @@ export class GameSocketClient {
 	}
 
 	constructor(token: string) {
+		useEventBus().emit(NormalEvents.WebSocketConnected);
 		this.socketClient = new WebSocket(`ws://${FATPAPER_HOST}:${MONOPOLY_SOCKET_PORT}`);
 		this.socketClient.onclose = () => {};
 		this.socketClient.onopen = () => {
@@ -216,15 +218,15 @@ export class GameSocketClient {
 		}
 	}
 
-	private handleGameInitFinished(){
-		useLoading().$patch({loading: false, text: "加载结束"})
+	private handleGameInitFinished() {
+		useLoading().$patch({ loading: false, text: "加载结束" });
 	}
 
 	private handleGameInfo(data: SocketMessage) {
 		if (data.data == "error") return;
 		const gameInfoStore = useGameInfo();
 		const gameInfo: GameInfo = data.data;
-		console.log(gameInfo)
+		console.log(gameInfo);
 		gameInfo &&
 			gameInfoStore.$patch({
 				currentPlayerInRound: gameInfo.currentPlayerInRound,
