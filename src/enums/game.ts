@@ -29,8 +29,7 @@ export enum ChanceCardOperateType {
 export enum RoleAnimations {
     Idle = 'idle',
     RoleWalkStart = 'walk-start',
-    RoleWalkingLeft = 'walking-left',
-    RoleWalkingRight = 'walking-right',
+    RoleWalking = 'walking',
     RoleWalkEnd = 'walk-end',
     Hi = 'hi'
 }

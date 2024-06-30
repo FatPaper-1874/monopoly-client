@@ -76,6 +76,7 @@ export class MapPreviewer {
 			const tempModule = this.models[item.type.id].clone();
 			tempModule.scale.set(0.5, 0.5, 0.5);
 			tempModule.position.set(item.x + item.type.size / 2, 0, item.y + item.type.size / 2);
+			tempModule.rotation.y = (Math.PI / 2) * item.rotation;
 			this.mapContainer.add(tempModule);
 		});
 	}

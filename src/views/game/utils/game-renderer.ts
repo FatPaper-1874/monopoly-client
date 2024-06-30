@@ -14,6 +14,7 @@ import {
 	Intersection,
 	Mesh,
 	PointLight,
+	PointLightHelper,
 } from "three";
 
 import { gsap } from "gsap";
@@ -265,9 +266,12 @@ export class GameRenderer {
 		hemiLight.position.setY(3);
 		this.scene.add(hemiLight);
 
-		const pointLight = new PointLight(0xffffff, 1, 10);
+		const pointLight = new PointLight(0xfff1e2, 2, 10);
 		pointLight.position.copy(this.getGroupCenter(this.mapContainer));
 		pointLight.position.setY(5);
+
+		const lightHelper = new PointLightHelper(pointLight);
+		this.scene.add(lightHelper);
 		this.scene.add(pointLight);
 	}
 
@@ -290,8 +294,8 @@ export class GameRenderer {
 		if (intersects.length > 0) {
 			const intersect = intersects[0];
 			const target = intersect.object.parent as Group;
-			const propertyInfo = target.userData as PropertyInfo;
-			if (propertyInfo) {
+			const propertyInfo = target.userData as any;
+			if (propertyInfo.isProperty) {
 				this.propertyInfoLabel.position.copy(target.position);
 				this.propertyInfoLabel.position.y += 2.2;
 				//@ts-ignore
@@ -395,14 +399,21 @@ export class GameRenderer {
 			pointer.y = -(mouseY / this.canvas.clientHeight) * 2 + 1;
 
 			raycaster.setFromCamera(pointer, this.camera);
-			const intersects = raycaster.intersectObjects(this.getModulesByChanceCardType(chanceCard.type));
-			console.log(intersects);
+			const intersects = raycaster.intersectObjects(this.getModulesByChanceCardType(chanceCard.type), true);
 
 			if (intersects.length > 0) {
-				const intersect = intersects[0];
-				const target = intersect.object.parent as Group;
-				console.log(target);
-				GameSocketClient.getInstance().useChanceCard(chanceCard.id, target.userData.id);
+				const firstInstance = intersects[0];
+				const target = firstInstance.object;
+
+				let temp: THREE.Object3D | null = target;
+				while (temp) {
+					if (temp.userData.isProperty) {
+						GameSocketClient.getInstance().useChanceCard(chanceCard.id, temp.userData.id);
+						break;
+					} else {
+						temp = temp.parent;
+					}
+				}
 			} else {
 				//@ts-ignore
 				this.propertyInfoLabelInstance.updateProperty(null);
@@ -437,7 +448,7 @@ export class GameRenderer {
 		buildModel.position.copy(targetMapItemModel.position);
 		buildModel.position.y += GROUND_HEIGHT;
 		buildModel.scale.copy(targetMapItemModel.scale);
-		buildModel.userData = newProperty;
+		buildModel.userData = { ...newProperty, isProperty: true };
 
 		buildModel.children.forEach((mesh) => {
 			const _mesh = mesh as Mesh;
@@ -483,6 +494,7 @@ export class GameRenderer {
 			await playerEntity.doAnimation(RoleAnimations.RoleWalkStart);
 			playerEntity.doAnimation(RoleAnimations.Idle, true);
 			const playerModule = playerEntity.model;
+			playerEntity.doAnimation(RoleAnimations.RoleWalking, true);
 			for (let i = 1; i <= stepNum; i++) {
 				const nextMapItem = this.getMapItem((sourceIndex + i) % total); //下一步
 				if (nextMapItem) {
@@ -491,14 +503,14 @@ export class GameRenderer {
 					const currentAnimationName = playerEntity.getCurrentAnimationName();
 					if (
 						nextMapItemScreenX > playerScreenX &&
-						(currentAnimationName === RoleAnimations.RoleWalkingLeft || currentAnimationName === RoleAnimations.Idle)
+						(currentAnimationName === RoleAnimations.RoleWalking || currentAnimationName === RoleAnimations.Idle)
 					) {
-						playerEntity.doAnimation(RoleAnimations.RoleWalkingRight, true);
+						gsap.to(playerEntity.model.scale, { x: 1, duration: 0.3 });
 					} else if (
 						nextMapItemScreenX < playerScreenX &&
-						(currentAnimationName === RoleAnimations.RoleWalkingRight || currentAnimationName === RoleAnimations.Idle)
+						(currentAnimationName === RoleAnimations.RoleWalking || currentAnimationName === RoleAnimations.Idle)
 					) {
-						playerEntity.doAnimation(RoleAnimations.RoleWalkingLeft, true);
+						gsap.to(playerEntity.model.scale, { x: -1, duration: 0.3 });
 					}
 					const { x, y, z } = nextMapItem.position;
 					await gsap.to(playerModule.position, { x, y: y + GROUND_HEIGHT, z, duration: 0.6 });
@@ -588,6 +600,7 @@ export class GameRenderer {
 	private async loadHousesModels(houseNameList: string[]) {
 		const modelList = await loadHouseModels(houseNameList);
 		modelList.forEach((model) => {
+			console.log("🚀 ~ GameRenderer ~ modelList.forEach ~ model:", model);
 			this.housesModules.set(model.name, model.glft.scene);
 		});
 	}
@@ -609,6 +622,7 @@ export class GameRenderer {
 			};
 			tempModule.scale.set(0.5, 0.5, 0.5);
 			tempModule.position.set(item.x + item.type.size / 2, 0, item.y + item.type.size / 2);
+			tempModule.rotation.y = (Math.PI / 2) * item.rotation;
 			this.mapItems.set(item.id, tempModule);
 			this.mapContainer.add(tempModule);
 		});

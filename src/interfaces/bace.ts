@@ -73,6 +73,7 @@ export interface MapItem {
     id: string;
     x: number;
     y: number;
+	rotation: 0 | 1 | 2 | 3;
     type: TypeItem;
     linkto?: MapItem;
     property?: PropertyInfo;
