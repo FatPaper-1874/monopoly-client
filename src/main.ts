@@ -37,7 +37,11 @@ import {
     faAngleRight,
     faBars,
     faExpand,
-    faRotate
+    faRotate,
+    faComments,
+    faClock,
+    faClockRotateLeft,
+    faVideo,
 } from "@fortawesome/free-solid-svg-icons";
 import {chanceCardSource, chanceCardTarget} from "./directives/chanceCardDrag";
 import {useDeviceStatus} from "@/store";
@@ -65,7 +69,11 @@ library.add(faBolt,
     faAngleRight,
     faBars,
     faExpand,
-    faRotate
+    faRotate,
+    faComments,
+    faClock,
+    faClockRotateLeft,
+    faVideo,
 );
 const pinia = createPinia()
 createApp(App)

@@ -1,3 +1,5 @@
+import * as THREE from 'three'
+
 declare namespace spine {
     class Animation {
         name: string;

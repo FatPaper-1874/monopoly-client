@@ -3,9 +3,9 @@ import { ref, computed } from "vue";
 import { PropertyInfo } from "@/interfaces/bace";
 import { PropertyLevel } from "@/utils/var";
 
-const { property } = defineProps<{ property: PropertyInfo | null }>();
+// const { property } = defineProps<{ property: PropertyInfo | null }>();
 
-const _property = ref<PropertyInfo | null>(property);
+const _property = ref<PropertyInfo | null>(null);
 
 const _propertyBuildLevelColor = computed(() => PropertyLevel[_property.value?.buildingLevel || 0].color);
 const _propertyBuildLevelName = computed(() => PropertyLevel[_property.value?.buildingLevel || 0].name);

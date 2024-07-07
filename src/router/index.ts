@@ -9,10 +9,7 @@ const routes = [
 	{ path: "/game", name: "game", component: () => import("@/views/game/game.vue") },
 ];
 
-const router = createRouter({
-	history: createWebHistory(),
-	routes,
-});
+const router = createRouter({history: import.meta.env.PROD ? createWebHistory() : createWebHashHistory(), routes});
 
 router.beforeEach((to, form) => {
     const loadingStore = useLoading();

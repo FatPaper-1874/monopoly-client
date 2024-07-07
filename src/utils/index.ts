@@ -133,3 +133,21 @@ export function isFullScreen() {
 export function isLandscape() {
 	return window.matchMedia("(orientation: landscape)").matches;
 }
+
+export function hexToRgbNormalized(hex:string) {
+	// Remove the hash at the start if it's there
+	hex = hex.replace(/^#/, '');
+
+	// Parse the r, g, b values
+	const bigint = parseInt(hex, 16);
+	const r = (bigint >> 16) & 255;
+	const g = (bigint >> 8) & 255;
+	const b = bigint & 255;
+
+	// Convert to 0-1 range
+	const rNormalized = r / 255;
+	const gNormalized = g / 255;
+	const bNormalized = b / 255;
+
+	return { r: rNormalized, g: gNormalized, b: bNormalized };
+}

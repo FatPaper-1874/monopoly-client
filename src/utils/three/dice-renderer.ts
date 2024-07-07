@@ -41,6 +41,7 @@ export class DiceRenderer {
 		this.renderer = new THREE.WebGLRenderer({ canvas: el, antialias: true });
 		this.renderer.setClearAlpha(0);
 		this.renderer.setSize(el.clientWidth, el.clientHeight);
+		this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 		this.scene = new THREE.Scene();
 		this.scene.background = null;

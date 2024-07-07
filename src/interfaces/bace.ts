@@ -74,9 +74,19 @@ export interface MapItem {
     x: number;
     y: number;
 	rotation: 0 | 1 | 2 | 3;
+    arrivedEvent?: ArrivedEvent;
     type: TypeItem;
     linkto?: MapItem;
     property?: PropertyInfo;
+}
+
+export interface ArrivedEvent {
+    id: string;
+    name: string;
+    describe: string;
+    iconUrl: string;
+    effectCode: string;
+    mapItem: MapItem[];
 }
 
 export interface TypeItem {

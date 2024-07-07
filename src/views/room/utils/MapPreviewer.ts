@@ -1,9 +1,19 @@
-import { AmbientLight, PerspectiveCamera, Scene, Vector3, WebGLRenderer, Group, Object3D, Box3, Color } from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { MapItem, ItemType } from "@/interfaces/bace";
-import { GameMap } from "@/interfaces/game";
-import { loadItemTypeModules } from "@/utils/three/itemtype-loader";
-import { debounce } from "@/utils";
+import {
+	AmbientLight,
+	Box3,
+	Color,
+	Group,
+	Object3D,
+	PerspectiveCamera,
+	Scene,
+	SRGBColorSpace,
+	Vector3,
+	WebGLRenderer
+} from "three";
+import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
+import {ItemType, MapItem} from "@/interfaces/bace";
+import {loadItemTypeModules} from "@/utils/three/itemtype-loader";
+import {debounce} from "@/utils";
 
 export class MapPreviewer {
 	private renderer: WebGLRenderer;
@@ -23,6 +33,7 @@ export class MapPreviewer {
 		this.camera = new PerspectiveCamera(45, el.clientWidth / el.clientHeight, 0.1, 1000);
 
 		this.renderer.setSize(el.clientWidth, el.clientHeight);
+		this.renderer.outputColorSpace = SRGBColorSpace;
 		this.mapContainer = new Group();
 		this.models = {};
 		this.mapItemList = [];
@@ -35,7 +46,7 @@ export class MapPreviewer {
 		// this.scene.add(axesHelper);
 
 		//创建灯光
-		const light = new AmbientLight(0xffffff, 1.2); // soft white light
+		const light = new AmbientLight(0xffffff, 2); // soft white light
 		this.scene.add(light);
 
 		// 创建轨道控制器

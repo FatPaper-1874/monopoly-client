@@ -8779,6 +8779,7 @@ var spine;
                 this.texture = new THREE.Texture(image);
                 this.texture.flipY = false;
                 this.texture.needsUpdate = true;
+                this.texture.colorSpace = 'srgb';
             }
 
             setFilters(minFilter, magFilter) {

@@ -6,7 +6,7 @@ export class LoginCodeRenderer extends DiceRenderer {
 
     constructor(el: HTMLCanvasElement, rotate: boolean) {
         super(el, rotate);
-        const codePlaneGeometry = new THREE.ShapeGeometry(roundedRect(new THREE.Shape(), -0.8, -0.8, 1.6, 1.6, 0.2), 20);
+        const codePlaneGeometry = new THREE.ShapeGeometry(roundedRect(new THREE.Shape(), -0.8, -0.8, 1.6, 1.6, 0.2), 10);
         const codePlaneMaterial = new THREE.MeshBasicMaterial({
             opacity: 0,
             transparent: true,
@@ -25,6 +25,7 @@ export class LoginCodeRenderer extends DiceRenderer {
         const texture = await new Promise<THREE.Texture>((resolve, reject) => {
             textureLoader.load(imgUrl, (texture) => {
                 texture.matrixAutoUpdate = false
+                texture.colorSpace = THREE.SRGBColorSpace
                 resolve(texture);
             });
         });
