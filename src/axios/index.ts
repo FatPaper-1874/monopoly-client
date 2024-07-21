@@ -1,7 +1,9 @@
 import axios from "axios";
 import FPMessage from "@/components/utils/fp-message";
-import router from "@/router/index";
 import {__MONOPOLYSERVER__} from "../../global.config";
+import {useRouter} from "vue-router";
+
+const router = useRouter();
 
 axios.defaults.baseURL = __MONOPOLYSERVER__;
 axios.defaults.headers.common["Authorization"] = localStorage.getItem("token");
@@ -38,6 +40,8 @@ axios.interceptors.response.use(
                     type: "warning",
                     message: msg,
                 });
+                localStorage.removeItem('token');
+                router.replace('/login');
             } else {
                 //用户输入数据错误
                 FPMessage({
@@ -49,7 +53,6 @@ axios.interceptors.response.use(
         return response.data;
     },
     function (error) {
-        console.log("🚀 ~ file: index.d.ts:54 ~ error.response:", error.response);
         let message = "";
         switch (error.response.status) {
             case 400:
@@ -57,13 +60,7 @@ axios.interceptors.response.use(
                 break;
             case 401: {
                 message = "未授权，请重新登录(401)";
-                // FPMessage({
-                //     message, type: "error", delay: 1500, onClosed: () => {
-                //         localStorage.setItem("token", "");
-                //         router.replace({name: "login"});
-                //         return Promise.reject(message);
-                //     }
-                // })
+                localStorage.removeItem('token')
                 break;
             }
             case 403:

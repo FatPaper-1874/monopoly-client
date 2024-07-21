@@ -26,7 +26,7 @@ export default defineConfig({
                     'vue-router': 'VueRouter',
                     'vue-demi': 'VueDemi',
                     pinia: 'Pinia',
-                    three: 'THREE',
+                    three: '',
                     gsap: '',
                 }),
             ],

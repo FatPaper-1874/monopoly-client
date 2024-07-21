@@ -1,14 +1,17 @@
 import * as THREE from "three";
 import {debounce} from "@/utils";
 
-export class ThreeSceneBase{
+export class ThreeSceneBase {
+    protected canvasEl: HTMLCanvasElement;
+    protected containerEl: HTMLDivElement | undefined;
     protected renderer: THREE.WebGLRenderer;
     protected scene: THREE.Scene;
     protected camera: THREE.PerspectiveCamera;
     protected requestAnimationFrameId: number = -1;
     private resizeObserver: ResizeObserver | undefined;
 
-    constructor(canvas: HTMLCanvasElement, resize = true) {
+    constructor(canvas: HTMLCanvasElement) {
+        this.canvasEl = canvas;
         this.renderer = new THREE.WebGLRenderer({canvas});
         this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
         this.scene = new THREE.Scene();
@@ -16,12 +19,23 @@ export class ThreeSceneBase{
         // this.renderLoop();
 
         const parentEl = canvas.parentElement;
-        if (resize && parentEl) {
+        if (parentEl) {
             const tempDivEl = document.createElement('div');
-            tempDivEl.style.width = '100%';
-            tempDivEl.style.height = '100%';
+            Object.assign(tempDivEl.style, {
+                position: 'relative',
+                width: '100%',
+                height: '100%',
+            });
+            Object.assign(canvas.style, {
+                position: 'absolute ',
+                width: '100%',
+                height: '100%',
+                left: '0',
+                top: '0',
+            });
             tempDivEl.append(canvas);
             parentEl.append(tempDivEl)
+            this.containerEl = tempDivEl;
             const callback: ResizeObserverCallback = (entries) => {
                 if (entries.length === 0) return
                 const _parentEl = entries[0].target;
@@ -37,9 +51,15 @@ export class ThreeSceneBase{
         }
     }
 
-    protected renderLoop() {
+    protected setLoadingMaskVisible(visible: boolean) {
+        if (this.containerEl) {
+            if (visible) this.containerEl.setAttribute('loading', '');
+            else this.containerEl.removeAttribute('loading');
+        }
+    }
+
+    protected render() {
         this.renderer.render(this.scene, this.camera);
-        this.requestAnimationFrameId = requestAnimationFrame(this.renderLoop.bind(this));
     }
 
     protected destroy() {
@@ -47,5 +67,6 @@ export class ThreeSceneBase{
         cancelAnimationFrame(this.requestAnimationFrameId);
         this.scene.clear();
         this.renderer.dispose();
+        this.renderer.forceContextLoss();
     }
 }

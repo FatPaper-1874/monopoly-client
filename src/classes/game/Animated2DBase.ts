@@ -4,7 +4,7 @@ import {spine as SPINE} from "@/utils/spine-threejs";
 export class Animated2DBase {
     protected readonly baseUrl;
     protected readonly name;
-    protected readonly size;
+    public readonly size;
     protected currentAnimationName: string = "";
     protected animationNamesList: string[] = [];
     protected skeletonMesh: SPINE.threejs.SkeletonMesh | undefined;

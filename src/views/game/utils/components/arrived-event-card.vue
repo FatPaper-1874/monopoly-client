@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import {ArrivedEvent, PropertyInfo} from "@/interfaces/bace";
+import {ArrivedEvent, PropertyInfo} from "@/interfaces/game";
 import {ref} from "vue";
 
 // const {arrivedEvent} = defineProps<{ arrivedEvent: ArrivedEvent | null }>();

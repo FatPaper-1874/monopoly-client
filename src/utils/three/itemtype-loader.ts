@@ -1,5 +1,5 @@
 import { GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-import { ItemType } from "@/interfaces/bace";
+import { ItemType } from "@/interfaces/game";
 import { __MONOPOLYSERVER__ } from "../../../global.config";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 
@@ -25,6 +25,5 @@ export const loadItemTypeModules = async (itemTypeList: ItemType[]): Promise<{ i
 		});
 		promiseArr.push(promise);
 	});
-
 	return await Promise.all(promiseArr);
 };

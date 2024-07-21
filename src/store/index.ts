@@ -3,15 +3,18 @@ import {
     User,
     Room,
     Role,
+    ChatMessage,
+} from "@/interfaces/bace";
+import {
+
     MapItem,
     PlayerInfo,
     PropertyInfo,
     ItemType,
     ChanceCardInfo,
     Street,
-} from "../interfaces/bace";
+} from "@/interfaces/game"
 import {GameOverRule} from "@/enums/game";
-import {ChatMessage} from "../interfaces/bace";
 import {isFullScreen, isLandscape} from "@/utils";
 
 export const useLoading = defineStore("loading", {
@@ -170,12 +173,13 @@ export const useChat = defineStore("chat", {
     },
 });
 
-export const useDeviceStatus = defineStore('deviceStatus',{
-    state: ()=>{
-        return{
+export const useDeviceStatus = defineStore('deviceStatus', {
+    state: () => {
+        return {
             isFullScreen: false,
             isLandscape: false,
             isMobile: false,
+            isFocus: false
         }
     }
 })

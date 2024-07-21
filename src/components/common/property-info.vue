@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PropertyInfo } from "@/interfaces/bace";
+import { PropertyInfo } from "@/interfaces/game";
 import { PropertyLevel } from "@/utils/var";
 import { computed, ref } from "vue";
 

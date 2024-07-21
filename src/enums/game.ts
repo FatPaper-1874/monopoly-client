@@ -28,8 +28,6 @@ export enum ChanceCardOperateType {
 //与spine导出的角色文件中的动画名对应
 export enum RoleAnimations {
     Idle = 'idle',
-    RoleWalkStart = 'walk-start',
     RoleWalking = 'walking',
-    RoleWalkEnd = 'walk-end',
     Hi = 'hi'
 }

@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import {ThreeSceneBase} from "@/views/room/utils/ThreeSceneBase";
+import {ThreeSceneBase} from "@/utils/three/ThreeSceneBase";
 import {RoleModel} from "@/views/room/utils/RoleModel";
 import {EffectComposer} from "three/examples/jsm/postprocessing/EffectComposer";
 import {RenderPass} from "three/examples/jsm/postprocessing/RenderPass";
@@ -11,8 +11,8 @@ export class RolePreviewer extends ThreeSceneBase {
     private composer: EffectComposer;
     private renderPass: RenderPass;
 
-    constructor(canvas: HTMLCanvasElement, resize: boolean) {
-        super(canvas, resize);
+    constructor(canvas: HTMLCanvasElement) {
+        super(canvas);
         const light = new THREE.AmbientLight(0xffffff, 1);
         this.scene.add(light);
         this.renderer.setClearAlpha(0);
@@ -30,15 +30,16 @@ export class RolePreviewer extends ThreeSceneBase {
 
     protected renderLoop() {
         this.role && this.role.update();
-        super.renderLoop();
+        super.render();
         this.composer.render();
+        this.requestAnimationFrameId = requestAnimationFrame(this.renderLoop.bind(this));
     }
 
     public async loadRole(baseUrl: string, fileName: string) {
         this.scene.clear();
         this.role = new RoleModel(1, baseUrl, fileName);
         const model = await this.role.load();
-        console.log(model)
+        
         this.scene.add(model);
         this.role.doAnimation('hi', false);
         return this.role;

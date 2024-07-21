@@ -1,5 +1,5 @@
 import {GameEntity} from "@/classes/game/GameEntity";
-import {PlayerInfo} from "@/interfaces/bace";
+import {PlayerInfo} from "@/interfaces/game";
 import * as THREE from 'three'
 import {RoleAnimations} from "@/enums/game";
 

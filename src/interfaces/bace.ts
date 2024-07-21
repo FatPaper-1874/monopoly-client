@@ -1,5 +1,5 @@
 import {ChanceCardType, GameOverRule} from "@/enums/game";
-import {ChatMessageType, SocketMsgType} from "../enums/bace";
+import {ChatMessageType, SocketMsgType} from "@/enums/bace";
 
 export interface GameSetting {
     gameOverRule: GameOverRule; //游戏结束的判定规则
@@ -67,117 +67,6 @@ export interface RoomInfo {
     ownerName: string;
     roleList: Role[];
     gameSetting: GameSetting;
-}
-
-export interface MapItem {
-    id: string;
-    x: number;
-    y: number;
-	rotation: 0 | 1 | 2 | 3;
-    arrivedEvent?: ArrivedEvent;
-    type: TypeItem;
-    linkto?: MapItem;
-    property?: PropertyInfo;
-}
-
-export interface ArrivedEvent {
-    id: string;
-    name: string;
-    describe: string;
-    iconUrl: string;
-    effectCode: string;
-    mapItem: MapItem[];
-}
-
-export interface TypeItem {
-    id: string;
-    color: string;
-    name: string;
-    model: string;
-    size: number;
-}
-
-export interface PropertyInfo {
-    id: string;
-    name: string;
-    buildingLevel: number;
-    buildCost: number;
-    sellCost: number;
-    cost_lv0: number;
-    cost_lv1: number;
-    cost_lv2: number;
-    owner?: {
-        id: string;
-        name: string;
-        color: string;
-        avatar: string;
-    };
-}
-
-export interface PlayerInfo {
-    id: string;
-    user: User;
-    money: number;
-    properties: PropertyInfo[];
-    chanceCards: ChanceCardInfo[];
-    positionIndex: number;
-    isStop: boolean;
-    isBankrupted: boolean;
-    isOffline: boolean;
-}
-
-export interface ChanceCardInfo {
-    id: string;
-    name: string;
-    describe: string;
-    color: string;
-    type: ChanceCardType;
-    icon: string;
-}
-
-export interface GameInitInfo {
-    mapId: string;
-    mapName: string;
-    mapBackground: string;
-    mapItemsList: MapItem[];
-    mapIndexList: string[];
-    itemTypesList: ItemType[];
-    playerList: PlayerInfo[];
-    properties: PropertyInfo[];
-    chanceCards: ChanceCardInfo[];
-    streetsList: Street[];
-    currentPlayerInRound: string;
-    currentRound: number;
-    currentMultiplier: number;
-}
-
-export interface GameInfo {
-    currentPlayerInRound: string;
-    currentRound: number;
-    currentMultiplier: number;
-    playerList: PlayerInfo[];
-    properties: PropertyInfo[];
-}
-
-export interface ItemType {
-    id: string;
-    color: string;
-    name: string;
-    model: Model;
-    size: number;
-}
-
-export interface Model {
-    id: string;
-    name: string;
-    fileUrl: string;
-    fileName: string;
-}
-
-export interface Street {
-    id: string;
-    name: string;
-    increase: number;
 }
 
 export interface ChatMessage {

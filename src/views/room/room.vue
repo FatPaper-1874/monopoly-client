@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import MapPreview from "@/components/common/map-preview.vue";
+import MapPreviewer from "@/views/room/components/map-previewer/index.vue";
 import roomUserCard from "@/views/room/components/room-user-card.vue";
 import FpDialog from "@/components/utils/fp-dialog/fp-dialog.vue";
 import FPMessage from "@/components/utils/fp-message";
@@ -10,14 +10,14 @@ import { useLoading, useRoomInfo } from "@/store";
 import { useUserInfo } from "@/store";
 import { getMapsList } from "@/utils/api/map";
 import { GameMap } from "@/interfaces/game";
-import { MapPreviewer } from "@/views/room/utils/MapPreviewer";
+import { MapPreviewerRenderer } from "@/views/room/utils/MapPreviewerRenderer";
 import { GameSocketClient } from "@/utils/websocket/fp-ws-client";
 import { computed, onBeforeMount, onBeforeUnmount, onMounted, reactive, ref, toRaw, watch } from "vue";
 
 const roomInfoStore = useRoomInfo();
 const userInfoStore = useUserInfo();
 
-let mapPreview: MapPreviewer;
+let mapPreview: MapPreviewerRenderer;
 
 const playerList = computed(() => roomInfoStore.userList);
 const ownerName = computed(() => roomInfoStore.ownerName);
@@ -77,7 +77,7 @@ onMounted(async () => {
 	_currentMap.value = _mapList.value.find((_item) => _item.id === gameSetting.value.mapId);
 	const threeCanvas = document.getElementById("map-preview__canvas_inroom") as HTMLCanvasElement;
 	if (threeCanvas) {
-		mapPreview = new MapPreviewer(threeCanvas);
+		mapPreview = new MapPreviewerRenderer(threeCanvas);
 		if (_currentMap.value) {
 			await mapPreview.loadModels(_currentMap.value.itemTypes);
 			await mapPreview.loadMapItems(_currentMap.value.mapItems);
@@ -87,7 +87,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-	if (mapPreview) mapPreview.distory();
+	if (mapPreview) mapPreview.destroy();
 });
 
 let socketClient: GameSocketClient;
@@ -202,7 +202,7 @@ const handleUpdateGameSetting = () => {
 				v-model:selected-key="_tempMapSelectedId"
 			>
 				<template #item="map">
-					<MapPreview :map="map" />
+					<MapPreviewer :map="map" />
 				</template>
 			</ItemSelector>
 		</template>

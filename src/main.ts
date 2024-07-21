@@ -42,6 +42,8 @@ import {
     faClock,
     faClockRotateLeft,
     faVideo,
+    faBullhorn,
+    faBug
 } from "@fortawesome/free-solid-svg-icons";
 import {chanceCardSource, chanceCardTarget} from "./directives/chanceCardDrag";
 import {useDeviceStatus} from "@/store";
@@ -74,6 +76,8 @@ library.add(faBolt,
     faClock,
     faClockRotateLeft,
     faVideo,
+    faBullhorn,
+    faBug
 );
 const pinia = createPinia()
 createApp(App)
@@ -86,10 +90,12 @@ createApp(App)
 
 initDeviceStatusListener();
 
+
 function initDeviceStatusListener() {
     const deviceStatus = useDeviceStatus();
     deviceStatus.isFullScreen = _isFullScreen();
     deviceStatus.isLandscape = _isLandscape();
+    deviceStatus.isFocus = document.visibilityState === "visible";
 
     window.addEventListener('fullscreenchange', (e) => {
         deviceStatus.isFullScreen = _isFullScreen();
@@ -98,4 +104,8 @@ function initDeviceStatusListener() {
     window.addEventListener('resize', (e) => {
         deviceStatus.isLandscape = _isLandscape();
     })
+
+    document.addEventListener("visibilitychange", () => {
+        deviceStatus.isFocus = document.visibilityState === "visible";
+    });
 }

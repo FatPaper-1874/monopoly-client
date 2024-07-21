@@ -7695,7 +7695,7 @@ var spine;
         static logBones(skeleton) {
             for (let i = 0; i < skeleton.bones.length; i++) {
                 let bone = skeleton.bones[i];
-                console.log(bone.data.name + ", " + bone.a + ", " + bone.b + ", " + bone.c + ", " + bone.d + ", " + bone.worldX + ", " + bone.worldY);
+                ;
             }
         }
     }
@@ -8540,7 +8540,8 @@ var spine;
                     fragmentShader: fragmentShader,
                     side: THREE.DoubleSide,
                     transparent: true,
-                    alphaTest: 0.5
+                    alphaTest: 0.5,
+                    depthWrite: false,
                 };
                 customizer(parameters);
                 super(parameters);

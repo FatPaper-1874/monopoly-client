@@ -1,5 +1,5 @@
 import { ChanceCardOperateType } from "@/enums/game";
-import { ChanceCardInfo } from "@/interfaces/bace";
+import { ChanceCardInfo } from "@/interfaces/game";
 import { lightenColor } from "@/utils";
 import useEventBus from "@/utils/event-bus";
 import { Directive, DirectiveBinding, toRaw } from "vue";

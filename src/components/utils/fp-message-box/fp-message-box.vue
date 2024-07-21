@@ -6,13 +6,13 @@ export interface Props {
 	title?: string;
 	content?: any;
 	confirmText?: string;
-	cancleText?: string;
+	cancelText?: string;
 }
 const props = withDefaults(defineProps<Props>(), {
 	title: "Message Box",
 	content: "test",
 	confirmText: "确认",
-	cancleText: "取消",
+	cancelText: "取消",
 });
 
 const ContentContainer = ref<HTMLElement | null>(null);
@@ -53,7 +53,7 @@ defineExpose({
 			<div ref="ContentContainer" class="fp-message-box__content"></div>
 			<div class="fp-message-box__footer">
 				<button class="confirm__btn" @click="handleConfirm">{{ confirmText }}</button>
-				<button class="cancle__btn" @click="handleCancle">{{ cancleText }}</button>
+				<button class="cancle__btn" @click="handleCancle">{{ cancelText }}</button>
 			</div>
 		</div>
 	</div>

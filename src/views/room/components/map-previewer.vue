@@ -1,22 +1,22 @@
 <script setup lang="ts">
 import { GameMap } from "@/interfaces/game";
 import { onMounted, onUnmounted } from "vue";
-import { MapPreviewer } from "@/views/room/utils/MapPreviewer";
+import { MapPreviewerRenderer } from "@/views/room/utils/MapPreviewerRenderer";
 
 const { map } = defineProps<{ map: GameMap }>();
 
-let mapPreview: MapPreviewer;
+let mapPreview: MapPreviewerRenderer;
 
 onMounted(async () => {
 	const threeCanvas = document.getElementById(map.id) as HTMLCanvasElement;
-	mapPreview = new MapPreviewer(threeCanvas);
+	mapPreview = new MapPreviewerRenderer(threeCanvas);
 	await mapPreview.loadModels(map.itemTypes);
 	await mapPreview.loadMapItems(map.mapItems);
 	mapPreview.lockCamera(true);
 });
 
 onUnmounted(() => {
-	if (mapPreview) mapPreview.distory();
+	if (mapPreview) mapPreview.destroy();
 });
 </script>
 

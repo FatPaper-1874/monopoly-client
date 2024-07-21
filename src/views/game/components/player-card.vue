@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PlayerInfo } from "@/interfaces/bace";
+import { PlayerInfo } from "@/interfaces/game";
 import { PropType, computed } from "vue";
 import { useGameInfo } from "@/store/index";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";

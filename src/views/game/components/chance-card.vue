@@ -1,52 +1,57 @@
 <script setup lang="ts">
 import {computed, watch} from "vue";
+import {ChanceCardInfo} from "@/interfaces/game";
 
-const props = defineProps({
-  id: {type: String, default: ""},
-  name: {type: String, default: ""},
-  describe: {type: String, default: ""},
-  icon: {type: String, default: ""},
-  color: {type: String, default: "rgb(255, 187, 50)"},
-});
+const props = defineProps<{ chanceCard: ChanceCardInfo, disable: boolean }>();
 
 const iconUrl = computed(() => {
-  return props.icon.includes("http") ? props.icon : `http://${props.icon}`;
+  return props.chanceCard.icon.includes("http") ? props.chanceCard.icon : `http://${props.chanceCard.icon}`;
 })
 </script>
 
 <template>
-  <div class="chance-card" :style="{ border: `0.4em solid ${props.color}` }">
-    <div class="icon" v-if="icon"><img :src="iconUrl" alt=""/></div>
-    <div class="name" :style="{ color }">{{ name }}</div>
-    <div class="describe" :style="{ color: props.color }">{{ describe }}</div>
+  <div v-chanceCardSource="chanceCard" class="chance-card" :class="{ disable }"
+       :style="{ border: `0.4em solid ${chanceCard.color}` }">
+    <div class="icon" v-if="chanceCard.icon"><img :src="iconUrl" alt=""/></div>
+    <div class="name" :style="{ color: chanceCard.color }">{{ chanceCard.name }}</div>
+    <div class="describe" :style="{ color: chanceCard.color }">{{ chanceCard.describe }}</div>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .chance-card {
-  font-size: 16px;
-  min-width: 10.5em;
-  min-height: 14em;
-  width: 10.5em;
-  height: 14em;
+  min-width: 9rem;
+  min-height: 12rem;
+  width: 9rem;
+  height: 12rem;
+  font-size: 0.8rem;
   background-color: #ffffff;
   box-sizing: border-box;
-  border-radius: 1.3em;
-  box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.12);
+  border-radius: 20px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.12);
   user-select: none;
   display: flex;
   justify-content: center;
   flex-direction: column;
   align-items: center;
   overflow: hidden;
+  transition: .3s;
+
+  &.disable {
+    filter: grayscale(1);
+    pointer-events: none;
+    cursor: not-allowed;
+  }
 
   & > .icon {
     margin-bottom: 0.8em;
 
     & > img {
-      $img-size: 3.6em;
+      $img-size: 4.2em;
       width: $img-size;
       height: $img-size;
+      pointer-events: none;
+      user-select: none;
     }
   }
 

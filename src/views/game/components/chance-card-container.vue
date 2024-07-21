@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import {useGameInfo, useUserInfo} from "@/store/index";
+import {useGameInfo, useUserInfo} from "@/store";
 import {computed, provide, ref, watch, toRaw} from "vue";
-import {ChanceCardInfo} from "@/interfaces/bace";
+import {ChanceCardInfo} from "@/interfaces/game";
 import ChanceCard from "./chance-card.vue";
 import {GameSocketClient} from "@/utils/websocket/fp-ws-client";
-import {useUtil} from "@/store/index";
+import {useUtil} from "@/store";
 
 const gameInfoStore = useGameInfo();
 const userInfoStore = useUserInfo();
@@ -80,6 +80,7 @@ provide("selectedId", _selectedId);
   opacity: 0;
   transform: translateY(-50rem);
 }
+
 .chance-card-container-vue {
   width: 10rem;
   height: 12rem;

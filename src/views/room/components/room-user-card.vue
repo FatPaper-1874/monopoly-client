@@ -26,7 +26,7 @@ let rolePreviewer: RolePreviewer | undefined;
 onMounted(() => {
   nextTick(() => {
     const canvasEl = document.getElementById(canvasId) as HTMLCanvasElement;
-    rolePreviewer = new RolePreviewer(canvasEl, true);
+    rolePreviewer = new RolePreviewer(canvasEl);
     watch(() => props.user, (newUser, oldUser) => {
       if (rolePreviewer && newUser && newUser.role.id !== (oldUser?.role.id || "")) {
         rolePreviewer.loadRole(`http://${newUser.role.baseUrl}/`, newUser.role.fileName);

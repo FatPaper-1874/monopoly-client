@@ -1,20 +1,25 @@
 import {
-    AmbientLight, Box3, DirectionalLight,
+    AmbientLight,
+    Box3,
+    Color,
+    DirectionalLight,
     DoubleSide,
     Group,
-    HemisphereLight, Material,
+    HemisphereLight,
     MathUtils,
     Mesh,
     MeshBasicMaterial,
+    MeshStandardMaterial,
     Object3D,
     PerspectiveCamera,
     PlaneGeometry,
-    PointLight,
-    PointLightHelper,
     Quaternion,
     Raycaster,
     Scene,
+    Sprite,
+    SpriteMaterial,
     SRGBColorSpace,
+    Texture,
     TextureLoader,
     Vector2,
     Vector3,
@@ -23,8 +28,8 @@ import {
 
 import {gsap} from "gsap";
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
-import {ChanceCardInfo, ItemType, MapItem, PlayerInfo, PropertyInfo} from "@/interfaces/bace";
-import {useGameInfo, useMapData, usePlayerWalkAnimation, useUserInfo} from "@/store";
+import {ChanceCardInfo, ItemType, MapItem, PlayerInfo, PropertyInfo} from "@/interfaces/game";
+import {useDeviceStatus, useGameInfo, useMapData, usePlayerWalkAnimation, useUserInfo} from "@/store";
 import {Component, ComponentPublicInstance, createApp, toRaw, watch, WatchStopHandle} from "vue";
 import {loadItemTypeModules} from "@/utils/three/itemtype-loader";
 import {GameSocketClient} from "@/utils/websocket/fp-ws-client";
@@ -33,7 +38,7 @@ import PropertyInfoCard from "./components/property-info-card.vue";
 import ArrivedEventCard from "./components/arrived-event-card.vue";
 import moneyPopTip from "../components/money-pop-tip.vue";
 import {loadHouseModels} from "./house-loader";
-import {debounce, getScreenPosition, hexToRgbNormalized} from "@/utils";
+import {debounce, getScreenPosition} from "@/utils";
 import {EffectComposer} from "three/examples/jsm/postprocessing/EffectComposer";
 import {RenderPass} from "three/examples/jsm/postprocessing/RenderPass";
 import {OutlinePass} from "three/examples/jsm/postprocessing/OutlinePass";
@@ -268,6 +273,9 @@ export class GameRenderer {
             this.updatePlayerPosition(player);
         });
 
+        //睡觉监听
+        this.addPlayerSleepWatcher();
+
         //玩家模型走路动画监听
         this.addPlayerWalkWatcher();
 
@@ -396,6 +404,24 @@ export class GameRenderer {
         controls.target.copy(targetPos);
     }
 
+    private addPlayerSleepWatcher() {
+        const _this = this;
+        const gameInfoStore = useGameInfo();
+        gameInfoStore.playersList.forEach((player, index) => {
+            _this.watcherList.push(
+                watch(
+                    () => gameInfoStore.playersList[index].stop,
+                    (newStop) => {
+                        if (newStop > 0) {
+                            const playerEntity = Array.from(this.playerEntites.values()).find(p => p.playerInfo.id === player.id);
+                            playerEntity && playerEntity.doAnimation("sleeping", true);
+                        }
+                    },
+                )
+            );
+        });
+    }
+
     private addPlayerWalkWatcher() {
         const mapDataStore = useMapData();
         const playerWalkStore = usePlayerWalkAnimation();
@@ -477,11 +503,9 @@ export class GameRenderer {
 
             if (intersects.length > 0) {
                 const firstInstance = intersects[0];
-                const target = firstInstance.object;
-
-                let temp: Object3D | null = target;
+                let temp: Object3D | null = firstInstance.object;
                 while (temp) {
-                    if (temp.userData.isProperty) {
+                    if (temp.userData.id) {
                         GameSocketClient.getInstance().useChanceCard(chanceCard.id, temp.userData.id);
                         break;
                     } else {
@@ -498,7 +522,6 @@ export class GameRenderer {
     }
 
     private outlineModels(models: Object3D[]) {
-        console.log(models);
         this.chanceCardTargetOutlinePass.selectedObjects = models;
     }
 
@@ -531,23 +554,23 @@ export class GameRenderer {
                     object.traverse(o => {
                         //@ts-ignore
                         if (o.isMesh) {
-                            const basicMaterial = (<Mesh>o).material as Material;
+                            // const basicMaterial = (<Mesh>o).material as Material;
+                            const basicMaterial = new MeshStandardMaterial();
                             if (newProperty.owner) {
-                                const {r, g, b} = hexToRgbNormalized(newProperty.owner.color);
-                                console.log(r, g, b);
-                                basicMaterial.onBeforeCompile = function (shader) {
-                                    shader.fragmentShader = shader.fragmentShader.replace(
-                                        '#include <dithering_fragment>',
-                                        `
-                                        #include <dithering_fragment>
-                                        gl_FragColor = vec4(${r} * gl_FragColor.r, ${g} * gl_FragColor.g, ${b} * gl_FragColor.b, gl_FragColor.a);
-                                        `
-                                    )
-                                }
+                                basicMaterial.color = new Color(Number(newProperty.owner.color.replace("#", "0x")));
+                                // const {r, g, b} = hexToRgbNormalized(newProperty.owner.color);
+                                // basicMaterial.onBeforeCompile = function (shader) {
+                                //     shader.fragmentShader = shader.fragmentShader.replace(
+                                //         '#include <dithering_fragment>',
+                                //         `
+                                //         #include <dithering_fragment>
+                                //         gl_FragColor = vec4(${r} * gl_FragColor.r, ${g} * gl_FragColor.g, ${b} * gl_FragColor.b, gl_FragColor.a);
+                                //         `
+                                //     )
+                                // }
+                            } else {
+                                basicMaterial.color.set("#cccccc");
                             }
-                            // else {
-                            //     // basicMaterial.color.set("#cccccc");
-                            // }
                             (<Mesh>o).material = basicMaterial;
                         }
                     })
@@ -581,11 +604,30 @@ export class GameRenderer {
         this.playerPosition.set(playerId, (sourceIndex + stepNum) % total);
         const playerEntity = this.playerEntites.get(playerId);
         if (playerEntity) {
-            await playerEntity.doAnimation(RoleAnimations.RoleWalkStart);
-            playerEntity.doAnimation(RoleAnimations.Idle, true);
+            // playerEntity.doAnimation(RoleAnimations.Idle, true);
             const playerModule = playerEntity.model;
             playerEntity.doAnimation(RoleAnimations.RoleWalking, true);
+
+            //页面进入后台后取消动画
+            let animationShouldStop = false;
+            let currentAnimation: gsap.core.Tween | null = null;
+            const deviceStatusStore = useDeviceStatus();
+            deviceStatusStore.$subscribe((mutation, state) => {
+                animationShouldStop = state.isFocus;
+            })
             for (let i = 1; i <= stepNum; i++) {
+                //页面进入后台后取消动画
+                if (animationShouldStop) {
+                    currentAnimation && currentAnimation.kill();
+                    const endMapItem = this.getMapItem((sourceIndex + stepNum) % total);
+                    if (endMapItem) {
+                        const {x, y, z} = endMapItem.position;
+                        playerModule.position.set(x, y + BLOCK_HEIGHT, z);
+                    } else {
+                        throw new Error("在读取EndMapItem错误");
+                    }
+                    break;
+                }
                 const nextMapItem = this.getMapItem((sourceIndex + i) % total); //下一步
                 if (nextMapItem) {
                     const {x: nextMapItemScreenX, y: nextMapItemScreenY} = getScreenPosition(nextMapItem, this.camera);
@@ -595,21 +637,21 @@ export class GameRenderer {
                         nextMapItemScreenX > playerScreenX &&
                         (currentAnimationName === RoleAnimations.RoleWalking || currentAnimationName === RoleAnimations.Idle)
                     ) {
-                        gsap.to(playerEntity.model.scale, {x: 1, duration: 0.3});
+                        currentAnimation = gsap.to(playerEntity.model.scale, {x: 1, duration: 0.3});
                     } else if (
                         nextMapItemScreenX < playerScreenX &&
                         (currentAnimationName === RoleAnimations.RoleWalking || currentAnimationName === RoleAnimations.Idle)
                     ) {
-                        gsap.to(playerEntity.model.scale, {x: -1, duration: 0.3});
+                        currentAnimation = gsap.to(playerEntity.model.scale, {x: -1, duration: 0.3});
                     }
                     const {x, y, z} = nextMapItem.position;
-                    await gsap.to(playerModule.position, {x, y: y + BLOCK_HEIGHT, z, duration: 0.6});
+                    currentAnimation = gsap.to(playerModule.position, {x, y: y + BLOCK_HEIGHT, z, duration: 0.6});
+                    await currentAnimation.play();
                     // await gsap.to(playerModule.position, {x, y, z, duration: 0.6});
                 } else {
                     throw new Error("在设置角色运动朝向时读取MapItem错误");
                 }
             }
-            await playerEntity.doAnimation(RoleAnimations.RoleWalkEnd);
             playerEntity.doAnimation(RoleAnimations.Idle, true);
         }
         GameSocketClient.getInstance().AnimationComplete();
@@ -669,20 +711,25 @@ export class GameRenderer {
     }
 
     private async loadPlayersModules(playerList: Array<PlayerInfo>) {
+        const playerModelSize = 0.7;
         for await (const player of playerList) {
             try {
+
                 this.playerPosition.set(player.id, toRaw(player.positionIndex));
                 const playerEntity = new PlayerEntity(
-                    0.7,
+                    playerModelSize,
                     `http://${player.user.role.baseUrl}/`,
                     player.user.role.fileName,
                     player
                 );
                 await playerEntity.load();
                 this.playerEntites.set(player.id, playerEntity);
+                const nameSprite = createTextSprite(player.user.username, 32, player.user.color, 5);
+                nameSprite.position.set(0, playerModelSize + 0.05, 0)
+                playerEntity.model.add(nameSprite);
                 this.scene.add(playerEntity.model);
             } catch (e) {
-                console.log(e);
+
             }
         }
     }
@@ -690,7 +737,7 @@ export class GameRenderer {
     private async loadHousesModels(houseNameList: string[]) {
         const modelList = await loadHouseModels(houseNameList);
         modelList.forEach((model) => {
-            console.log("🚀 ~ GameRenderer ~ modelList.forEach ~ model:", model);
+            ;
             this.housesModules.set(model.name, model.glft.scene);
         });
     }
@@ -725,11 +772,14 @@ export class GameRenderer {
                 const arrivedEvent = mapItem.arrivedEvent;
                 textureLoader.load(`http://${arrivedEvent.iconUrl}`, (texture) => {
                     // texture.matrixAutoUpdate = false
+
+                    texture.colorSpace = SRGBColorSpace;
                     const planeGeometry = new PlaneGeometry(1, 1);
                     const planeMaterial = new MeshBasicMaterial({
                         map: texture,
                         side: DoubleSide,
-                        transparent: true
+                        transparent: true,
+                        depthWrite: false,
                     });
                     const iconPlane = new Mesh(planeGeometry, planeMaterial);
                     iconPlane.rotateX(Math.PI / 2)
@@ -750,7 +800,7 @@ export class GameRenderer {
                         iconPlane.quaternion.copy(quaternion);
                         this.arrivedEventIcons.set(arrivedEvent.id, iconPlane)
                         this.mapContainer.add(iconPlane);
-                        this.setItemPositionOnMap(iconPlane, mapItem.x, mapItem.y, 0, BLOCK_HEIGHT + 0.01)
+                        this.setItemPositionOnMap(iconPlane, mapItem.x, mapItem.y, 0, BLOCK_HEIGHT + 0.01);
                     }
                 });
             }
@@ -788,7 +838,7 @@ export class GameRenderer {
 
         const {css2DObject, appInstance, unmount} = createCSS2DObjectFromVue(component, props);
 
-        position.y += 1.1;
+        position.y += (playerEntity.size + 0.1);
         css2DObject.position.copy(position);
         this.scene.add(css2DObject);
         delay && setTimeout(unmount, delay);
@@ -812,4 +862,36 @@ function createCSS2DObjectFromVue(rootComponent: Component, rootProps?: Record<s
 
     // 返回CSS2DObject
     return {css2DObject, appInstance, containerEl, unmount};
+}
+
+function createTextSprite(text: string, fontSize: number, color: string, strokeWidth: number) {
+    const canvas = document.createElement("canvas");
+    const resolution = 10;
+    const h = fontSize * resolution;
+    const w = fontSize * resolution;
+    canvas.width = w;
+    canvas.height = h;
+    const c = canvas.getContext("2d") as CanvasRenderingContext2D;
+    // 文字
+    c.beginPath();
+    c.translate(w / 2, h / 2);
+    c.fillStyle = color;
+    c.font = `bold ${fontSize}px ContentFont`;
+    c.textBaseline = "middle";
+    c.textAlign = "center";
+    c.lineWidth = strokeWidth;
+    c.strokeStyle = "#fff";
+    c.strokeText(text, 0, 0);
+    c.fillText(text, 0, 0);
+    const texture = new Texture(canvas);
+    texture.needsUpdate = true;
+    texture.colorSpace = SRGBColorSpace;
+    const material = new SpriteMaterial({
+        map: texture,
+        depthWrite: false,
+        transparent: true,
+        side: DoubleSide,
+
+    });
+    return new Sprite(material);
 }
