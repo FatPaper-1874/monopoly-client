@@ -60,21 +60,26 @@ export class GameRenderer {
     private renderPass: RenderPass;
     private chanceCardTargetOutlinePass: OutlinePass;
 
-    private mapContainer: Group;
-    private mapModules: Map<string, Group>;
-    private mapItems: Map<string, Group>;
-    private playerEntites: Map<string, PlayerEntity>;
-    private housesModules: Map<string, Group>;
-    private housesItems: Map<string, Group>;
-    private arrivedEventIcons: Map<string, Mesh>;
-    private playerPosition: Map<string, number>;
-    private requestAnimationFrameId: number;
+    private mapContainer: Group = new Group();
+    private mapModules: Map<string, Group> = new Map<string, Group>();
+    private mapItems: Map<string, Group> = new Map<string, Group>();
+    private playerEntities: Map<string, PlayerEntity> = new Map<string, PlayerEntity>();
+    private housesModules: Map<string, Group> = new Map<string, Group>();
+    private housesItems: Map<string, Group> = new Map<string, Group>();
+    private arrivedEventIcons: Map<string, Mesh> = new Map<string, Mesh>();
+    private playerPosition: Map<string, number> = new Map<string, number>();
+    private requestAnimationFrameId: number = -1;
 
-    private watcherList: WatchStopHandle[] = [];
+    private playerWatchers: Map<string, {
+        stopWatcher: WatchStopHandle | undefined,
+        moneyWatcher: WatchStopHandle | undefined,
+        bankruptWatcher: WatchStopHandle | undefined,
+    }> = new Map();
+    private commonWatchers: WatchStopHandle[] = [];
 
-    private isLockingRole: boolean;
+    private isLockingRole: boolean = false;
 
-    private currentFocusModule: Object3D | null;
+    private currentFocusModule: Object3D | null = null;
 
     private propertyInfoLabel: CSS2DObject;
     private propertyInfoLabelInstance: ComponentPublicInstance;
@@ -106,19 +111,6 @@ export class GameRenderer {
         this.composer.addPass(this.chanceCardTargetOutlinePass);
         const gammaPass = new ShaderPass(GammaCorrectionShader);
         this.composer.addPass(gammaPass);
-
-        this.mapContainer = new Group();
-        this.mapModules = new Map<string, Group>();
-        this.mapItems = new Map<string, Group>();
-        this.playerEntites = new Map<string, PlayerEntity>();
-        this.housesModules = new Map<string, Group>();
-        this.housesItems = new Map<string, Group>();
-        this.arrivedEventIcons = new Map<string, Mesh>();
-        this.playerPosition = new Map<string, number>();
-        this.requestAnimationFrameId = -1;
-        this.isLockingRole = true;
-
-        this.currentFocusModule = null;
 
         const {
             css2DObject: propertyCSS2DObject,
@@ -209,12 +201,12 @@ export class GameRenderer {
             this.handlePropertyRaycaster(propertyRaycaster, pointer);
             this.handleArrivedEventRaycaster(propertyRaycaster, pointer);
 
-            if (this.isLockingRole && this.playerEntites.has(userInfoStore.userId)) {
-                this.updateCamera(controls, this.playerEntites.get(userInfoStore.userId)!.model, 5, 30);
+            if (this.isLockingRole && this.playerEntities.has(userInfoStore.userId)) {
+                this.updateCamera(controls, this.playerEntities.get(userInfoStore.userId)!.model, 5, 30);
             }
             controls.update();
 
-            Array.from(this.playerEntites.values()).forEach((player) => {
+            Array.from(this.playerEntities.values()).forEach((player) => {
                 player.model.lookAt(this.camera.position);
                 player.update();
             });
@@ -273,14 +265,11 @@ export class GameRenderer {
             this.updatePlayerPosition(player);
         });
 
-        //睡觉监听
-        this.addPlayerSleepWatcher();
+        //玩家数据监听
+        this.addPlayerStateWatcher();
 
         //玩家模型走路动画监听
         this.addPlayerWalkWatcher();
-
-        //玩家金钱变化监听,金钱失去或得到效果
-        this.addPlayerMoneyWatcher();
     }
 
     private initChanceCard() {
@@ -389,9 +378,14 @@ export class GameRenderer {
         }
     }
 
-    public distory() {
+    public destroy() {
         cancelAnimationFrame(this.requestAnimationFrameId);
-        this.watcherList.forEach((watcherStopHandle) => watcherStopHandle());
+        Array.from(this.playerWatchers.values()).forEach(watchers => {
+            watchers.stopWatcher && watchers.stopWatcher();
+            watchers.moneyWatcher && watchers.moneyWatcher();
+            watchers.bankruptWatcher && watchers.bankruptWatcher();
+        })
+        this.commonWatchers.forEach(f => f());
     }
 
     private updateCamera(controls: OrbitControls, targetObject: Object3D, followDistance: number, followAngleY: number) {
@@ -404,21 +398,46 @@ export class GameRenderer {
         controls.target.copy(targetPos);
     }
 
-    private addPlayerSleepWatcher() {
-        const _this = this;
+    private addPlayerStateWatcher() {
         const gameInfoStore = useGameInfo();
         gameInfoStore.playersList.forEach((player, index) => {
-            _this.watcherList.push(
-                watch(
-                    () => gameInfoStore.playersList[index].stop,
-                    (newStop) => {
-                        if (newStop > 0) {
-                            const playerEntity = Array.from(this.playerEntites.values()).find(p => p.playerInfo.id === player.id);
-                            playerEntity && playerEntity.doAnimation("sleeping", true);
-                        }
-                    },
-                )
-            );
+            const stopWatcher = watch(
+                () => gameInfoStore.playersList[index].stop,
+                (newStop) => {
+                    if (newStop > 0) {
+                        const playerEntity = Array.from(this.playerEntities.values()).find(p => p.playerInfo.id === player.id);
+                        playerEntity && playerEntity.doAnimation("sleeping", true);
+                    }
+                },
+                {immediate: true}
+            )
+            const moneyWatcher = watch(
+                () => gameInfoStore.playersList[index].money,
+                (newMoney, oldMoney = 0) => {
+                    this.createPopoverOnPlayerTop(player.user.userId, moneyPopTip, {money: newMoney - oldMoney}, 2000);
+                },
+                {immediate: true}
+            )
+            const bankruptWatcher = watch(
+                () => gameInfoStore.playersList[index].isBankrupted,
+                (isBankrupted) => {
+                    if (!isBankrupted) return;
+                    const playerEntity = Array.from(this.playerEntities.values()).find(p => p.playerInfo.id === player.id);
+                    playerEntity && playerEntity.doAnimation("failed", true);
+                    const watchers = this.playerWatchers.get(player.id);
+                    if (watchers) {
+                        watchers.stopWatcher && watchers.stopWatcher();
+                        watchers.moneyWatcher && watchers.moneyWatcher();
+                        watchers.bankruptWatcher && watchers.bankruptWatcher();
+                    }
+                },
+                {immediate: true}
+            )
+            this.playerWatchers.set(player.id, {
+                stopWatcher,
+                moneyWatcher,
+                bankruptWatcher,
+            })
         });
     }
 
@@ -426,7 +445,7 @@ export class GameRenderer {
         const mapDataStore = useMapData();
         const playerWalkStore = usePlayerWalkAnimation();
 
-        this.watcherList.push(
+        this.commonWatchers.push(
             watch(playerWalkStore, (newVal) => {
                 const sourcePosition = toRaw(this.playerPosition.get(newVal.walkPlayerId)) as number;
                 const mapIndexLength = toRaw(mapDataStore.mapIndexList.length);
@@ -437,7 +456,7 @@ export class GameRenderer {
 
     private addPropertyLevelWatcher() {
         const gameInfoStore = useGameInfo();
-        this.watcherList.push(
+        this.commonWatchers.push(
             watch(
                 () => gameInfoStore.propertiesList,
                 (newList, oldList) => {
@@ -457,22 +476,6 @@ export class GameRenderer {
         );
     }
 
-    private addPlayerMoneyWatcher() {
-        const _this = this;
-        const gameInfoStore = useGameInfo();
-        gameInfoStore.playersList.forEach((player, index) => {
-            _this.watcherList.push(
-                watch(
-                    () => gameInfoStore.playersList[index].money,
-                    (newMoney, oldMoney = 0) => {
-                        this.createPopoverOnPlayerTop(player.user.userId, moneyPopTip, {money: newMoney - oldMoney}, 2000);
-                    },
-                    {immediate: true}
-                )
-            );
-        });
-    }
-
     private addChanceCardUseWatcher() {
         const eventEmitter = useEventBus();
         eventEmitter.on(ChanceCardOperateType.HOVER, handleChanceCardHover.bind(this));
@@ -483,8 +486,8 @@ export class GameRenderer {
                 case ChanceCardType.ToSelf:
                     this.outlineModels(this.getModulesByChanceCardType(ChanceCardType.ToSelf));
                     break;
-                case ChanceCardType.ToOtherPlayer:
-                    this.outlineModels(this.getModulesByChanceCardType(ChanceCardType.ToOtherPlayer));
+                case ChanceCardType.ToPlayer:
+                    this.outlineModels(this.getModulesByChanceCardType(ChanceCardType.ToPlayer));
                     break;
                 case ChanceCardType.ToProperty:
                     this.outlineModels(this.getModulesByChanceCardType(ChanceCardType.ToProperty));
@@ -600,9 +603,9 @@ export class GameRenderer {
     }
 
     private async updatePlayerPositionByStep(playerId: string, sourceIndex: number, stepNum: number, total: number) {
-        if (!this.playerEntites.has(playerId)) return;
+        if (!this.playerEntities.has(playerId)) return;
         this.playerPosition.set(playerId, (sourceIndex + stepNum) % total);
-        const playerEntity = this.playerEntites.get(playerId);
+        const playerEntity = this.playerEntities.get(playerId);
         if (playerEntity) {
             // playerEntity.doAnimation(RoleAnimations.Idle, true);
             const playerModule = playerEntity.model;
@@ -660,9 +663,9 @@ export class GameRenderer {
     private updatePlayerPosition(player: PlayerInfo) {
         const {x, y, z} = this.getMapItemPosition(player.positionIndex);
 
-        if (!this.playerEntites.has(player.id)) return;
-        this.playerEntites.get(player.id)!.model.position.set(x, y + BLOCK_HEIGHT, z);
-        // this.playerEntites.get(player.id)!.model.position.set(x, y, z);
+        if (!this.playerEntities.has(player.id)) return;
+        this.playerEntities.get(player.id)!.model.position.set(x, y + BLOCK_HEIGHT, z);
+        // this.playerEntities.get(player.id)!.model.position.set(x, y, z);
     }
 
     private getMapItemPosition(index: number) {
@@ -694,16 +697,16 @@ export class GameRenderer {
     private getModulesByChanceCardType(type: ChanceCardType) {
         const chanceCardTargetEachType: Record<ChanceCardType, Object3D[]> = {
             [ChanceCardType.ToSelf]: (() => {
-                const selfEntity = this.playerEntites.get(useUserInfo().userId);
+                const selfEntity = this.playerEntities.get(useUserInfo().userId);
                 return selfEntity ? [selfEntity.model] : [];
             })(),
-            [ChanceCardType.ToOtherPlayer]: (() =>
-                Array.from(this.playerEntites.values())
-                    .filter((playerEntity) => playerEntity.playerInfo.id !== useUserInfo().userId)
+            [ChanceCardType.ToPlayer]: (() =>
+                Array.from(this.playerEntities.values())
+                    .filter((playerEntity) => !playerEntity.playerInfo.isBankrupted)
                     .map((p) => p.model))(),
             [ChanceCardType.ToProperty]: (() => Array.from(this.housesItems.values()))(),
             [ChanceCardType.ToMapItem]: (() =>
-                Array.from(this.playerEntites.values())
+                Array.from(this.playerEntities.values())
                     .filter((playerEntity) => playerEntity.playerInfo.id !== useUserInfo().userId)
                     .map((p) => p.model))(),
         };
@@ -723,7 +726,7 @@ export class GameRenderer {
                     player
                 );
                 await playerEntity.load();
-                this.playerEntites.set(player.id, playerEntity);
+                this.playerEntities.set(player.id, playerEntity);
                 const nameSprite = createTextSprite(player.user.username, 32, player.user.color, 5);
                 nameSprite.position.set(0, playerModelSize + 0.05, 0)
                 playerEntity.model.add(nameSprite);
@@ -831,7 +834,7 @@ export class GameRenderer {
         props?: Record<string, any>,
         delay?: number
     ) {
-        const playerEntity = this.playerEntites.get(playerId);
+        const playerEntity = this.playerEntities.get(playerId);
         if (!playerEntity) return;
         const position = new Vector3();
         position.copy(playerEntity.model.position);

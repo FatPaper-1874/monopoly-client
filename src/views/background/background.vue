@@ -1,15 +1,17 @@
 <script setup lang='ts'>
-import { onBeforeUnmount, onMounted, ref, computed } from 'vue';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-import { shuffleArray } from '@/utils'
+import {onBeforeUnmount, onMounted, ref, computed} from 'vue';
+import {FontAwesomeIcon} from '@fortawesome/vue-fontawesome';
+import {shuffleArray} from '@/utils'
+import {useDeviceStatus} from "@/store";
 
-const SVGLIST = ["bolt", "bomb", "heart", "house", "palette", "sack-dollar", "wand-magic-sparkles"];
-const getDoubleSvgList = () => {
-  const _svgList = shuffleArray(SVGLIST)
+const svgList = ["bolt", "bomb", "heart", "house", "palette", "sack-dollar", "wand-magic-sparkles", 'video', 'close', 'comments'];
+const getDoubleSvgList = (num: number) => {
+  let _svgList = shuffleArray(svgList);
+  _svgList = _svgList.slice(0, num);
   return _svgList.concat(_svgList);
 }
 
-const isRoll = ref(true);
+const isRoll = ref(!useDeviceStatus().isMobile);
 
 </script>
 
@@ -19,7 +21,7 @@ const isRoll = ref(true);
       <FontAwesomeIcon :icon="isRoll ? 'toilet-paper' : 'toilet-paper-slash'" />
     </button> -->
     <div class="row" :style="{ 'animation-play-state': isRoll ? 'running' : 'paused' }" v-for="i in 8" :key="i">
-      <FontAwesomeIcon class="icon" v-for="item in getDoubleSvgList()" :icon="item" />
+      <FontAwesomeIcon class="icon" v-for="item in getDoubleSvgList(7)" :icon="item"/>
     </div>
   </div>
 </template>

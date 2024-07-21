@@ -59,6 +59,8 @@ function toRoomList(){
   border-radius: 12px;
   overflow: hidden;
   background-color: var(--color-bg-light);
+  display: flex;
+  flex-direction: column;
 }
 
 .title {
@@ -95,6 +97,14 @@ function toRoomList(){
   display: flex;
   justify-content: space-around;
   align-items: center;
+}
+
+.goback{
+  width: 100%;
+
+  button{
+    width: 100%;
+  }
 }
 
 .fade-enter-active,

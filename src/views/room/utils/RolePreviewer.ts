@@ -36,12 +36,14 @@ export class RolePreviewer extends ThreeSceneBase {
     }
 
     public async loadRole(baseUrl: string, fileName: string) {
+        this.setLoadingMaskVisible(true);
         this.scene.clear();
         this.role = new RoleModel(1, baseUrl, fileName);
         const model = await this.role.load();
         
         this.scene.add(model);
         this.role.doAnimation('hi', false);
+        this.setLoadingMaskVisible(false);
         return this.role;
     }
 }

@@ -12,7 +12,7 @@ const userListStore = useUserList();
 const roomListStroe = useRoomList();
 let socketClient: GameSocketClient;
 
-onBeforeMount(async () => {
+onMounted(async () => {
 	const loadingStore = useLoading();
 	loadingStore.loading = true;
 	loadingStore.text = "连接WebSocket服务器中";
@@ -21,7 +21,7 @@ onBeforeMount(async () => {
 	if (!token || !userInfoStore.userId) {
 		router.replace({ name: "login" });
 	} else {
-		socketClient = GameSocketClient.getInstance(token);
+		socketClient = GameSocketClient.getInstance();
 	}
 	if (useRoomInfo().roomId) {
 		router.replace({ name: "room" });
@@ -56,7 +56,7 @@ const handleLogout = () => {
 </script>
 
 <template>
-	<div class="room-list-page">
+	<div class="hall-page">
 		<div class="left-container">
 			<div class="user-container">
 				<userCard :avatar="user.avatar" :username="user.username" :color="user.color" />
@@ -79,11 +79,11 @@ const handleLogout = () => {
 			</div>
 		</div>
 		<div class="right-container">
-			<div class="room-list-topbar">
-				<div class="room-list-info">房间列表({{ roomList.length }})</div>
+			<div class="hall-topbar">
+				<div class="hall-info">房间列表({{ roomList.length }})</div>
 				<button class="create-room-button" @click="handleCreateRoom">创建房间</button>
 			</div>
-			<div class="room-list">
+			<div class="hall">
 				<roomListItem
 					@click="handleJoinRoom(room.roomId)"
 					v-for="room in roomList"
@@ -97,7 +97,7 @@ const handleLogout = () => {
 </template>
 
 <style lang="scss" scoped>
-.room-list-page {
+.hall-page {
 	width: 75vw;
 	height: 90%;
 	padding: 1.2rem;
@@ -181,7 +181,7 @@ const handleLogout = () => {
 		justify-content: space-between;
 		box-shadow: var(--box-shadow);
 
-		& > .room-list {
+		& > .hall {
 			flex: 1;
 		}
 	}
@@ -199,7 +199,7 @@ const handleLogout = () => {
 	text-shadow: 3px 3px 2px rgba(0, 0, 0, 0.1);
 }
 
-.room-list-topbar {
+.hall-topbar {
 	height: 2rem;
 	line-height: 2rem;
 	width: 100%;
@@ -211,7 +211,7 @@ const handleLogout = () => {
 	box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
 	text-shadow: 3px 3px 2px rgba(0, 0, 0, 0.1);
 
-	& > .room-list-info {
+	& > .hall-info {
 		padding-left: 0.8rem;
 	}
 

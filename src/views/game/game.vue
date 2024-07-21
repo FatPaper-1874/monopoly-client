@@ -62,7 +62,7 @@ onBeforeMount(() => {
 });
 
 onBeforeUnmount(() => {
-  if (gameRenderer) gameRenderer.distory();
+  if (gameRenderer) gameRenderer.destroy();
 });
 </script>
 

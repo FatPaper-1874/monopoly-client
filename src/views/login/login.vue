@@ -60,7 +60,7 @@ async function getUserInfoToRoomList(token: string) {
 }
 
 async function toLogin() {
-  await exitFullScreen();
+  // await exitFullScreen();
   return await createLoginIframeOnBody(__LOGINPAGEURL__);
 }
 
@@ -92,7 +92,7 @@ function toRoomList() {
         </template>
       </fp-popover>
       <fp-popover placement="right" trigger="hover">
-        <div class="login-extra-item about">
+        <div class="login-extra-item bug">
           <FontAwesomeIcon icon="bug"/>
         </div>
         <template #content>
@@ -236,7 +236,7 @@ function toRoomList() {
     justify-content: center;
     align-items: center;
     margin: 1rem 0;
-    background-color: rgba(255, 255, 255, .7);
+    background-color: rgba(255, 255, 255, .8);
     font-size: 2rem;
     border-radius: .7rem;
     color: var(--color-second);
@@ -244,7 +244,12 @@ function toRoomList() {
     cursor: pointer;
     box-shadow: var(--box-shadow);
 
-    & > * {
+    &.to-bilibili {
+      color: #FB7299;
+      text-shadow: 3px 3px 2px #ffb9b3;
+    }
+
+    & svg {
       filter: drop-shadow(3px 3px 2px rgba(0, 0, 0, 0.15));
     }
   }

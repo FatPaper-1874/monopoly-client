@@ -13,7 +13,7 @@ function getBlockHeight(money: number) {
 
 <template>
   <div class="progress-bar">
-    <div class="target-bar">￥{{ 100000 }}</div>
+    <div class="target-bar">目标: ￥{{ 100000 }}</div>
     <div :style="{height: getBlockHeight(player.money), backgroundColor: player.user.color}"
          class="player-block" v-for="player in playerList"
          :key="player.id">
@@ -42,14 +42,17 @@ function getBlockHeight(money: number) {
 .target-bar {
   position: absolute;
   top: -2rem;
-  height: 2rem;
+  width: max-content;
+  line-height: .8rem;
   background-color: var(--color-third);
   color: var(--color-text-white);
   padding: .45rem;
   font-size: .8rem;
-  border-radius: 0 .3rem .3rem 0;
+  border-radius: 0 .7rem .7rem 0;
   box-sizing: border-box;
   box-shadow: var(--box-shadow);
+  border: .4rem solid rgba(255, 255, 255, .7);
+  border-left: 0;
 }
 
 .player-block {

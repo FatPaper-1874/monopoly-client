@@ -47,7 +47,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import {chanceCardSource, chanceCardTarget} from "./directives/chanceCardDrag";
 import {useDeviceStatus} from "@/store";
-import {isFullScreen as _isFullScreen, isLandscape as _isLandscape} from "@/utils";
+import {isFullScreen as _isFullScreen, isLandscape as _isLandscape, isMobileDevice} from "@/utils";
 
 library.add(faBolt,
     faBomb,
@@ -95,7 +95,9 @@ function initDeviceStatusListener() {
     const deviceStatus = useDeviceStatus();
     deviceStatus.isFullScreen = _isFullScreen();
     deviceStatus.isLandscape = _isLandscape();
+    deviceStatus.isMobile = isMobileDevice();
     deviceStatus.isFocus = document.visibilityState === "visible";
+
 
     window.addEventListener('fullscreenchange', (e) => {
         deviceStatus.isFullScreen = _isFullScreen();

@@ -17,7 +17,6 @@ import {
     GameInitInfo,
     PropertyInfo,
 } from "@/interfaces/game"
-import router from "@/router";
 import {
     useChat,
     useGameInfo,
@@ -33,6 +32,7 @@ import {
 import {randomString} from "@/utils";
 import {FATPAPER_HOST, MONOPOLY_SOCKET_PORT} from "../../../../global.config";
 import useEventBus from "../event-bus";
+import router from "@/router";
 
 interface UserInfo {
     username: string;
@@ -46,11 +46,13 @@ export class GameSocketClient {
     private socketClient: WebSocket;
     private static instance: GameSocketClient | null;
 
-    static getInstance(token?: string): GameSocketClient {
-        if (!this.instance) {
+    static getInstance(): GameSocketClient {
+        if (!this.instance || this.instance.socketClient.readyState === WebSocket.CLOSED) {
+            const token = localStorage.getItem("token");
             if (token) {
                 this.instance = new GameSocketClient(token);
             } else {
+                router.replace('login');
                 throw Error("必须在首次使用GameSocketClient时提供token");
             }
         }
@@ -59,11 +61,14 @@ export class GameSocketClient {
 
     constructor(token: string) {
         useEventBus().emit(NormalEvents.WebSocketConnected);
+        const loadingStore = useLoading();
+        loadingStore.loading = true;
+        loadingStore.text = "连接WebSocket服务器中";
         this.socketClient = new WebSocket(`ws://${FATPAPER_HOST}:${MONOPOLY_SOCKET_PORT}`);
         this.socketClient.onclose = () => {
         };
         this.socketClient.onopen = () => {
-            ;
+            loadingStore.loading = false;
             this.sendMsg(SocketMsgType.ConfirmIdentity, JSON.stringify({token}));
             this.socketClient.onmessage = (e) => {
                 const data: SocketMessage = JSON.parse(e.data);
@@ -143,7 +148,6 @@ export class GameSocketClient {
 
     private handleHeart(data: SocketMessage) {
         const gameInfoStore = useGameInfo();
-
         gameInfoStore.ping = Date.now() - data.data;
     }
 

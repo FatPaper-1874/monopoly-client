@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import MapPreviewer from "@/views/room/components/map-previewer/index.vue";
+import MapPreviewer from "@/views/room/components/map-previewer.vue";
 import roomUserCard from "@/views/room/components/room-user-card.vue";
 import FpDialog from "@/components/utils/fp-dialog/fp-dialog.vue";
 import FPMessage from "@/components/utils/fp-message";
@@ -310,6 +310,7 @@ const handleUpdateGameSetting = () => {
 		font-size: 0.8rem;
 		padding: 0.6rem 1.2rem;
 		border-radius: 0.6rem;
+    z-index: 1;
 	}
 
 	& > #map-preview__canvas_inroom {
