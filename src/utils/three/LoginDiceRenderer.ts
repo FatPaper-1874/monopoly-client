@@ -1,7 +1,7 @@
-import {DiceRenderer} from "./dice-renderer";
+import {DiceRenderer} from "./DiceRenderer";
 import * as THREE from "three";
 
-export class LoginCodeRenderer extends DiceRenderer {
+export class LoginDiceRenderer extends DiceRenderer {
     private imagePlane: THREE.Mesh | undefined;
 
     constructor(el: HTMLCanvasElement, rotate: boolean) {

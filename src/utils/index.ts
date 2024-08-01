@@ -49,13 +49,16 @@ export function randomString(length: number) {
     return randomString;
 }
 
-export function throttle(fn: Function, interval: number, first = false) {
-    let lastTime = first ? 0 : Date.now();
+export function throttle(fn: Function, interval: number) {
+    let lastTime = Date.now();
+    //@ts-ignore
+    const _this = this;
 
-    return function () {
+    return function (...args: any[]) {
+        console.log(Date.now(), interval + lastTime)
         if (Date.now() >= interval + lastTime) {
             lastTime = Date.now();
-            fn(...arguments);
+            fn.apply(_this, args);
         }
     };
 }

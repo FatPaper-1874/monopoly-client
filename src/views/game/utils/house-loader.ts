@@ -1,12 +1,11 @@
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import {getDracoLoader} from "@/utils/three/draco";
 export const loadHouseModels = async (houseNamearr: string[]): Promise<{ name: string; glft: GLTF }[]> => {
 	// const houseArr = ["house_lv0", "house_lv1", "house_lv2"];
 	const promiseArr: Promise<{ name: string; glft: GLTF }>[] = new Array<Promise<{ name: string; glft: GLTF }>>();
 	const gltfLoader = new GLTFLoader();
-	const draco = new DRACOLoader();
-	draco.setDecoderPath('./draco/');
-	gltfLoader.setDRACOLoader(draco);
+	gltfLoader.setDRACOLoader(getDracoLoader());
 	houseNamearr.forEach((itemName) => {
 		const promise = new Promise<{ name: string; glft: GLTF }>((resolve, reject) => {
 			gltfLoader.load(

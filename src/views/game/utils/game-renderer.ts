@@ -29,7 +29,7 @@ import {
 import {gsap} from "gsap";
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 import {ChanceCardInfo, ItemType, MapItem, PlayerInfo, PropertyInfo} from "@/interfaces/game";
-import {useDeviceStatus, useGameInfo, useMapData, usePlayerWalkAnimation, useUserInfo} from "@/store";
+import {useDeviceStatus, useGameInfo, useLoading, useMapData, useUserInfo} from "@/store";
 import {Component, ComponentPublicInstance, createApp, toRaw, watch, WatchStopHandle} from "vue";
 import {loadItemTypeModules} from "@/utils/three/itemtype-loader";
 import {GameSocketClient} from "@/utils/websocket/fp-ws-client";
@@ -38,7 +38,7 @@ import PropertyInfoCard from "./components/property-info-card.vue";
 import ArrivedEventCard from "./components/arrived-event-card.vue";
 import moneyPopTip from "../components/money-pop-tip.vue";
 import {loadHouseModels} from "./house-loader";
-import {debounce, getScreenPosition} from "@/utils";
+import {debounce, getScreenPosition, throttle} from "@/utils";
 import {EffectComposer} from "three/examples/jsm/postprocessing/EffectComposer";
 import {RenderPass} from "three/examples/jsm/postprocessing/RenderPass";
 import {OutlinePass} from "three/examples/jsm/postprocessing/OutlinePass";
@@ -47,8 +47,11 @@ import {PlayerEntity} from "@/classes/game/PlayerEntity";
 import useEventBus from "@/utils/event-bus";
 import {GammaCorrectionShader} from "three/examples/jsm/shaders/GammaCorrectionShader";
 import {ShaderPass} from "three/examples/jsm/postprocessing/ShaderPass";
+import {storeToRefs} from "pinia";
 
 const BLOCK_HEIGHT = 0.09;
+const PLAY_MODEL_SIZE = 0.7;
+const loadingMask = useLoading();
 
 export class GameRenderer {
     private canvas: HTMLCanvasElement;
@@ -59,6 +62,7 @@ export class GameRenderer {
     private composer: EffectComposer;
     private renderPass: RenderPass;
     private chanceCardTargetOutlinePass: OutlinePass;
+    private controls: OrbitControls;
 
     private mapContainer: Group = new Group();
     private mapModules: Map<string, Group> = new Map<string, Group>();
@@ -141,6 +145,16 @@ export class GameRenderer {
         this.popElementRenderer.domElement.style.zIndex = "500";
         container.appendChild(this.popElementRenderer.domElement);
 
+        const controls = new OrbitControls(this.camera, this.canvas);
+        controls.enableDamping = true;
+        controls.maxDistance = 30;
+        controls.minDistance = 1;
+        controls.maxPolarAngle = Math.PI / 2;
+        controls.minPolarAngle = Math.PI / 3;
+        controls.enableDamping = true;
+        controls.update();
+        this.controls = controls;
+
         window.addEventListener(
             "resize",
             debounce(() => {
@@ -155,15 +169,20 @@ export class GameRenderer {
     }
 
     public async init() {
+        loadingMask.loading = true;
+        loadingMask.text = '正在进行初始化加载：背景';
         //加载背景
         this.initBackground();
 
+        loadingMask.text = '正在进行初始化加载：地图数据';
         //加载地图
         await this.initMap();
 
+        loadingMask.text = '正在进行初始化加载：玩家数据';
         //加载玩家模型
         await this.initPlayer();
 
+        loadingMask.text = '正在进行初始化加载：机会卡';
         //加载机会卡
         this.initChanceCard();
 
@@ -180,13 +199,6 @@ export class GameRenderer {
         const arrivedEventRaycaster = new Raycaster();
         const pointer = new Vector2();
         // 创建轨道控制器
-        const controls = new OrbitControls(this.camera, this.canvas);
-        controls.enableDamping = true;
-        controls.maxDistance = 30;
-        controls.minDistance = 1;
-        controls.maxPolarAngle = Math.PI / 2;
-        controls.minPolarAngle = Math.PI / 3;
-        controls.update();
 
         const onPointerMove = (event: MouseEvent) => {
             // 将鼠标位置归一化为设备坐标。x 和 y 方向的取值范围是 (-1 to +1)
@@ -201,10 +213,10 @@ export class GameRenderer {
             this.handlePropertyRaycaster(propertyRaycaster, pointer);
             this.handleArrivedEventRaycaster(propertyRaycaster, pointer);
 
-            if (this.isLockingRole && this.playerEntities.has(userInfoStore.userId)) {
-                this.updateCamera(controls, this.playerEntities.get(userInfoStore.userId)!.model, 5, 30);
+            if (this.isLockingRole && this.currentFocusModule) {
+                this.updateCamera(this.controls, this.currentFocusModule, 7, 30);
             }
-            controls.update();
+            this.controls.update(100);
 
             Array.from(this.playerEntities.values()).forEach((player) => {
                 player.model.lookAt(this.camera.position);
@@ -258,6 +270,7 @@ export class GameRenderer {
         const mapDataStore = useMapData();
         const playersList = mapDataStore.playerList;
         await this.loadPlayersModules(playersList);
+        this.breakUpPlayersInSameMapItem();
 
         const gameInfoStore = useGameInfo();
         gameInfoStore.playersList = playersList;
@@ -268,8 +281,14 @@ export class GameRenderer {
         //玩家数据监听
         this.addPlayerStateWatcher();
 
-        //玩家模型走路动画监听
-        this.addPlayerWalkWatcher();
+        //玩家模型移动动画监听
+        this.addPlayerMoveWatcher();
+
+        this.currentFocusModule = this.playerEntities.get(useUserInfo().userId)?.model || null;
+        if (this.currentFocusModule) {
+            this.updateCamera(this.controls, this.currentFocusModule, 7, 30);
+            this.controls.update();
+        }
     }
 
     private initChanceCard() {
@@ -385,17 +404,36 @@ export class GameRenderer {
             watchers.moneyWatcher && watchers.moneyWatcher();
             watchers.bankruptWatcher && watchers.bankruptWatcher();
         })
+        useEventBus().removeAll('player-walk');
+        useEventBus().removeAll('player-tp');
         this.commonWatchers.forEach(f => f());
     }
 
-    private updateCamera(controls: OrbitControls, targetObject: Object3D, followDistance: number, followAngleY: number) {
+    private updateCamera(controls: OrbitControls, targetObject: Object3D, followDistance: number, followAngleY: number,) {
         if (!targetObject) return;
+        controls.enabled = false;
         const targetPos = targetObject.position;
         const followPos = new Vector3();
-        followPos.x = targetPos.x - Math.sin(targetObject.rotation.y) * followDistance;
+        const cameraFaceVector = controls.object.getWorldDirection(new Vector3());
+        const coefficient = followDistance / cameraFaceVector.length();
+        const v1 = new Vector2(targetPos.x, targetPos.z);
+        const v2 = v1.add(new Vector2(cameraFaceVector.x, cameraFaceVector.z).multiplyScalar(coefficient).negate());
+
+        followPos.x = v2.x;
         followPos.y = targetPos.y + followDistance * Math.tan(MathUtils.degToRad(followAngleY));
-        followPos.z = targetPos.z - Math.cos(targetObject.rotation.y) * followDistance;
-        controls.target.copy(targetPos);
+        followPos.z = v2.y;
+        // controls.target.copy(targetPos);
+        gsap.to(controls.target, {
+            x: targetPos.x, y: targetPos.y, z: targetPos.z, duration: .5
+        });
+        gsap.to(controls.object.position, {
+            x: followPos.x,
+            y: followPos.y,
+            z: followPos.z,
+            duration: .5, onComplete: () => {
+                controls.enabled = true;
+            }
+        });
     }
 
     private addPlayerStateWatcher() {
@@ -405,7 +443,7 @@ export class GameRenderer {
                 () => gameInfoStore.playersList[index].stop,
                 (newStop) => {
                     if (newStop > 0) {
-                        const playerEntity = Array.from(this.playerEntities.values()).find(p => p.playerInfo.id === player.id);
+                        const playerEntity = this.getPlayerEntity(player.id);
                         playerEntity && playerEntity.doAnimation("sleeping", true);
                     }
                 },
@@ -422,7 +460,7 @@ export class GameRenderer {
                 () => gameInfoStore.playersList[index].isBankrupted,
                 (isBankrupted) => {
                     if (!isBankrupted) return;
-                    const playerEntity = Array.from(this.playerEntities.values()).find(p => p.playerInfo.id === player.id);
+                    const playerEntity = this.getPlayerEntity(player.id);
                     playerEntity && playerEntity.doAnimation("failed", true);
                     const watchers = this.playerWatchers.get(player.id);
                     if (watchers) {
@@ -441,17 +479,57 @@ export class GameRenderer {
         });
     }
 
-    private addPlayerWalkWatcher() {
+    private addPlayerMoveWatcher() {
         const mapDataStore = useMapData();
-        const playerWalkStore = usePlayerWalkAnimation();
 
-        this.commonWatchers.push(
-            watch(playerWalkStore, (newVal) => {
-                const sourcePosition = toRaw(this.playerPosition.get(newVal.walkPlayerId)) as number;
+        useEventBus().on('player-walk', async (walkPlayerId: string, step: number) => {
+            //拆散重叠的玩家模型;
+            // this.breakUpPlayersInSameMapItem();
+
+            const playerEntity = this.playerEntities.get(walkPlayerId);
+            if (playerEntity) {
+                const sourcePosition = toRaw(this.playerPosition.get(walkPlayerId)) as number;
                 const mapIndexLength = toRaw(mapDataStore.mapIndexList.length);
-                this.updatePlayerPositionByStep(newVal.walkPlayerId, sourcePosition, newVal.walkstep, mapIndexLength);
-            })
-        );
+                this.currentFocusModule = this.playerEntities.get(walkPlayerId)?.model || null;
+                this.isLockingRole = true;
+                gsap.to(playerEntity.model.scale, {
+                    x: Math.sign(playerEntity.model.scale.x),
+                    y: Math.sign(playerEntity.model.scale.y),
+                    z: Math.sign(playerEntity.model.scale.z)
+                });
+                await this.updatePlayerPositionByStep(walkPlayerId, sourcePosition, step, mapIndexLength);
+                this.currentFocusModule = null;
+                this.isLockingRole = false;
+
+                //拆散重叠的玩家模型;
+                this.breakUpPlayersInSameMapItem();
+            }
+        })
+
+        useEventBus().on('player-tp', async (walkPlayerId: string, positionIndex: number) => {
+            const playerEntity = this.getPlayerEntity(walkPlayerId);
+            if (playerEntity) {
+                playerEntity.model.scale.set(
+                    Math.sign(playerEntity.model.scale.x),
+                    Math.sign(playerEntity.model.scale.y),
+                    Math.sign(playerEntity.model.scale.z),
+                )
+                await gsap.to(playerEntity.model.scale, {
+                    x: -(playerEntity.model.scale.x),
+                    direction: .2,
+                    repeat: 1
+                });
+                const {x, y, z} = this.getMapItemPosition(positionIndex);
+                playerEntity.model.position.set(x, y + BLOCK_HEIGHT, z);
+                await gsap.to(playerEntity.model.scale, {
+                    x: -(playerEntity.model.scale.x),
+                    direction: .2,
+                    repeat: 1
+                });
+                this.playerPosition.set(walkPlayerId, positionIndex);
+                this.breakUpPlayersInSameMapItem();
+            }
+        })
     }
 
     private addPropertyLevelWatcher() {
@@ -676,6 +754,10 @@ export class GameRenderer {
         return this.mapItems.get(id)!.position;
     }
 
+    private getPlayerEntity(id: string) {
+        return this.playerEntities.get(id);
+    }
+
     private getMapItem(index: number) {
         const mapStore = useMapData();
         const mapIndex = mapStore.mapIndexList;
@@ -714,21 +796,20 @@ export class GameRenderer {
     }
 
     private async loadPlayersModules(playerList: Array<PlayerInfo>) {
-        const playerModelSize = 0.7;
-        for await (const player of playerList) {
+        for await (const playerInfo of playerList) {
             try {
 
-                this.playerPosition.set(player.id, toRaw(player.positionIndex));
+                this.playerPosition.set(playerInfo.id, toRaw(playerInfo.positionIndex));
                 const playerEntity = new PlayerEntity(
-                    playerModelSize,
-                    `http://${player.user.role.baseUrl}/`,
-                    player.user.role.fileName,
-                    player
+                    PLAY_MODEL_SIZE,
+                    `http://${playerInfo.user.role.baseUrl}/`,
+                    playerInfo.user.role.fileName,
+                    playerInfo
                 );
                 await playerEntity.load();
-                this.playerEntities.set(player.id, playerEntity);
-                const nameSprite = createTextSprite(player.user.username, 32, player.user.color, 5);
-                nameSprite.position.set(0, playerModelSize + 0.05, 0)
+                this.playerEntities.set(playerInfo.id, playerEntity);
+                const nameSprite = createTextSprite(`${playerInfo.user.username}${playerInfo.user.userId === useUserInfo().userId ? ' (你)' : ''}`, 32, playerInfo.user.color, 5);
+                nameSprite.position.set(0, PLAY_MODEL_SIZE + 0.05, 0)
                 playerEntity.model.add(nameSprite);
                 this.scene.add(playerEntity.model);
             } catch (e) {
@@ -821,6 +902,75 @@ export class GameRenderer {
     public async reloadMap(mapData: Array<MapItem>) {
         this.mapContainer.clear();
         await this.loadMap(mapData);
+    }
+
+    private breakUpPlayersInSameMapItem() {
+        const playersList = useGameInfo().playersList;
+        groupByPositionIndex(playersList).forEach(a => {
+            if (a.length > 1) {
+                const positionIndex = a[0].positionIndex;
+                const {x, y, z} = this.getMapItemPosition(positionIndex);
+                const offsetArr = generateCirclePointsOffset(x, z, 0.5, a.length);
+                offsetArr.forEach((offset, index) => {
+                    const playerEntity = this.getPlayerEntity(a[index].id);
+                    if (playerEntity) {
+                        playerEntity.model.position.x += offset.offsetX;
+                        playerEntity.model.position.z += offset.offsetY;
+                        const scale = 1 - 1 / a.length;
+
+                        gsap.to(playerEntity.model.scale, {
+                            x: Math.sign(playerEntity.model.scale.x) * scale,
+                            y: Math.sign(playerEntity.model.scale.y) * scale,
+                            z: Math.sign(playerEntity.model.scale.z) * scale
+                        });
+                    }
+                })
+            } else {
+                const playerEntity = this.getPlayerEntity(a[0].id);
+                if (playerEntity) {
+                    const positionIndex = a[0].positionIndex;
+                    const {x, y, z} = this.getMapItemPosition(positionIndex);
+                    playerEntity.model.position.setX(x);
+                    playerEntity.model.position.setY(y + BLOCK_HEIGHT);
+                    playerEntity.model.position.setZ(z);
+                    gsap.to(playerEntity.model.scale, {
+                        x: Math.sign(playerEntity.model.scale.x),
+                        y: Math.sign(playerEntity.model.scale.y),
+                        z: Math.sign(playerEntity.model.scale.z)
+                    });
+                }
+            }
+        })
+
+        function groupByPositionIndex(items: PlayerInfo[]): PlayerInfo[][] {
+            const groups = new Map<number, PlayerInfo[]>();
+
+            for (const item of items) {
+                if (!groups.has(item.positionIndex)) {
+                    groups.set(item.positionIndex, []);
+                }
+                groups.get(item.positionIndex)!.push(item);
+            }
+
+            return Array.from(groups.values());
+        }
+
+
+        function generateCirclePointsOffset(x: number, y: number, r: number, n: number): {
+            offsetX: number,
+            offsetY: number
+        }[] {
+            const points = [];
+            r = r - PLAY_MODEL_SIZE / 2;
+            const angleStep = (2 * Math.PI) / n;
+            for (let i = 0; i < n; i++) {
+                const angle = i * angleStep;
+                const pointX = r * Math.cos(angle);
+                const pointY = r * Math.sin(angle);
+                points.push({offsetX: pointX, offsetY: pointY});
+            }
+            return points;
+        }
     }
 
     public toggleLockCamera() {

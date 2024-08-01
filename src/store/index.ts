@@ -124,25 +124,6 @@ export const useUtil = defineStore("util", {
     },
 });
 
-export const usePlayerWalkAnimation = defineStore("playerWalk", {
-    state: () => {
-        return {
-            walkPlayerId: "",
-            walkstep: 0,
-            timeStamp: 0,
-        };
-    },
-    actions: {
-        updatePlayWalk(walkPlayerId: string, walkstep: number) {
-            this.$patch({
-                walkPlayerId: walkPlayerId,
-                walkstep: walkstep,
-                timeStamp: new Date().getTime(),
-            });
-        },
-    },
-});
-
 export const useChat = defineStore("chat", {
     state: (): {
         chatShow: boolean, messageLimit: number,

@@ -6,7 +6,7 @@ interface Options extends Record<string, any> {
 	title?: string;
 	content?: string | VNode | (() => VNode);
 	confirmText?: string;
-	cancleText?: string;
+	cancelText?: string;
 }
 
 export const FPMessageBox = (options: Options) => {

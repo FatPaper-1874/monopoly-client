@@ -19,13 +19,13 @@ function toRoomList(){
 		<div v-if="isGameOver" class="scoreboard">
 			<div class="contianer">
 				<div class="title">游戏结束</div>
-				<div class="playerListContainer">
-					<div class="playerContianer" v-for="(player, index) in playerListSorted">
+				<div class="player-list-container">
+					<div class="player-container" v-for="(player, index) in playerListSorted">
             <div class="No">{{ index + 1 }}</div>
             <playerCard :player="player" :round-mark="false" />
           </div>
 				</div>
-        <div class="goback">
+        <div class="go-back">
           <button @click="toRoomList">返回大厅</button>
         </div>
 			</div>
@@ -84,7 +84,7 @@ function toRoomList(){
   background-color: var(--color-primary);
 }
 
-.playerListContainer {
+.player-list-container {
 	flex: 1;
 	display: flex;
 	flex-direction: column;
@@ -92,18 +92,19 @@ function toRoomList(){
   color: #fff;
 }
 
-.playerContianer{
+.player-container{
   width: 25rem;
   display: flex;
   justify-content: space-around;
   align-items: center;
 }
 
-.goback{
+.go-back{
   width: 100%;
 
   button{
     width: 100%;
+    height: 2rem;
   }
 }
 

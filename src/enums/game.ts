@@ -4,7 +4,7 @@ export enum GameOverRule {
 }
 
 export enum OperateType {
-    GameInitFinished ="GameInitFinished", //前端加载完毕
+    GameInitFinished = "GameInitFinished", //前端加载完毕
     RollDice = "RollDice", //前端掷骰子
     UseChanceCard = "UseChanceCard", //使用机会卡
     Animation = "AnimationComplete", //前端动画完成回馈

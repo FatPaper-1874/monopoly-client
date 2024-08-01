@@ -22,7 +22,6 @@ import {
     useGameInfo,
     useLoading,
     useMapData,
-    usePlayerWalkAnimation,
     useRoomInfo,
     useRoomList,
     useUserInfo,
@@ -131,6 +130,12 @@ export class GameSocketClient {
                     case SocketMsgType.UseChanceCard:
                         this.handleUsedChanceCard(data);
                         break;
+                    case SocketMsgType.PlayerWalk:
+                        this.handlePlayerWalk(data);
+                        break;
+                    case SocketMsgType.PlayerTp:
+                        this.handlePlayerTp(data);
+                        break;
                     case SocketMsgType.BuyProperty:
                         this.handleBuyProperty(data);
                         break;
@@ -237,7 +242,6 @@ export class GameSocketClient {
         if (data.data == "error") return;
         const gameInfoStore = useGameInfo();
         const gameInfo: GameInfo = data.data;
-        ;
         gameInfo &&
         gameInfoStore.$patch({
             currentPlayerInRound: gameInfo.currentPlayerInRound,
@@ -269,12 +273,7 @@ export class GameSocketClient {
     }
 
     private handleRollDiceResult(data: SocketMessage) {
-        const rollDicePlayerId: string = data.data.rollDicePlayerId;
         const rollDiceResult: number[] = data.data.rollDiceResult;
-        const rollDiveCount: number = data.data.rollDiveCount;
-
-        const playerWalkStore = usePlayerWalkAnimation();
-        playerWalkStore.updatePlayWalk(rollDicePlayerId, rollDiveCount);
 
         const utilStore = useUtil();
         utilStore.rollDiceResult = rollDiceResult;
@@ -285,6 +284,17 @@ export class GameSocketClient {
         const {userId, chanceCardId} = data.data as { userId: string, chanceCardId: string };
     }
 
+    private handlePlayerWalk(data: SocketMessage) {
+        const {playerId, step} = data.data as { playerId: string, step: number };
+        console.log(data)
+        useEventBus().emit('player-walk', playerId, step)
+    }
+
+    private handlePlayerTp(data: SocketMessage) {
+        const {playerId, positionIndex} = data.data as { playerId: string, positionIndex: number };
+        useEventBus().emit('player-tp', playerId, positionIndex)
+    }
+
     private handleBuyProperty(data: SocketMessage) {
         const property: PropertyInfo = data.data;
 
@@ -293,7 +303,7 @@ export class GameSocketClient {
         FPMessageBox({
             title: "购买地皮",
             content: vnode,
-            cancleText: "不买",
+            cancelText: "不买",
             confirmText: "买！",
         })
             .then(() => {
@@ -312,7 +322,7 @@ export class GameSocketClient {
         FPMessageBox({
             title: "升级房子",
             content: vnode,
-            cancleText: "不升级",
+            cancelText: "不升级",
             confirmText: "升级！",
         })
             .then(() => {
@@ -333,6 +343,8 @@ export class GameSocketClient {
     }
 
     public joinRoom(roomId: string) {
+        useLoading().loading = true;
+        useLoading().text = "正在进入房间";
         this.sendMsg(SocketMsgType.JoinRoom, "", roomId);
     }
 

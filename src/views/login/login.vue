@@ -6,11 +6,11 @@ import {getUserByToken} from "@/utils/api/user";
 import {createLoginIframeOnBody, exitFullScreen, setTimeOutAsync} from "@/utils";
 import FPMessage from "@/components/utils/fp-message/index";
 import {useUserInfo} from "@/store";
-import {LoginCodeRenderer} from "@/utils/three/login-code-renderer";
+import {LoginDiceRenderer} from "@/utils/three/LoginDiceRenderer";
 import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
 import FpPopover from "@/components/utils/fp-popover/fp-popover.vue";
 
-let loginCodeRenderer: LoginCodeRenderer | null;
+let loginCodeRenderer: LoginDiceRenderer | null;
 let diceRotate: boolean = true;
 const firstClick = ref(false);
 
@@ -23,7 +23,7 @@ async function doLogin() {
   }
   nextTick(() => {
     const canvasEl = document.getElementById("dice-canvas") as HTMLCanvasElement;
-    loginCodeRenderer = new LoginCodeRenderer(canvasEl, diceRotate);
+    loginCodeRenderer = new LoginDiceRenderer(canvasEl, diceRotate);
     getUserInfoToRoomList(token);
   });
 }

@@ -67,7 +67,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div v-chanceCardTarget class="game-page">
+  <div v-chance-card-target class="game-page">
     <canvas id="game-canvas" :width="windowWidth" :height="windowHeight"></canvas>
     <div class="ui-container">
 

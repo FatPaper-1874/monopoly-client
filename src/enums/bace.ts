@@ -13,7 +13,7 @@ export enum SocketMsgType {
 	ChangeGameSetting, //修改游戏设置信息
 	GameStart, //游戏开始
 	GameInit, //游戏初始化
-	GameInitFinished, //游戏初始化完成
+	GameInitFinished,	//游戏初始化完成
 	GameInfo, //游戏信息广播
 	RoundTurn, //更新当前回合轮到的玩家,
 	RollDiceStart, //开始摇骰子
@@ -21,6 +21,8 @@ export enum SocketMsgType {
 	UseChanceCard, //使用机会卡
 	RemainingTime, //回合剩余时间
 	RoundTimeOut, //回合超时
+	PlayerWalk,	//位置移动方式1：玩家角色走路
+	PlayerTp,	//位置移动方式2：传送
 	Animation, //前端动画完成回馈
 	BuyProperty, //购买地皮
 	BuildHouse, //升级房子
