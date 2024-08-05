@@ -1,7 +1,7 @@
 import { loadModel } from "@/utils/three/model-loader";
 import gsap from "gsap";
 import * as THREE from "three";
-import { debounce } from "..";
+import { debounce } from "../../utils";
 
 //骰子面的法向量
 const DICEFACE = [

@@ -3,7 +3,7 @@ import {useGameInfo, useUserInfo} from "@/store";
 import {computed, provide, ref, watch, toRaw} from "vue";
 import {ChanceCardInfo} from "@/interfaces/game";
 import ChanceCard from "./chance-card.vue";
-import {GameSocketClient} from "@/utils/websocket/fp-ws-client";
+import {GameSocketClient} from "@/classes/websocket/GameSocketClient";
 import {useUtil} from "@/store";
 
 const gameInfoStore = useGameInfo();

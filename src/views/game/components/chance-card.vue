@@ -44,10 +44,10 @@ const iconUrl = computed(() => {
   }
 
   & > .icon {
-    margin-bottom: 0.8em;
+    margin-bottom: 0.6em;
 
     & > img {
-      $img-size: 4.2em;
+      $img-size: 4.4em;
       width: $img-size;
       height: $img-size;
       pointer-events: none;

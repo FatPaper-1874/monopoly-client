@@ -11,7 +11,7 @@ import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 import {ItemType, MapItem} from "@/interfaces/game";
 import {loadItemTypeModules} from "@/utils/three/itemtype-loader";
 import {debounce} from "@/utils";
-import {ThreeSceneBase} from "@/utils/three/ThreeSceneBase";
+import {ThreeSceneBase} from "@/classes/three/ThreeSceneBase";
 
 export class MapPreviewerRenderer extends ThreeSceneBase{
     private controls: OrbitControls;

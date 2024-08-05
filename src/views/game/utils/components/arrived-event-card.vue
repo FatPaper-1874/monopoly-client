@@ -49,7 +49,7 @@ defineExpose({updateArrivedEvent});
     margin-bottom: .6rem;
     text-shadow: #fff -1px 0 0, #fff 1px 0 0, #fff 0 1px 0, #fff 0 -1px 0;
 
-    $icon_size: 1.2em;
+    $icon_size: 1.6em;
 
     img {
       width: $icon_size;

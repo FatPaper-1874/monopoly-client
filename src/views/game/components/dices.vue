@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { useUtil } from "@/store/index";
-import { DiceRenderer } from "@/utils/three/dice-renderer";
+import { DiceRenderer } from "@/classes/three/DiceRenderer";
 
 const utilStore = useUtil();
 const rollDiceResult = computed(() => utilStore.rollDiceResult);

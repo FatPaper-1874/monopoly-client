@@ -6,7 +6,7 @@ import {getUserByToken} from "@/utils/api/user";
 import {createLoginIframeOnBody, exitFullScreen, setTimeOutAsync} from "@/utils";
 import FPMessage from "@/components/utils/fp-message/index";
 import {useUserInfo} from "@/store";
-import {LoginDiceRenderer} from "@/utils/three/LoginDiceRenderer";
+import {LoginDiceRenderer} from "@/classes/three/LoginDiceRenderer";
 import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
 import FpPopover from "@/components/utils/fp-popover/fp-popover.vue";
 

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import {onMounted, computed, onUnmounted, ref, onBeforeMount, onBeforeUnmount} from "vue";
-import {GameRenderer} from "@/views/game/utils/game-renderer";
+import {GameRenderer} from "@/classes/game/GameRenderer";
 import {useLoading, useMapData, useRoomInfo, useGameInfo, useUtil} from "@/store";
 import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
 import router from "@/router/index";
-import {GameSocketClient} from "@/utils/websocket/fp-ws-client";
+import {GameSocketClient} from "@/classes/websocket/GameSocketClient";
 import Dices from "./components/dices.vue";
 import PlayerCard from "./components/player-card.vue";
 import ChanceCardContainer from "./components/chance-card-container.vue";

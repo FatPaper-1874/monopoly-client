@@ -5,7 +5,7 @@ import {computed, ref, reactive, onMounted, watch, nextTick} from "vue";
 import {Role, User} from "@/interfaces/bace";
 import {useRoomInfo, useUserInfo} from "@/store";
 import {ChangeRoleOperate} from "@/enums/bace";
-import {GameSocketClient} from "@/utils/websocket/fp-ws-client";
+import {GameSocketClient} from "@/classes/websocket/GameSocketClient";
 import {RolePreviewer} from "@/views/room/utils/RolePreviewer";
 
 const props = defineProps<{ user: User | undefined }>();

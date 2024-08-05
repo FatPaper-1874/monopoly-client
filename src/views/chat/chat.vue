@@ -2,7 +2,7 @@
 import {ref, watch, computed, nextTick} from 'vue';
 import {FontAwesomeIcon} from '@fortawesome/vue-fontawesome';
 import {useChat, useRoomInfo} from '@/store';
-import {GameSocketClient} from '@/utils/websocket/fp-ws-client';
+import {GameSocketClient} from '@/classes/websocket/GameSocketClient';
 import ChatMessageItem from './components/chat-message-item.vue';
 import gsap from 'gsap';
 

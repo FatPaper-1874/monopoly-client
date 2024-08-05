@@ -50,8 +50,10 @@ export class Animated2DBase {
             if (!this.animationNamesList.includes(state)) {
                 throw new Error(`该模型中不存在动画：${state}`)
             }
-            this.currentAnimationName = state;
-            this.skeletonMesh.state.setAnimation(0, state, loop);
+            if (this.currentAnimationName !== state) {
+                this.currentAnimationName = state;
+                this.skeletonMesh.state.setAnimation(0, state, loop);
+            }
         } else {
             throw new Error("在模型加载之前尝试修改模型状态！")
         }

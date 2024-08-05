@@ -1,7 +1,7 @@
 import PropertyInfoVue from "@/components/common/property-info.vue";
 import {FPMessageBox} from "@/components/utils/fp-message-box";
 import {createVNode} from "vue";
-import FPMessage from "@/components/utils/fp-message/index";
+import FPMessage from "@/components/utils/fp-message";
 import {ChangeRoleOperate, NormalEvents, SocketMsgType} from "@/enums/bace";
 import {OperateType} from "@/enums/game";
 import {
@@ -27,10 +27,10 @@ import {
     useUserInfo,
     useUserList,
     useUtil,
-} from "@/store/index";
+} from "@/store";
 import {randomString} from "@/utils";
 import {FATPAPER_HOST, MONOPOLY_SOCKET_PORT} from "../../../../global.config";
-import useEventBus from "../event-bus";
+import useEventBus from "../../utils/event-bus";
 import router from "@/router";
 
 interface UserInfo {
@@ -119,7 +119,7 @@ export class GameSocketClient {
                         this.handleRemainingTime(data);
                         break;
                     case SocketMsgType.RoundTurn:
-                        this.handleRoundTurn(data);
+                        this.handleRoundTurn();
                         break;
                     case SocketMsgType.RollDiceStart:
                         this.handleRollDiceAnimationPlay();
@@ -262,9 +262,10 @@ export class GameSocketClient {
         }
     }
 
-    private handleRoundTurn(data: SocketMessage) {
+    private handleRoundTurn() {
         const utilStore = useUtil();
         utilStore.canRoll = true;
+        useEventBus().emit('RoundTurn');
     }
 
     private handleRollDiceAnimationPlay() {
@@ -286,7 +287,6 @@ export class GameSocketClient {
 
     private handlePlayerWalk(data: SocketMessage) {
         const {playerId, step} = data.data as { playerId: string, step: number };
-        console.log(data)
         useEventBus().emit('player-walk', playerId, step)
     }
 

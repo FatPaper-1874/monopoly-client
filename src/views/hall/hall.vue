@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeMount, onMounted, computed, ref, onUpdated } from "vue";
 import { useUserInfo, useUserList, useRoomList, useRoomInfo, useLoading } from "@/store";
-import { GameSocketClient } from "@/utils/websocket/fp-ws-client";
+import { GameSocketClient } from "@/classes/websocket/GameSocketClient";
 import userCard from "@/components/common/user-card.vue";
 import userListItem from "@/components/common/user-list-item.vue";
 import roomListItem from "@/components/common/room-list-item.vue";

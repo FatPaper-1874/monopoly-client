@@ -1,7 +1,8 @@
 <script setup lang='ts'>
 import popoverTransition from './popover-transition.vue';
-import { computed } from 'vue';
-const props = withDefaults(defineProps<{ money: number }>(), { money: 0 })
+import {computed} from 'vue';
+
+const props = withDefaults(defineProps<{ money: number }>(), {money: 0})
 const tipContent = computed(() => props.money > 0 ? `+${props.money}` : props.money)
 const tipStyle = computed(() => props.money < 0 ? 'color: var(--color-text-error)' : "color: var(--color-text-success)")
 </script>
@@ -14,7 +15,14 @@ const tipStyle = computed(() => props.money < 0 ? 'color: var(--color-text-error
 
 <style lang='scss' scoped>
 .money-pop-tip-content {
-  font-size: 2rem;
-  text-shadow: 1px 1px 2px rgba($color: #ffffff, $alpha: 1);
+  font-size: 1.6rem;
+  text-shadow: 1px 1px 0 #ffffff,
+  1.2px 1.2px 0 #ffffff,
+  -1px -1px 0 #ffffff,
+  -1.2px -1.2px 0 #ffffff,
+  1px -1px 0 #ffffff,
+  1.2px -1.2px 0 #ffffff,
+  -1px 1px 0 #ffffff,
+  -1.2px 1.2px 0 #ffffff;
 }
 </style>

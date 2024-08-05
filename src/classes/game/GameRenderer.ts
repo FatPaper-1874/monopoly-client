@@ -32,12 +32,12 @@ import {ChanceCardInfo, ItemType, MapItem, PlayerInfo, PropertyInfo} from "@/int
 import {useDeviceStatus, useGameInfo, useLoading, useMapData, useUserInfo} from "@/store";
 import {Component, ComponentPublicInstance, createApp, toRaw, watch, WatchStopHandle} from "vue";
 import {loadItemTypeModules} from "@/utils/three/itemtype-loader";
-import {GameSocketClient} from "@/utils/websocket/fp-ws-client";
+import {GameSocketClient} from "@/classes/websocket/GameSocketClient";
 import {CSS2DObject, CSS2DRenderer} from "three/examples/jsm/renderers/CSS2DRenderer";
-import PropertyInfoCard from "./components/property-info-card.vue";
-import ArrivedEventCard from "./components/arrived-event-card.vue";
-import moneyPopTip from "../components/money-pop-tip.vue";
-import {loadHouseModels} from "./house-loader";
+import PropertyInfoCard from "@/views/game/utils/components/property-info-card.vue";
+import ArrivedEventCard from "@/views/game/utils/components/arrived-event-card.vue";
+import moneyPopTip from "@/views/game/components/money-pop-tip.vue";
+import {loadHouseModels} from "@/views/game/utils/house-loader";
 import {debounce, getScreenPosition, throttle} from "@/utils";
 import {EffectComposer} from "three/examples/jsm/postprocessing/EffectComposer";
 import {RenderPass} from "three/examples/jsm/postprocessing/RenderPass";
@@ -75,7 +75,7 @@ export class GameRenderer {
     private requestAnimationFrameId: number = -1;
 
     private playerWatchers: Map<string, {
-        stopWatcher: WatchStopHandle | undefined,
+        InfoWatcher: WatchStopHandle | undefined,
         moneyWatcher: WatchStopHandle | undefined,
         bankruptWatcher: WatchStopHandle | undefined,
     }> = new Map();
@@ -284,11 +284,10 @@ export class GameRenderer {
         //玩家模型移动动画监听
         this.addPlayerMoveWatcher();
 
-        this.currentFocusModule = this.playerEntities.get(useUserInfo().userId)?.model || null;
-        if (this.currentFocusModule) {
-            this.updateCamera(this.controls, this.currentFocusModule, 7, 30);
-            this.controls.update();
-        }
+        //回合到切换到自己的视角
+        useEventBus().on('RoundTurn', this.focusMe.bind(this))
+
+        this.focusMe();
     }
 
     private initChanceCard() {
@@ -400,7 +399,7 @@ export class GameRenderer {
     public destroy() {
         cancelAnimationFrame(this.requestAnimationFrameId);
         Array.from(this.playerWatchers.values()).forEach(watchers => {
-            watchers.stopWatcher && watchers.stopWatcher();
+            watchers.InfoWatcher && watchers.InfoWatcher();
             watchers.moneyWatcher && watchers.moneyWatcher();
             watchers.bankruptWatcher && watchers.bankruptWatcher();
         })
@@ -439,15 +438,14 @@ export class GameRenderer {
     private addPlayerStateWatcher() {
         const gameInfoStore = useGameInfo();
         gameInfoStore.playersList.forEach((player, index) => {
-            const stopWatcher = watch(
-                () => gameInfoStore.playersList[index].stop,
-                (newStop) => {
-                    if (newStop > 0) {
-                        const playerEntity = this.getPlayerEntity(player.id);
-                        playerEntity && playerEntity.doAnimation("sleeping", true);
-                    }
+            const InfoWatcher = watch(
+                () => gameInfoStore.playersList[index],
+                (newInfo) => {
+                    const playerEntity = this.getPlayerEntity(player.id);
+                    playerEntity && playerEntity.updatePlayerInfo(newInfo);
+                    console.log(newInfo)
                 },
-                {immediate: true}
+                {immediate: true, deep: true}
             )
             const moneyWatcher = watch(
                 () => gameInfoStore.playersList[index].money,
@@ -464,7 +462,7 @@ export class GameRenderer {
                     playerEntity && playerEntity.doAnimation("failed", true);
                     const watchers = this.playerWatchers.get(player.id);
                     if (watchers) {
-                        watchers.stopWatcher && watchers.stopWatcher();
+                        watchers.InfoWatcher && watchers.InfoWatcher();
                         watchers.moneyWatcher && watchers.moneyWatcher();
                         watchers.bankruptWatcher && watchers.bankruptWatcher();
                     }
@@ -472,7 +470,7 @@ export class GameRenderer {
                 {immediate: true}
             )
             this.playerWatchers.set(player.id, {
-                stopWatcher,
+                InfoWatcher,
                 moneyWatcher,
                 bankruptWatcher,
             })
@@ -566,6 +564,9 @@ export class GameRenderer {
                     break;
                 case ChanceCardType.ToPlayer:
                     this.outlineModels(this.getModulesByChanceCardType(ChanceCardType.ToPlayer));
+                    break;
+                case ChanceCardType.ToOtherPlayer:
+                    this.outlineModels(this.getModulesByChanceCardType(ChanceCardType.ToOtherPlayer));
                     break;
                 case ChanceCardType.ToProperty:
                     this.outlineModels(this.getModulesByChanceCardType(ChanceCardType.ToProperty));
@@ -786,11 +787,15 @@ export class GameRenderer {
                 Array.from(this.playerEntities.values())
                     .filter((playerEntity) => !playerEntity.playerInfo.isBankrupted)
                     .map((p) => p.model))(),
+            [ChanceCardType.ToOtherPlayer]: (() =>
+                Array.from(this.playerEntities.values())
+                    .filter((playerEntity) => {
+                        return !playerEntity.playerInfo.isBankrupted && playerEntity.playerInfo.id != useUserInfo().userId;
+                    })
+                    .map((p) => p.model))(),
             [ChanceCardType.ToProperty]: (() => Array.from(this.housesItems.values()))(),
             [ChanceCardType.ToMapItem]: (() =>
-                Array.from(this.playerEntities.values())
-                    .filter((playerEntity) => playerEntity.playerInfo.id !== useUserInfo().userId)
-                    .map((p) => p.model))(),
+                [])(),
         };
         return chanceCardTargetEachType[type];
     }
@@ -866,26 +871,27 @@ export class GameRenderer {
                         depthWrite: false,
                     });
                     const iconPlane = new Mesh(planeGeometry, planeMaterial);
-                    iconPlane.rotateX(Math.PI / 2)
-                    if (mapIndex.length > 0) {
-                        //根据路径优化图标方向
-                        const currentIndex = mapIndex.findIndex((item) => item === mapItem.id);
-                        const preMapItem = mapItemsInMapIndex[(currentIndex - 1) < 0 ? (currentIndex - 1 + mapItemsInMapIndex.length) : (currentIndex - 1)]
-                        const nextMapItem = mapItemsInMapIndex[(currentIndex + 1) % mapItemsInMapIndex.length];
-                        // 计算两个点之间的向量
-                        const direction = new Vector3();
-                        direction.subVectors(new Vector3(preMapItem.x, 0, preMapItem.y), new Vector3(nextMapItem.x, 0, nextMapItem.y)).normalize();
-                        // 设定一个法向量，图片朝上，y=1
-                        const normal = new Vector3(0, 1, 0);
-                        // 计算旋转四元数，使得法向量旋转到direction
-                        const quaternion = new Quaternion();
-                        quaternion.setFromUnitVectors(normal, direction);
-                        //应用
-                        iconPlane.quaternion.copy(quaternion);
-                        this.arrivedEventIcons.set(arrivedEvent.id, iconPlane)
-                        this.mapContainer.add(iconPlane);
-                        this.setItemPositionOnMap(iconPlane, mapItem.x, mapItem.y, 0, BLOCK_HEIGHT + 0.01);
-                    }
+                    iconPlane.rotateX(-Math.PI / 2)
+                    // if (mapIndex.length > 0) {
+                    //     //根据路径优化图标方向
+                    //     const currentIndex = mapIndex.findIndex((item) => item === mapItem.id);
+                    //     const preMapItem = mapItemsInMapIndex[(currentIndex - 1) < 0 ? (currentIndex - 1 + mapItemsInMapIndex.length) : (currentIndex - 1)]
+                    //     const nextMapItem = mapItemsInMapIndex[(currentIndex + 1) % mapItemsInMapIndex.length];
+                    //     // 计算两个点之间的向量
+                    //     const direction = new Vector3();
+                    //     direction.subVectors(new Vector3(preMapItem.x, 0, preMapItem.y), new Vector3(nextMapItem.x, 0, nextMapItem.y)).normalize();
+                    //     // 设定一个法向量，图片朝上，y=1
+                    //     const normal = new Vector3(0, 1, 0);
+                    //     // 计算旋转四元数，使得法向量旋转到direction
+                    //     const quaternion = new Quaternion();
+                    //     quaternion.setFromUnitVectors(normal, direction);
+                    //     //应用
+                    //     iconPlane.quaternion.copy(quaternion);
+                    //     this.arrivedEventIcons.set(arrivedEvent.id, iconPlane)
+                    // }
+                    this.arrivedEventIcons.set(arrivedEvent.id, iconPlane)
+                    this.mapContainer.add(iconPlane);
+                    this.setItemPositionOnMap(iconPlane, mapItem.x, mapItem.y, 0, BLOCK_HEIGHT + 0.01);
                 });
             }
             this.setItemPositionOnMap(tempModule, mapItem.x, mapItem.y, mapItem.rotation);
@@ -992,9 +998,19 @@ export class GameRenderer {
         const {css2DObject, appInstance, unmount} = createCSS2DObjectFromVue(component, props);
 
         position.y += (playerEntity.size + 0.1);
+        position.z += (playerEntity.size / 2);
         css2DObject.position.copy(position);
         this.scene.add(css2DObject);
         delay && setTimeout(unmount, delay);
+    }
+
+    //让摄像机看自己
+    private focusMe() {
+        this.currentFocusModule = this.playerEntities.get(useUserInfo().userId)?.model || null;
+        if (this.currentFocusModule) {
+            this.updateCamera(this.controls, this.currentFocusModule, 7, 30);
+            this.controls.update();
+        }
     }
 }
 
