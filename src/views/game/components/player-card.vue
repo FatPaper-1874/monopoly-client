@@ -15,13 +15,18 @@ const gameInfoStroe = useGameInfo();
 
 const _userInfo = computed(() => props.player.user);
 const _isMyTrun = computed(() => gameInfoStroe.currentPlayerInRound === props.player.id);
+const _isBankrupted = computed(() => gameInfoStroe.getMyInfo?.isBankrupted);
 const avatarSrc = computed(() => {
 	return _userInfo.value.avatar ? `http://${_userInfo.value.avatar}` : "";
 });
 </script>
 
 <template>
-	<div class="player-card" :style="{ 'border-color': _isMyTrun ? 'var(--color-third)' : '' }">
+	<div
+		class="player-card"
+		:class="{ is_bankrupted: _isBankrupted }"
+		:style="{ 'border-color': _isMyTrun ? 'var(--color-third)' : '' }"
+	>
 		<div class="avatar" :style="{ 'background-color': _userInfo.color }">
 			<div v-if="player.isOffline" class="disconnect-marker">
 				<FontAwesomeIcon icon="link-slash" />
@@ -49,6 +54,24 @@ const avatarSrc = computed(() => {
 	box-sizing: border-box;
 	user-select: none;
 	margin: 0.2rem 0;
+
+	&.is_bankrupted {
+		position: relative;
+		filter: grayscale(1);
+	}
+
+	&.is_bankrupted::after {
+		content: "OUT!";
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		color: #444444;
+		font-size: 2.5rem;
+		line-height: 2.5rem;
+		text-align: center;
+		display: block;
+	}
 
 	& > .avatar {
 		$avatar_size: 3rem;

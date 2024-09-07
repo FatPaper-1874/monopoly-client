@@ -5,13 +5,13 @@ import {shuffleArray} from '@/utils'
 import {useDeviceStatus} from "@/store";
 
 const svgList = ["bolt", "bomb", "heart", "house", "palette", "sack-dollar", "wand-magic-sparkles", 'video', 'close', 'comments'];
-const getDoubleSvgList = (num: number) => {
+function getDoubleSvgList(num: number){
   let _svgList = shuffleArray(svgList);
   _svgList = _svgList.slice(0, num);
   return _svgList.concat(_svgList);
 }
 
-const isRoll = ref(!useDeviceStatus().isMobile);
+const isRoll = computed(()=>!useDeviceStatus().isMobile);
 
 </script>
 

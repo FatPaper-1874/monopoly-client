@@ -29,11 +29,11 @@ const lockCameraIcon = computed(() => (islockingCamera.value ? "fa-video" : "fa-
 const _isMyTurn = computed(() => gameInfoStore.isMyTurn);
 const _propertiesList = computed(() => gameInfoStore.propertiesList);
 
-const handleToggleLockCamera = () => {
+function handleToggleLockCamera(){
   islockingCamera.value = gameRenderer.toggleLockCamera();
 };
 
-const handleRollDice = () => {
+function handleRollDice(){
   if (socketClient) {
     socketClient.rollDice();
   }

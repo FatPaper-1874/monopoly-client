@@ -13,7 +13,7 @@ import {loadItemTypeModules} from "@/utils/three/itemtype-loader";
 import {debounce} from "@/utils";
 import {ThreeSceneBase} from "@/classes/three/ThreeSceneBase";
 
-export class MapPreviewerRenderer extends ThreeSceneBase{
+export class MapPreviewerRenderer extends ThreeSceneBase {
     private controls: OrbitControls;
     private mapContainer: Group;
     private models: { [key: string]: Group };

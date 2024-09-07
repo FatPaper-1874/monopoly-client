@@ -16,7 +16,7 @@ const emits = defineEmits(["select", "update:selectedKey"]);
 
 const _selectedList = reactive<string[]>([]);
 
-const handleItemClick = (item: any) => {
+function handleItemClick(item: any){
 	const itemId = item[props.keyName];
 	if (props.multiple) {
 		if (_selectedList.includes(itemId)) {

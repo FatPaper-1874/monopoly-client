@@ -22,7 +22,7 @@ export const lightenColor = (hexColor: string, amount: number): string => {
     return newHexColor;
 };
 
-export const getRandomInteger = (min: number, max: number) => {
+export function getRandomInteger(min: number, max: number){
     return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
@@ -55,7 +55,6 @@ export function throttle(fn: Function, interval: number) {
     const _this = this;
 
     return function (...args: any[]) {
-        console.log(Date.now(), interval + lastTime)
         if (Date.now() >= interval + lastTime) {
             lastTime = Date.now();
             fn.apply(_this, args);

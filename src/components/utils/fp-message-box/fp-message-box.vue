@@ -19,11 +19,11 @@ const ContentContainer = ref<HTMLElement | null>(null);
 const visible = ref(false);
 const isConfirm = ref(true);
 
-const handleCancle = () => {
+function handleCancle(){
 	isConfirm.value = false;
 	visible.value = false;
 };
-const handleConfirm = () => {
+function handleConfirm(){
 	visible.value = false;
 };
 

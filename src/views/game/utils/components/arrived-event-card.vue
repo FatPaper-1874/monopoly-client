@@ -7,7 +7,7 @@ import {ref} from "vue";
 
 const arrivedEvent = ref<ArrivedEvent | null>(null);
 
-const updateArrivedEvent = (newArrivedEvent: ArrivedEvent) => {
+function updateArrivedEvent(newArrivedEvent: ArrivedEvent){
   arrivedEvent.value = newArrivedEvent;
 };
 

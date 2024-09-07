@@ -18,7 +18,7 @@ const _playerNameColor = computed(() => {
 	}
 });
 
-const updateProperty = (newProperty: PropertyInfo) => {
+function updateProperty(newProperty: PropertyInfo){
 	_property.value = newProperty;
 };
 

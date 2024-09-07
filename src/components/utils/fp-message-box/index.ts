@@ -9,13 +9,13 @@ interface Options extends Record<string, any> {
 	cancelText?: string;
 }
 
-export const FPMessageBox = (options: Options) => {
+export function FPMessageBox(options: Options){
 	return new Promise((resolve, reject) => {
 		showMessageBox(options, resolve, reject);
 	});
 };
 
-const showMessageBox = (options: Options, resolve: (value: unknown) => void, reject: (reason?: any) => void) => {
+function showMessageBox(options: Options, resolve: (value: unknown) => void, reject: (reason?: any) => void){
 	const fragment = document.createDocumentFragment();
 	const messageBoxApp = createApp(FPMessageBoxVue, options) as App<any>;
 

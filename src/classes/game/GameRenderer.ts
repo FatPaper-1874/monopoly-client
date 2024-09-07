@@ -198,6 +198,7 @@ export class GameRenderer {
         const propertyRaycaster = new Raycaster();
         const arrivedEventRaycaster = new Raycaster();
         const pointer = new Vector2();
+
         // 创建轨道控制器
 
         const onPointerMove = (event: MouseEvent) => {
@@ -443,7 +444,6 @@ export class GameRenderer {
                 (newInfo) => {
                     const playerEntity = this.getPlayerEntity(player.id);
                     playerEntity && playerEntity.updatePlayerInfo(newInfo);
-                    console.log(newInfo)
                 },
                 {immediate: true, deep: true}
             )

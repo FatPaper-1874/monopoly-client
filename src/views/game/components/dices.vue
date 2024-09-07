@@ -28,7 +28,7 @@ onMounted(() => {
 
 const emit = defineEmits(["roll"]);
 
-const handleRollDice = () => {
+function handleRollDice(){
 	if (canRoll.value) {
 		emit("roll");
 	}

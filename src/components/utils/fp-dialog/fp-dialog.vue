@@ -9,12 +9,12 @@ const { visible, sumbitDisable } = defineProps({
 
 const emits = defineEmits(["update:visible", "submit", "cancel"]);
 
-const handleSumbit = () => {
+function handleSumbit(){
 	emits("submit");
 	emits("update:visible", false);
 };
 
-const closeDialog = () => {
+function closeDialog(){
 	emits("cancel");
 	emits("update:visible", false);
 };

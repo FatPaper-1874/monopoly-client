@@ -92,19 +92,19 @@ onBeforeUnmount(() => {
 
 let socketClient: GameSocketClient;
 
-const handleLeaveRoom = () => {
+function handleLeaveRoom() {
   if (socketClient) {
     socketClient.leaveRoom();
   }
-};
+}
 
-const handleReadyToggle = () => {
+function handleReadyToggle() {
   if (socketClient) {
     socketClient.readyToggle();
   }
-};
+}
 
-const handleGameStart = () => {
+function handleGameStart() {
   if (socketClient) {
     useLoading().$patch({
       loading: true,
@@ -112,20 +112,20 @@ const handleGameStart = () => {
     })
     socketClient.startGame();
   }
-};
+}
 
-const handleChangeMap = () => {
+function handleChangeMap() {
   if (socketClient) {
     _tempGameSettingFrom.value.mapId = _tempMapSelectedId.value;
     socketClient.changeGameSetting(toRaw(_tempGameSettingFrom.value));
   }
-};
+}
 
-const handleUpdateGameSetting = () => {
+function handleUpdateGameSetting() {
   if (socketClient) {
     socketClient.changeGameSetting(toRaw(_tempGameSettingFrom.value));
   }
-};
+}
 </script>
 
 <template>

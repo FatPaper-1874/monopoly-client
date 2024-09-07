@@ -34,19 +34,19 @@ const user = computed(() => userInfoStore);
 const userList = computed(() => userListStore.userList);
 const roomList = computed(() => roomListStroe.roomList);
 
-const handleCreateRoom = () => {
+function handleCreateRoom(){
 	if (socketClient) {
 		socketClient.joinRoom("");
 	}
 };
 
-const handleJoinRoom = (roomId: string) => {
+function handleJoinRoom(roomId: string){
 	if (socketClient) {
 		socketClient.joinRoom(roomId);
 	}
 };
 
-const handleLogout = () => {
+function handleLogout(){
 	if (socketClient) {
 		socketClient.disConnect();
 	}

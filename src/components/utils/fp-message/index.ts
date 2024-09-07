@@ -10,12 +10,12 @@ import { App, ComponentPublicInstance, createApp, ref, watch, WatchStopHandle } 
 
 let itemQueue = ref([] as Array<ComponentPublicInstance>);
 
-const FPMessage = (options: MessageOptions) => {
+function FPMessage(options: MessageOptions){
 	const fpMessage = createApp(fpMessageVue, options);
 	showMessage(fpMessage, options.delay || 3000, options.onClosed);
 };
 
-const showMessage = (app: App, delay: number, onClosedFn: Function | undefined) => {
+function showMessage(app: App, delay: number, onClosedFn: Function | undefined){
 	const container = document.createDocumentFragment();
 	const vm = app.mount(container);
 	itemQueue.value.push(vm);
@@ -45,11 +45,11 @@ const hideMessage = async (app: App, vm: ComponentPublicInstance, stopHandle: Wa
 	itemQueue.value = itemQueue.value.filter((item) => item !== vm);
 };
 
-const findIndex = (arr: Array<ComponentPublicInstance>, item: ComponentPublicInstance) => {
+function findIndex(arr: Array<ComponentPublicInstance>, item: ComponentPublicInstance){
 	return arr.findIndex((i) => i === item);
 };
 
-const updateTop = (vm: ComponentPublicInstance) => {
+function updateTop(vm: ComponentPublicInstance){
 	const index = findIndex(itemQueue.value, vm);
 	//@ts-ignore
 	vm.setTop(index * 2.8 + (index + 1) * 1.2);

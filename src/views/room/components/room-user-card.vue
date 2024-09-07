@@ -15,7 +15,7 @@ const lightColor = computed(() => user.value ? lightenColor(user.value.color, 15
 const avatarSrc = computed(() => user.value ? `http://${user.value.avatar}` : "");
 const isMe = computed(() => user.value ? user.value.userId === useUserInfo().userId : false)
 
-const handleChangeRole = (operate: ChangeRoleOperate) => {
+function handleChangeRole(operate: ChangeRoleOperate){
   const serverClient = GameSocketClient.getInstance();
   serverClient.changeRole(operate);
 };

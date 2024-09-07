@@ -36,11 +36,11 @@ const classType = computed(() => ["fp-message", props.type]);
 //@ts-ignore
 const iconName = computed(() => `fa-solid fa-${iconList[props.type]}`);
 
-const setTop = (newValue: number) => {
+function setTop(newValue: number){
 	top.value = newValue;
 };
 
-const setVisible = (newState: boolean) => {
+function setVisible(newState: boolean){
 	return new Promise((resolve, reject) => {
 		show.value = newState;
 		let timer = setTimeout(() => {

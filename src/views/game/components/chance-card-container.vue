@@ -27,21 +27,21 @@ const _currentChanceCard = ref<ChanceCardInfo | null>(null);
 const _selectedId = ref<string | string[]>("");
 const _canUseChanceCard = computed(() => utilStore.canRoll);
 
-const handleChangeCardClick = (card: ChanceCardInfo) => {
+function handleChangeCardClick(card: ChanceCardInfo){
   if (_canUseChanceCard.value) {
     _useChanceCardVisible.value = true;
     _currentChanceCard.value = card;
   }
 };
 
-const handleUseChanceCard = () => {
+function handleUseChanceCard(){
   if (_currentChanceCard.value) {
     const targetId = toRaw(_selectedId.value);
     socketClient.useChanceCard(_currentChanceCard.value.id, targetId);
   }
 };
 
-const handleCancleChanceCard = () => {
+function handleCancleChanceCard(){
   _currentChanceCard.value = null;
 };
 
