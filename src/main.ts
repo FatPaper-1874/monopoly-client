@@ -43,7 +43,8 @@ import {
     faClockRotateLeft,
     faVideo,
     faBullhorn,
-    faBug
+    faBug,
+    faCode
 } from "@fortawesome/free-solid-svg-icons";
 import {chanceCardSource, chanceCardTarget} from "./directives/chanceCardDrag";
 import {useDeviceStatus} from "@/store";
@@ -77,7 +78,8 @@ library.add(faBolt,
     faClockRotateLeft,
     faVideo,
     faBullhorn,
-    faBug
+    faBug,
+    faCode
 );
 const pinia = createPinia()
 createApp(App)

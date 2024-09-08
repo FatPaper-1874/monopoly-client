@@ -1,18 +1,72 @@
-# Vue 3 + TypeScript + Vite
+# monopoly-client
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+FatPaper 大富翁的 web 客户端
 
-## Recommended IDE Setup
+#### 运行
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+`yarn dev`
 
-## Type Support For `.vue` Imports in TS
+#### 打包
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
+`yarn build`
 
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
+#### 目录结构
 
-1. Disable the built-in TypeScript Extension
-   1. Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-   2. Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
+```
+├─📁 public------------------------ # 资源
+│ ├─📁 draco----------------------- # 模型解密工具
+│ └─📄 logo.ico-------------------- # logo
+├─📁 src
+│ ├─📁 assets
+│ │ ├─📁 font---------------------- # 字体
+│ │ ├─📄 style.scss---------------- # 全局样式
+│ │ └─📄 ui.scss------------------- # 全局UI样式
+│ ├─📁 axios----------------------- # axios
+│ ├─📁 classes--------------------- # 重要类
+│ │ ├─📁 game
+│ │ │ ├─📄 Animated2DBase.ts
+│ │ │ ├─📄 GameEntity.ts
+│ │ │ ├─📄 GameRenderer.ts--------- # 游戏渲染工具
+│ │ │ └─📄 PlayerEntity.ts--------- # 玩家实体
+│ │ ├─📁 three--------------------- # three.js相关
+│ │ │ ├─📄 DiceRenderer.ts--------- # 骰子类
+│ │ │ ├─📄 LoginDiceRenderer.ts---- # 登陆页面骰子
+│ │ │ └─📄 ThreeSceneBase.ts------- # three.js场景基类
+│ │ └─📁 websocket
+│ │   └─📄 GameSocketClient.ts----- # websocket客户端
+│ ├─📁 components------------------ # 组件
+│ │ ├─📁 common
+│ │ └─📁 utils
+│ │   ├─📁 fp-dialog--------------- # dialog组件
+│ │   ├─📁 fp-loading-------------- # loading组件
+│ │   ├─📁 fp-message-------------- # message组件
+│ │   ├─📁 fp-message-box---------- # message-box组件
+│ │   ├─📁 fp-popover-------------- # popover组件
+│ │   └─📁 item-selector----------- # 选择器组件
+│ ├─📁 directives------------------ # 自定义指令
+│ │ └─📄 chanceCardDrag.ts--------- # 机会卡拖拽指令
+│ ├─📁 enums----------------------- # 枚举
+│ ├─📁 interfaces------------------ # 接口
+│ ├─📁 router---------------------- # 路由
+│ ├─📁 store----------------------- # 数据仓库
+│ ├─📁 utils
+│ │ ├─📁 api----------------------- # api
+│ │ ├─📁 event-bus----------------- # 事件发布订阅
+│ │ ├─📁 spine-threejs------------- # spine在three.js中运行的工具
+│ │ ├─📁 three--------------------- # three.js相关工具
+│ │ ├─📄 index.ts------------------ # 工具函数集
+│ │ └─📄 var.ts-------------------- # 静态数据
+│ ├─📁 views
+│ │ ├─📁 background---------------- # 背景组件
+│ │ ├─📁 chat---------------------- # 聊天组件
+│ │ ├─📁 danmaku------------------- # 弹幕组件
+│ │ ├─📁 game---------------------- # 游戏页面
+│ │ ├─📁 hall---------------------- # 大厅页面
+│ │ ├─📁 login--------------------- # 登陆页面
+│ │ ├─📁 music_player-------------- # 音乐播放器组件
+│ │ ├─📁 room---------------------- # 房间页面
+│ │ └─📁 screen_mask--------------- # 遮罩层组件
+│ ├─📄 App.vue
+│ └─📄 main.ts
+└─📄 global.config.ts-------------- # 配置数据桥梁
+```
