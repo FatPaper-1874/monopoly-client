@@ -26,6 +26,7 @@ export class DiceRenderer {
 	private isRotate: boolean;
 	private isEnlarge: boolean;
 	private enlargenum: number;
+	private diceModleWidth: number = 2;
 
 	constructor(
 		el: HTMLCanvasElement,
@@ -56,7 +57,12 @@ export class DiceRenderer {
 		// );
 		this.camera = new THREE.PerspectiveCamera(45, el.clientWidth / el.clientHeight, 0.1, 100);
 
-		this.camera.position.set(3 * enlargenum, 0, 0);
+		this.camera.position.set(
+			enlargenum *
+				((this.dicenum * this.diceModleWidth + (this.dicenum * 0.5 - 1)) * Math.tan(22.5) + 1 / this.dicenum),
+			0,
+			0
+		);
 		this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 
 		this.isRotate = rotate;
@@ -159,7 +165,7 @@ export class DiceRenderer {
 			this.scene.add(dice);
 		}
 		if (this.isRotate) this.startRotate();
-		this.arrangeModels(this.dices, this.dicegap, 2);
+		this.arrangeModels(this.dices, this.dicegap, this.diceModleWidth);
 	}
 
 	private arrangeModels(models: THREE.Group[], gap: number, modelWidth: number) {
