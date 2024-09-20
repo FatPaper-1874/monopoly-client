@@ -21,24 +21,28 @@ export class LoginDiceRenderer extends DiceRenderer {
 
     public async showImage(imgUrl: string) {
         if (!this.imagePlane) return;
-        const textureLoader = new THREE.TextureLoader();
-        const texture = await new Promise<THREE.Texture>((resolve, reject) => {
-            textureLoader.load(imgUrl, (texture) => {
-                texture.matrixAutoUpdate = false
-                texture.colorSpace = THREE.SRGBColorSpace
-                resolve(texture);
+        if (imgUrl) {
+            const textureLoader = new THREE.TextureLoader();
+            const texture = await new Promise<THREE.Texture>((resolve, reject) => {
+                textureLoader.load(imgUrl, (texture) => {
+                    texture.matrixAutoUpdate = false
+                    texture.colorSpace = THREE.SRGBColorSpace
+                    resolve(texture);
+                });
             });
-        });
-        //获取图片后，停止转动;
 
-        await super.stopRotate([1]);
-        const material = new THREE.MeshBasicMaterial({
-            transparent: true,
-            map: texture,
-            side: THREE.DoubleSide,
-        });
-        material.map && material.map.matrix.scale(0.6, 0.6).translate(0.5, 0.5)
-        this.imagePlane.material = material;
+            await super.stopRotate([1]);
+            const material = new THREE.MeshBasicMaterial({
+                transparent: true,
+                map: texture,
+                side: THREE.DoubleSide,
+            });
+            material.map && material.map.matrix.scale(0.6, 0.6).translate(0.5, 0.5)
+            this.imagePlane.material = material;
+            //获取图片后，停止转动;
+        } else {
+            await super.stopRotate([1]);
+        }
     }
 
     public cleanImage() {

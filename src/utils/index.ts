@@ -22,7 +22,70 @@ export const lightenColor = (hexColor: string, amount: number): string => {
     return newHexColor;
 };
 
-export function getRandomInteger(min: number, max: number){
+export function adjustColorBrightness(hex: string, percent: number): string {
+    // 移除 '#' 符号
+    hex = hex.replace(/^#/, '');
+
+    // 将 3 字符 HEX 转为 6 字符 HEX
+    if (hex.length === 3) {
+        hex = hex.split('').map(char => char + char).join('');
+    }
+
+    // 将 HEX 转换为 RGB
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+
+    // 调整颜色的亮度
+    const adjust = (color: number) =>
+        Math.min(255, Math.max(0, Math.floor(color * (1 + percent / 100))));
+
+    const newR = adjust(r);
+    const newG = adjust(g);
+    const newB = adjust(b);
+
+    // 转回 HEX 格式
+    const toHex = (color: number) => color.toString(16).padStart(2, '0');
+
+    return `#${toHex(newR)}${toHex(newG)}${toHex(newB)}`;
+}
+
+export function adjustColorAuto(hex: string, percent: number): string {
+    // 移除 '#' 符号
+    hex = hex.replace(/^#/, '');
+
+    // 将 3 字符 HEX 转为 6 字符 HEX
+    if (hex.length === 3) {
+        hex = hex.split('').map(char => char + char).join('');
+    }
+
+    // 将 HEX 转换为 RGB
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+
+    // 计算当前亮度 (0-255)，使用 YIQ 模型
+    const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+
+    // 设定亮度阈值，判断是增加还是减少亮度
+    const threshold = 128;
+    const adjustment = brightness < threshold ? percent : -percent;
+
+    // 调整颜色的亮度
+    const adjust = (color: number) =>
+        Math.min(255, Math.max(0, Math.floor(color * (1 + adjustment / 100))));
+
+    const newR = adjust(r);
+    const newG = adjust(g);
+    const newB = adjust(b);
+
+    // 转回 HEX 格式
+    const toHex = (color: number) => color.toString(16).padStart(2, '0');
+
+    return `#${toHex(newR)}${toHex(newG)}${toHex(newB)}`;
+}
+
+export function getRandomInteger(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
@@ -158,6 +221,7 @@ export function createLoginIframeOnBody(url: string): Promise<string> {
     const iframe = document.createElement("iframe");
     iframe.src = url;
     iframe.id = "login-iframe";
+    iframe.style.zIndex = "10000"
     document.body.appendChild(iframe);
     return new Promise((resolve, reject) => {
         window.addEventListener('message', e => {
@@ -167,3 +231,21 @@ export function createLoginIframeOnBody(url: string): Promise<string> {
         })
     })
 }
+
+export function base64ToFileUrl(base64String: string, type: string) {
+    const binaryString = atob(base64String); // Base64 解码为二进制字符串
+
+    // 将二进制字符串转换为 Uint8Array
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    // 创建 Blob 对象
+    const blob = new Blob([bytes], {type});
+
+    // 创建临时 URL
+    return URL.createObjectURL(blob);
+}
+

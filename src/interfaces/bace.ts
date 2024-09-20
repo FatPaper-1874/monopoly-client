@@ -1,5 +1,11 @@
 import {ChanceCardType, GameOverRule} from "@/enums/game";
-import {ChatMessageType, SocketMsgType} from "@/enums/bace";
+import {ChatMessageType, MonopolyWebSocketMsgType, SocketMsgType} from "@/enums/bace";
+import {DataConnection} from "peerjs";
+
+export type MonopolyWebSocketMsg = {
+    type: MonopolyWebSocketMsgType;
+    data: any;
+};
 
 export interface GameSetting {
     gameOverRule: GameOverRule; //游戏结束的判定规则
@@ -35,6 +41,9 @@ export interface User {
     isReady: boolean;
     avatar: string;
     color: string;
+}
+
+export interface UserInRoomInfo extends User {
     role: Role;
 }
 
@@ -55,13 +64,7 @@ export interface Role {
 
 export interface RoomInfo {
     roomId: string;
-    userList: Array<{
-        userId: string;
-        username: string;
-        isReady: boolean;
-        color: string;
-        avatar: string;
-    }>;
+    userList: Array<User>;
     isStarted: boolean;
     ownerId: string;
     ownerName: string;

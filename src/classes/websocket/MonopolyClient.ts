@@ -1,11 +1,11 @@
-import PropertyInfoVue from "@/components/common/property-info.vue";
-import { FPMessageBox } from "@/components/utils/fp-message-box";
-import { createVNode } from "vue";
+import Peer, { DataConnection } from "peerjs";
+import { ChangeRoleOperate, MonopolyWebSocketMsgType, SocketMsgType } from "@/enums/bace";
+import { ChatMessage, GameSetting, MonopolyWebSocketMsg, Room, RoomInfo, SocketMessage, User } from "@/interfaces/bace";
+import { base64ToFileUrl } from "@/utils";
+import { asyncMissionQueue } from "@/utils/async-mission-queue";
+import { MonopolyHost } from "@/classes/game/MonopolyHost";
+import { PeerClient } from "@/classes/game/PeerClient";
 import FPMessage from "@/components/utils/fp-message";
-import { ChangeRoleOperate, NormalEvents, SocketMsgType } from "@/enums/bace";
-import { OperateType } from "@/enums/game";
-import { Room, SocketMessage, User, GameSetting, ChatMessage, RoomInfo } from "@/interfaces/bace";
-import { GameInfo, GameInitInfo, PropertyInfo } from "@/interfaces/game";
 import {
 	useChat,
 	useGameInfo,
@@ -17,18 +17,14 @@ import {
 	useUserList,
 	useUtil,
 } from "@/store";
-import { randomString } from "@/utils";
-import { FATPAPER_HOST, MONOPOLY_SOCKET_PORT } from "../../../../global.config";
-import useEventBus from "../../utils/event-bus";
 import router from "@/router";
-
-interface UserInfo {
-	username: string;
-	useraccount: string;
-	userId: string;
-	avatar: string;
-	color: string;
-}
+import { GameInfo, GameInitInfo, PropertyInfo } from "@/interfaces/game";
+import useEventBus from "@/utils/event-bus";
+import { createVNode } from "vue";
+import PropertyInfoVue from "@/components/common/property-info.vue";
+import { FPMessageBox } from "@/components/utils/fp-message-box";
+import { OperateType } from "@/enums/game";
+import { send } from "vite";
 
 type MonopolyClientOptions = {
 	webSocket: {
@@ -41,48 +37,176 @@ type MonopolyClientOptions = {
 	};
 };
 
-export class GameSocketClient {
-	private socketClient: WebSocket;
-	private static instance: GameSocketClient | null;
-
-	static getInstance(): GameSocketClient {
-		if (!this.instance || this.instance.socketClient.readyState === WebSocket.CLOSED) {
-			const token = localStorage.getItem("token");
-			if (token) {
-				this.instance = new GameSocketClient(token);
-			} else {
-				router.replace("login");
-				throw Error("必须在首次使用GameSocketClient时提供token");
-			}
+async function createWebSocketClient(options: MonopolyClientOptions): Promise<WebSocket> {
+	const { webSocket: wsInfo } = options;
+	const ws = new WebSocket(`ws://${wsInfo.host}:${wsInfo.port}`);
+	return new Promise((resolve, reject) => {
+		try {
+			ws.onopen = (ev) => {
+				ws.onopen = null;
+				resolve(ws);
+			};
+		} catch (e: any) {
+			reject(e.message);
 		}
-		return <GameSocketClient>this.instance;
+	});
+}
+
+export class MonopolyClient {
+	private userId: string | undefined;
+	private peerId: string | undefined;
+	private roomId: string | undefined;
+
+	private options: MonopolyClientOptions;
+	private webSocketHost: string;
+	private webSocketPort: number;
+	private iceServerHost: string;
+	private iceServerPort: number;
+
+	private worker: Worker | undefined;
+	private webSocketClient: WebSocket | undefined;
+	private peerClient: PeerClient | undefined;
+	private conn: DataConnection | undefined;
+
+	private gameHost: MonopolyHost | undefined;
+
+	private static instance: MonopolyClient | undefined;
+
+	public static getInstance(): MonopolyClient;
+	public static getInstance(options: MonopolyClientOptions): Promise<MonopolyClient>;
+	public static getInstance(options?: MonopolyClientOptions) {
+		if (this.instance) {
+			return this.instance;
+		}
+		if (options) {
+			return (async () => {
+				const ws = await createWebSocketClient(options);
+				this.instance = new MonopolyClient(ws, options);
+
+				return this.instance;
+			})();
+		} else {
+			if (!this.instance) {
+				throw Error("在调用MonopolyClient之前应该先对其初始化, 使用useMonopolyClient时提供options以初始化");
+			}
+			return this.instance;
+		}
 	}
 
-	constructor(token: string) {
-		useEventBus().emit(NormalEvents.WebSocketConnected);
-		const loadingStore = useLoading();
-		loadingStore.loading = true;
-		loadingStore.text = "连接WebSocket服务器中";
-		this.socketClient = new WebSocket(`ws://${FATPAPER_HOST}:${MONOPOLY_SOCKET_PORT}`);
-		this.socketClient.onclose = () => {};
-		this.socketClient.onopen = () => {
-			loadingStore.loading = false;
-			this.sendMsg(SocketMsgType.ConfirmIdentity, JSON.stringify({ token }));
-			this.socketClient.onmessage = (e) => {
-				const data: SocketMessage = JSON.parse(e.data);
+	private constructor(ws: WebSocket, options: MonopolyClientOptions) {
+		this.webSocketClient = ws;
+		const {
+			webSocket: { host: wsHost, port: wsPort },
+			iceServer: { host: iceHost, port: icePort },
+		} = options;
+
+		this.options = options;
+		this.webSocketHost = wsHost;
+		this.webSocketPort = wsPort;
+		this.iceServerHost = iceHost;
+		this.iceServerPort = icePort;
+		// asyncMessageQueue<MonopolyWebSocketMsgType, MonopolyWebSocketMsg>((callback) => {
+		// 	const messageHandler = (ev: MessageEvent) => {
+		// 		const data: MonopolyWebSocketMsg = JSON.parse(ev.data);
+		// 		callback(data);
+		// 	};
+		// 	ws.addEventListener("message", messageHandler);
+		// 	return () => ws.removeEventListener("message", messageHandler);
+		// }, []);
+	}
+
+	public async joinRoom(roomId: string) {
+		if (!this.webSocketClient)
+			throw Error("在调用MonopolyClient之前应该先对其初始化, 使用useMonopolyClient时提供options以初始化");
+		if (this.webSocketClient.readyState === WebSocket.CLOSED) {
+			this.webSocketClient = await createWebSocketClient(this.options);
+		}
+		const ws = this.webSocketClient;
+
+		//向服务器发出申请
+		this.sendToWebSocketServer(MonopolyWebSocketMsgType.JoinRoom, roomId);
+
+		//同步队列等待服务器响应
+		await asyncMissionQueue<MonopolyWebSocketMsgType, MonopolyWebSocketMsg>(
+			(callback, cancle) => {
+				function messageHandler(ev: MessageEvent) {
+					const data: MonopolyWebSocketMsg = JSON.parse(ev.data);
+					callback(data);
+				}
+
+				function errorHandler(ev: MessageEvent) {
+					const data = JSON.parse(ev.data) as MonopolyWebSocketMsg;
+					switch (data.type) {
+						case MonopolyWebSocketMsgType.Error:
+							cancle(`服务器驳回: ${data.data}`);
+							break;
+					}
+				}
+
+				function removeEventListeners() {
+					ws.removeEventListener("message", messageHandler);
+					ws.removeEventListener("message", errorHandler);
+				}
+
+				ws.addEventListener("message", messageHandler);
+				ws.addEventListener("message", errorHandler);
+				return removeEventListeners;
+			},
+			[
+				{
+					type: MonopolyWebSocketMsgType.JoinRoom,
+					fn: async (_data) => {
+						const data = _data.data;
+						let hostPeerId = data;
+						if (data.create) {
+							if (this.gameHost) throw Error("你已经是主机了,为什么要再次创建房间!!!");
+							// 创建一个临时的 URL 指向 Blob 数据
+							this.gameHost = await MonopolyHost.create(data.roomId, this.iceServerHost, this.iceServerPort);
+							hostPeerId = this.gameHost.getPeerId();
+							this.sendToWebSocketServer(MonopolyWebSocketMsgType.CreateRoom, hostPeerId);
+						}
+						await this.linkToGameHost(hostPeerId);
+					},
+				},
+			]
+		).catch((e) => {
+			FPMessage({ type: "error", message: e });
+		});
+	}
+
+	private async linkToGameHost(hostPeerId: string) {
+		try {
+			if (!this.peerClient) {
+				this.peerClient = await PeerClient.create(this.iceServerHost, this.iceServerPort);
+			}
+			this.conn = await this.peerClient.linkToHost(hostPeerId);
+			const { userId, username, color, avatar } = useUserInfo();
+			const user: User = {
+				userId,
+				username,
+				color,
+				avatar,
+				isReady: false,
+			};
+			this.sendMsg(SocketMsgType.JoinRoom, user);
+
+			this.conn.on("data", (_data: any) => {
+				// const data = JSON.parse(_data as string);
+				const data: SocketMessage = JSON.parse(_data);
 				if (data.msg) {
 					FPMessage({
 						type: data.msg.type as "info" | "success" | "warning" | "error",
 						message: data.msg.content,
 					});
 				}
+				console.log("Client Receive: ", data);
 
 				switch (data.type) {
 					case SocketMsgType.Heart:
 						this.handleHeart(data);
 						break;
 					case SocketMsgType.ConfirmIdentity:
-						this.handleConfirmIdentity(data.data);
+						this.handleConfirmIdentity();
 						break;
 					case SocketMsgType.UserList:
 						this.handleUserListReply(data.data);
@@ -146,8 +270,14 @@ export class GameSocketClient {
 					default:
 						break;
 				}
-			};
-		};
+			});
+		} catch (e: any) {
+			FPMessage({ type: "error", message: e });
+		}
+	}
+
+	private sendToWebSocketServer(type: MonopolyWebSocketMsgType, data: any) {
+		if (this.webSocketClient) this.webSocketClient.send(JSON.stringify({ type, data }));
 	}
 
 	private handleHeart(data: SocketMessage) {
@@ -155,12 +285,7 @@ export class GameSocketClient {
 		gameInfoStore.ping = Date.now() - data.data;
 	}
 
-	private handleConfirmIdentity(userDataRes: UserInfo) {
-		if (!userDataRes) {
-			localStorage.removeItem("token");
-			router.replace({ name: "login" });
-		}
-	}
+	private handleConfirmIdentity() {}
 
 	private handleUserListReply(data: User[]) {
 		const userListStore = useUserList();
@@ -233,7 +358,7 @@ export class GameSocketClient {
 	}
 
 	private handleGameInitFinished() {
-		useLoading().$patch({ loading: false, text: "加载结束" });
+		useLoading().hideLoading();
 	}
 
 	private handleGameInfo(data: SocketMessage) {
@@ -340,12 +465,6 @@ export class GameSocketClient {
 		this.sendMsg(SocketMsgType.RoomChat, message, roomId);
 	}
 
-	public joinRoom(roomId: string) {
-		useLoading().loading = true;
-		useLoading().text = "正在进入房间";
-		this.sendMsg(SocketMsgType.JoinRoom, "", roomId);
-	}
-
 	public leaveRoom() {
 		this.sendMsg(SocketMsgType.LeaveRoom, "");
 		const roomInfoStore = useRoomInfo();
@@ -388,8 +507,7 @@ export class GameSocketClient {
 	}
 
 	public disConnect() {
-		this.socketClient.close();
-		GameSocketClient.instance = null;
+		this.conn && this.conn.close();
 	}
 
 	private sendMsg(type: SocketMsgType, data: any, roomId: string = useRoomInfo().roomId, extra: any = undefined) {
@@ -401,6 +519,14 @@ export class GameSocketClient {
 			data,
 			extra,
 		};
-		this.socketClient.send(JSON.stringify(msgToSend));
+		this.conn && this.conn.send(JSON.stringify(msgToSend));
 	}
 }
+
+function useMonopolyClient(): MonopolyClient;
+function useMonopolyClient(options: MonopolyClientOptions): Promise<MonopolyClient>;
+function useMonopolyClient(options?: MonopolyClientOptions) {
+	return options ? MonopolyClient.getInstance(options) : MonopolyClient.getInstance();
+}
+
+export default useMonopolyClient;

@@ -3,130 +3,307 @@ import { ref, onBeforeMount, onBeforeUnmount, reactive, onMounted, nextTick } fr
 import router from "@/router";
 import { __LOGINPAGEURL__ } from "../../../global.config";
 import { getUserByToken } from "@/utils/api/user";
-import { createLoginIframeOnBody, exitFullScreen, setTimeOutAsync } from "@/utils";
+import { createLoginIframeOnBody, exitFullScreen, randomString, setTimeOutAsync } from "@/utils";
 import FPMessage from "@/components/utils/fp-message/index";
 import { useUserInfo } from "@/store";
 import { LoginDiceRenderer } from "@/classes/three/LoginDiceRenderer";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import FpPopover from "@/components/utils/fp-popover/fp-popover.vue";
+import LoginExtra from "@/views/login/components/login-extra.vue";
+import FpDialog from "@/components/utils/fp-dialog/fp-dialog.vue";
 
 let loginCodeRenderer: LoginDiceRenderer | null;
 let diceRotate: boolean = true;
 const firstClick = ref(false);
+const needLogin = ref(true);
+const showLoginMode = ref(false);
+const showDice = ref(false);
 
-async function doLogin() {
+const showTouristLogin = ref(false);
+const touristLoginForm = reactive({
+	userName: "",
+	color: "#000000",
+});
+
+function handleFirstClick() {
 	firstClick.value = true;
 	let token = localStorage.getItem("token") || "";
-	if (!token) {
-		token = await toLogin();
-		localStorage.setItem("token", token);
+	let userInfo = localStorage.getItem("user") || "";
+	const _needLogin = !token && !userInfo;
+	needLogin.value = _needLogin;
+	if (!_needLogin) {
+		getUserInfoToRoomList();
+	} else {
+		showLoginMode.value = true;
 	}
-	nextTick(() => {
-		const canvasEl = document.getElementById("dice-canvas") as HTMLCanvasElement;
-		loginCodeRenderer = new LoginDiceRenderer(canvasEl, diceRotate);
-		getUserInfoToRoomList(token);
-	});
 }
 
-// onMounted(() => {
-// 	const canvasEl = document.getElementById("dice-canvas") as HTMLCanvasElement;
-// 	loginCodeRenderer = new LoginCodeRenderer(canvasEl, diceRotate);
-// });
+async function doLogin() {
+	const token = await toLogin();
+	if (token) {
+		localStorage.setItem("token", token);
+		getUserInfoToRoomList();
+	}
+}
 
 onBeforeUnmount(() => {
 	loginCodeRenderer && loginCodeRenderer.clear();
 	loginCodeRenderer = null;
 });
 
-async function getUserInfoToRoomList(token: string) {
+async function getUserInfoToRoomList() {
 	try {
-		const { id: userId, useraccount, username, avatar, color } = await getUserByToken(token);
-		const userInfoStore = useUserInfo();
-		userInfoStore.$patch({ userId, useraccount, username, avatar, color });
-		await setTimeOutAsync(1500);
-		if (loginCodeRenderer) await loginCodeRenderer.showImage(`http://${avatar}`);
-		await setTimeOutAsync(2000, toRoomList);
+		showLoginMode.value = false;
+		showDice.value = true;
+		nextTick(() => {
+			const canvasEl = document.getElementById("dice-canvas") as HTMLCanvasElement;
+			loginCodeRenderer = new LoginDiceRenderer(canvasEl, diceRotate);
+		});
+		let token = localStorage.getItem("token") || "";
+		if (token) {
+			//账号登录
+			const { id: userId, useraccount, username, avatar, color } = await getUserByToken(token);
+			const userInfoStore = useUserInfo();
+			userInfoStore.$patch({ userId, useraccount, username, avatar, color });
+			await setTimeOutAsync(1500);
+			if (loginCodeRenderer) await loginCodeRenderer.showImage(`http://${avatar}`);
+			await setTimeOutAsync(2000, toRoomList);
+			return;
+		}
+		let userInfo = localStorage.getItem("user") || "";
+		if (userInfo) {
+			//游客登录
+			const { userId, useraccount = "", username, avatar = "", color } = JSON.parse(userInfo);
+			const userInfoStore = useUserInfo();
+			userInfoStore.$patch({ userId, useraccount, username, avatar, color });
+			await setTimeOutAsync(1500);
+			if (loginCodeRenderer) await loginCodeRenderer.showImage("");
+			await setTimeOutAsync(2000, toRoomList);
+			return;
+		}
 	} catch (e: any) {
 		FPMessage({
 			type: "error",
 			message: e || e.message || "在验证身份时发生了未知的错误",
 			onClosed: () => {
-				doLogin();
-				loginCodeRenderer && loginCodeRenderer.clear();
-				loginCodeRenderer = null;
+				localStorage.removeItem("token");
+				localStorage.removeItem("user");
 			},
 		});
 	}
 }
 
+function handleShowTouristLoginDialog() {
+	showTouristLogin.value = true;
+}
+
+function handleTouristLogin() {
+	if (!touristLoginForm.userName) {
+		FPMessage({
+			type: "error",
+			message: "不能逃避游客登记📝",
+		});
+		return;
+	}
+	const userInfo = {
+		userId: "temp-player-" + randomString(32),
+		useraccount: "",
+		username: touristLoginForm.userName,
+		color: touristLoginForm.color,
+		avatar: "",
+	};
+	localStorage.setItem("user", JSON.stringify(userInfo));
+	getUserInfoToRoomList();
+}
+
 async function toLogin() {
-	// await exitFullScreen();
 	return await createLoginIframeOnBody(__LOGINPAGEURL__);
 }
 
 function toRoomList() {
-	if (localStorage.getItem("token")) {
-		router.replace({ name: "room-list" });
-	}
-}
-
-function toGithub() {
-	window.open("https://github.com/FatPaper-1874/fatpaper-monopoly");
-}
-
-function toIssues() {
-	window.open("https://github.com/FatPaper-1874/fatpaper-monopoly/issues");
-}
-
-function toBilibili() {
-	window.open("https://www.bilibili.com/video/BV1mPHFedEH1");
+	router.replace({ name: "room-router" });
 }
 </script>
 
 <template>
-	<div @click.once="doLogin" class="login-page">
+	<div @click.once="handleFirstClick" class="login-page">
 		<div class="title">
 			<span>FatPaper的大富翁</span>
 		</div>
-		<div class="login-code-container">
-			<div class="tip" v-show="!firstClick">点击任意位置继续</div>
-			<!-- <img class="login-code loading" :src="imgUrl" alt=""> -->
-			<canvas id="dice-canvas" class="dice" v-show="firstClick"></canvas>
+
+		<div class="front-cover" v-show="!firstClick">
+			<div class="login-code-container">
+				<div class="tip">点击任意位置继续</div>
+				<!-- <img class="login-code loading" :src="imgUrl" alt=""> -->
+			</div>
+
+			<LoginExtra></LoginExtra>
 		</div>
 
-		<div class="login-extra">
-			<fp-popover placement="right" trigger="hover">
-				<div @click="toGithub" class="login-extra-item about">
-					<FontAwesomeIcon icon="code" />
+		<div class="login-mode-choose" v-if="showLoginMode">
+			<div @click="doLogin" class="login-mode">
+				<span>我(想)有个号</span>
+				<span>注册/登录</span>
+				<FontAwesomeIcon class="icon" icon="circle-user" />
+			</div>
+			<div @click="handleShowTouristLoginDialog" class="login-mode">
+				<span>我是游客</span>
+				<span>随便玩玩</span>
+				<FontAwesomeIcon class="icon" icon="gamepad" />
+			</div>
+
+			<FpDialog @submit="handleTouristLogin" v-model:visible="showTouristLogin">
+				<template #title>
+					<span style="font-size: 1.5rem">游客信息登记📝</span>
+				</template>
+				<div class="tourist-form-container">
+					<span>用户名</span>
+					<input
+						v-model="touristLoginForm.userName"
+						:style="{ color: touristLoginForm.color }"
+						type="text"
+						placeholder="输入名字"
+					/><br />
+					<span>代表颜色</span>
+					<input v-model="touristLoginForm.color" type="color" />
 				</div>
-				<template #content>
-					<div class="extra-content">点击直达Git仓库</div>
-				</template>
-			</fp-popover>
-			<fp-popover placement="right" trigger="hover">
-				<div @click="toIssues" class="login-extra-item bug">
-					<FontAwesomeIcon icon="bug" />
-				</div>
-				<template #content>
-					<div class="extra-content">有Bug？点击提交</div>
-				</template>
-			</fp-popover>
-			<fp-popover placement="right" trigger="hover">
-				<div @click="toBilibili" class="login-extra-item to-bilibili">Bili</div>
-				<template #content>
-					<div class="extra-content">点击看介绍视频</div>
-				</template>
-			</fp-popover>
+			</FpDialog>
+		</div>
+
+		<div class="dice-container" v-show="showDice">
+			<canvas id="dice-canvas" class="dice"></canvas>
 		</div>
 	</div>
 </template>
 
 <style lang="scss" scoped>
 .login-page {
+	width: 100%;
 	height: 100%;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+}
+
+.front-cover,
+.login-mode-choose,
+.dice-container {
+	flex: 1;
+}
+
+.dice-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 8rem 0;
+
+	canvas {
+		width: 100%;
+		height: 100%;
+	}
+}
+
+.tourist-form-container {
+	display: grid;
+	padding: 0 0.3rem;
+
+	& span {
+		font-size: 1.3rem;
+		margin-bottom: 0.3rem;
+		color: var(--color-primary);
+	}
+
+	& input {
+		height: 4rem;
+		font-size: 1.5rem;
+		box-sizing: border-box;
+		margin-bottom: 0.5rem;
+		transition: 0.3s all;
+		border: 0.2rem solid var(--color-bg);
+
+		&:focus {
+			border: 0.2rem solid var(--color-primary);
+		}
+	}
+}
+
+.login-mode-choose {
+	width: 85%;
+	display: flex;
+	flex-direction: row;
+	justify-content: space-around;
+	align-items: center;
+
+	.login-mode {
+		width: 19rem;
+		height: 15rem;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		border: 0.5rem solid rgba(255, 255, 255, 0.5);
+		border-radius: 1.8rem;
+		background-color: rgba(255, 255, 255, 0.65);
+		cursor: pointer;
+		transition: 0.5s all;
+		overflow: hidden;
+		position: relative;
+
+		& > span {
+			transition: 0.2s all;
+			font-size: 2rem;
+			color: var(--color-primary);
+			text-shadow: var(--text-shadow);
+			z-index: 1;
+
+			&:first-child {
+				font-size: 2.5rem;
+				font-weight: bold;
+				color: #ffffff;
+				margin-bottom: 0.5rem;
+				text-shadow: 3px 3px 2px rgb(255, 182, 59);
+			}
+		}
+
+		& > .icon {
+			transition: 0.2s all;
+			position: absolute;
+			font-size: 10rem;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			z-index: 0;
+			color: var(--color-second);
+			opacity: 0.2;
+		}
+
+		&:hover {
+			background-color: var(--color-second);
+
+			& > span {
+				font-size: 2.8rem;
+				color: #ffffff;
+				margin-bottom: 0;
+				text-shadow: 3px 3px 2px rgb(255, 182, 59);
+
+				&:first-child {
+					font-size: 0;
+					color: var(--color-primary);
+					text-shadow: 2px 2px 2px rgb(255, 245, 229);
+				}
+			}
+
+			& > .icon {
+				position: absolute;
+				top: 0.5rem;
+				left: 0.5rem;
+				font-size: 5rem;
+				transform: rotate(-10deg);
+				color: #ffffff;
+				opacity: 0.4;
+			}
+		}
+	}
 }
 
 .login-code-container {
@@ -141,7 +318,7 @@ function toBilibili() {
 	& > .tip {
 		font-size: 2rem;
 		margin-top: auto;
-		margin-bottom: 3rem;
+		margin-bottom: 9rem;
 		color: #ffffff;
 		text-shadow: var(--text-shadow);
 		animation: blink infinite 1.8s;
@@ -229,52 +406,6 @@ function toBilibili() {
 			-webkit-transform: translate3d((-5px, 5px, -5px));
 			transform: translate3d((-5px, 5px, -5px));
 		}
-	}
-}
-
-.login-extra {
-	position: absolute;
-	left: 2rem;
-	bottom: 2rem;
-	display: flex;
-	flex-direction: column;
-	justify-content: space-around;
-	align-items: center;
-
-	.login-extra-item {
-		width: 5rem;
-		height: 5rem;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		margin: 1rem 0;
-		background-color: rgba(255, 255, 255, 0.8);
-		font-size: 2rem;
-		border-radius: 0.7rem;
-		color: var(--color-second);
-		text-shadow: var(--text-shadow);
-		cursor: pointer;
-		box-shadow: var(--box-shadow);
-
-		&.to-bilibili {
-			color: #fb7299;
-			text-shadow: 3px 3px 2px #ffb9b3;
-		}
-
-		& svg {
-			filter: drop-shadow(3px 3px 2px rgba(0, 0, 0, 0.15));
-		}
-	}
-
-	.extra-content {
-		width: 5rem;
-		margin-left: 1rem;
-		font-size: 1.2rem;
-		background-color: rgba(255, 255, 255, 0.7);
-		border-radius: 0.7rem;
-		padding: 0.6rem;
-		color: var(--color-primary);
-		text-shadow: var(--text-shadow);
 	}
 }
 </style>

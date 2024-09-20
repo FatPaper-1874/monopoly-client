@@ -44,3 +44,11 @@ export enum NormalEvents {
 	WebSocketConnected = "WebSocketConnected", //ws链接成功
 	WebSocketDisconnected = "WebSocketDisconnected", //ws断开
 }
+
+export enum MonopolyWebSocketMsgType {
+	Connected = 1,
+	JoinRoom,
+	CreateRoom,
+	Step3,
+	Error,
+}

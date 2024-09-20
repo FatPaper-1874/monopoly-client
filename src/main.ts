@@ -44,7 +44,9 @@ import {
     faVideo,
     faBullhorn,
     faBug,
-    faCode
+    faCode,
+    faCircleUser,
+    faGamepad
 } from "@fortawesome/free-solid-svg-icons";
 import {chanceCardSource, chanceCardTarget} from "./directives/chanceCardDrag";
 import {useDeviceStatus} from "@/store";
@@ -79,7 +81,9 @@ library.add(faBolt,
     faVideo,
     faBullhorn,
     faBug,
-    faCode
+    faCode,
+    faCircleUser,
+    faGamepad
 );
 const pinia = createPinia()
 createApp(App)
