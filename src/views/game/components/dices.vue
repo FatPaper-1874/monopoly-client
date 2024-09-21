@@ -20,8 +20,6 @@ watch(isRollDiceAnimationPlay, (animationPlay) => {
 	if (!diceRenderer) return;
 	if (animationPlay) {
 		diceRenderer.startRotate();
-	} else {
-		diceRenderer.stopRotate(new Array(roomInfoStore.gameSetting.diceNum).fill(1));
 	}
 });
 

@@ -1,4 +1,4 @@
-import { User } from "@/interfaces/bace";
+import { User, UserInRoomInfo } from "@/interfaces/bace";
 import { ChanceCardType, GameOverRule } from "@/enums/game";
 
 export interface Property {
@@ -88,7 +88,7 @@ export interface PropertyInfo {
 
 export interface PlayerInfo {
 	id: string;
-	user: User;
+	user: UserInRoomInfo;
 	money: number;
 	properties: PropertyInfo[];
 	chanceCards: ChanceCardInfo[];

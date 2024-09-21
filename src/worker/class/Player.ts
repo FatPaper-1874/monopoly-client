@@ -1,4 +1,4 @@
-import { Role, SocketMessage, User } from "@/interfaces/bace";
+import { Role, SocketMessage, User, UserInRoomInfo } from "@/interfaces/bace";
 import { PlayerInfo } from "@/interfaces/game";
 import { ChanceCard } from "./ChanceCard";
 import { Property } from "./Property";
@@ -7,7 +7,7 @@ import { PlayerEvents } from "../enums/game";
 import { ChanceCardInterface, PlayerInterface, PropertyInterface } from "../interface";
 
 export class Player implements PlayerInterface {
-	private user: User;
+	private user: UserInRoomInfo;
 	private money: number;
 	private properties: PropertyInterface[];
 	private chanceCards: ChanceCardInterface[];
@@ -18,7 +18,7 @@ export class Player implements PlayerInterface {
 
 	private callBackMap: Map<PlayerEvents, { fn: Function; isOnce: boolean }[]> = new Map();
 
-	constructor(user: User, initMoney: number, initPositionIndex: number) {
+	constructor(user: UserInRoomInfo, initMoney: number, initPositionIndex: number) {
 		this.user = user;
 		this.money = initMoney;
 		this.properties = [];

@@ -31,7 +31,7 @@ export class PlayerEntity extends GameEntity {
 
     public updatePlayerInfo(playerInfo: PlayerInfo) {
         this.playerInfo = playerInfo;
-        super.currentPositionIndex = playerInfo.positionIndex;
+        this.currentPositionIndex = playerInfo.positionIndex;
         if (this.playerInfo.stop > 0) {
             super.doAnimation('sleeping', true);
         }
