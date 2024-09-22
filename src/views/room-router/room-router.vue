@@ -6,7 +6,7 @@ import userCard from "@/components/common/user-card.vue";
 import router from "@/router";
 import { getUserByToken } from "@/utils/api/user";
 import FPMessage from "@/components/utils/fp-message";
-import { __FATPAPER_HOST__, __ICE_SERVER_PORT__, __WEBSOCKET_PORT__ } from "../../../global.config";
+import { __FATPAPER_HOST__, __ICE_SERVER_PORT__ } from "../../../global.config";
 
 const userInfoStore = useUserInfo();
 const userListStore = useUserList();
