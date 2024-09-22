@@ -29,7 +29,7 @@ export interface SocketMessage {
     roomId?: string;
     data: any;
     msg?: {
-        type: string;
+        type: "info" | "success" | "warning" | "error" | "";
         content: string;
     };
     extra?: any;

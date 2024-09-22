@@ -32,7 +32,7 @@ import { ChanceCardInfo, ItemType, MapItem, PlayerInfo, PropertyInfo } from "@/i
 import { useDeviceStatus, useGameInfo, useLoading, useMapData, useUserInfo } from "@/store";
 import { Component, ComponentPublicInstance, createApp, toRaw, watch, WatchStopHandle } from "vue";
 import { loadItemTypeModules } from "@/utils/three/itemtype-loader";
-import useMonopolyClient from "@/classes/websocket/MonopolyClient";
+import { useMonopolyClient } from "@/classes/monopoly-client/MonopolyClient";
 import { CSS2DObject, CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
 import PropertyInfoCard from "@/views/game/utils/components/property-info-card.vue";
 import ArrivedEventCard from "@/views/game/utils/components/arrived-event-card.vue";
@@ -464,8 +464,8 @@ export class GameRenderer {
 				() => gameInfoStore.playersList[index].isBankrupted,
 				(isBankrupted) => {
 					if (!isBankrupted) return;
-					const playerEntity = this.getPlayerEntity(player.id);
-					playerEntity && playerEntity.doAnimation("failed", true);
+					// const playerEntity = this.getPlayerEntity(player.id);
+					// playerEntity && playerEntity.doAnimation("failed", true);
 					const watchers = this.playerWatchers.get(player.id);
 					if (watchers) {
 						watchers.InfoWatcher && watchers.InfoWatcher();

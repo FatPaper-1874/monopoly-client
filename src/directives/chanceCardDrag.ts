@@ -1,13 +1,22 @@
 import { ChanceCardOperateType } from "@/enums/game";
 import { ChanceCardInfo } from "@/interfaces/game";
-import { lightenColor } from "@/utils";
+import { useDeviceStatus } from "@/store";
+import { debounce, lightenColor } from "@/utils";
 import useEventBus from "@/utils/event-bus";
 import { Directive, DirectiveBinding, toRaw } from "vue";
 
 const eventEmitter = useEventBus();
 
+enum ChanceCardDragEventType {
+	DragStart = "ChanceCardDragEvent-DragStart",
+	DragEnd = "ChanceCardDragEvent-DragEnd",
+	Drag = "ChanceCardDragEvent-Drag",
+	Drog = "ChanceCardDragEvent-Drog",
+}
+
 export const chanceCardSource: Directive = {
 	mounted: (el: HTMLElement, binding: DirectiveBinding) => {
+		const deviceStatus = useDeviceStatus();
 		const chanceCard = toRaw(binding.value) as ChanceCardInfo;
 
 		const svgNamespace = "http://www.w3.org/2000/svg";
@@ -58,66 +67,111 @@ export const chanceCardSource: Directive = {
 
 		svg.appendChild(path);
 
-		el.draggable = true;
-
-		function handleMouseMove(mouse: DragEvent) {
-			// if (mouse.dataTransfer) {
-			//     mouse.dataTransfer.dropEffect = 'none'
-			//     mouse.dataTransfer.effectAllowed = "none";
-			// }
-			document.body.style.cursor = "none";
-			const boundingRect = el.getBoundingClientRect();
-
-			const startX = boundingRect.left + (boundingRect.right - boundingRect.left) / 2;
-			const startY = boundingRect.top + 20;
-
-			const endX = mouse.pageX;
-			const endY = mouse.pageY;
-
-			if (startX && startY && endX && endY) {
-				setPath(startX, startY, endX, endY);
-			}
-		}
-
 		function setPath(startX: number, startY: number, endX: number, endY: number) {
 			path.setAttribute("d", `M ${startX} ${startY} ${endX} ${endY}`);
 		}
 
-		el.addEventListener("dragstart", (event: DragEvent) => {
-			if (event.dataTransfer) {
-				event.dataTransfer.setData("chance-card", JSON.stringify(chanceCard));
-				event.dataTransfer.setDragImage(document.createElement("div"), 0, 0);
+		if (deviceStatus.isMobile) {
+			//移动端
+			function handleTouchMove(event: TouchEvent) {
+				const touch = event.touches[0];
+				const boundingRect = el.getBoundingClientRect();
+
+				const startX = boundingRect.left + (boundingRect.right - boundingRect.left) / 2;
+				const startY = boundingRect.top + 20;
+
+				const endX = touch.pageX;
+				const endY = touch.pageY;
+
+				if (startX && startY && endX && endY) {
+					setPath(startX, startY, endX, endY);
+				}
 			}
-			document.body.appendChild(svg);
-			eventEmitter.emit(ChanceCardOperateType.HOVER, chanceCard);
-		});
 
-		el.addEventListener("dragend", (event: DragEvent) => {
-			path.setAttribute("d", "");
-			document.body.removeChild(svg);
-			document.body.style.cursor = "initial";
-		});
-
-		el.addEventListener("drag", handleMouseMove);
-	},
-};
-
-export const chanceCardTarget: Directive = {
-	mounted: (el: HTMLElement, binding: DirectiveBinding) => {
-		el.addEventListener("dragover", (event: DragEvent) => {
-			if (event.dataTransfer) {
-				event.dataTransfer.effectAllowed = "move";
+			function inital() {
+				path.setAttribute("d", "");
+				document.body.removeChild(svg);
+				document.removeEventListener("touchmove", handleTouchMove);
+				document.removeEventListener("touchend", handleTouchEnd);
 			}
-			event.preventDefault();
-		});
 
-		el.addEventListener("drop", (event: DragEvent) => {
-			const dataTransfer = event.dataTransfer;
-			if (dataTransfer) {
-				const chanceCard = JSON.parse(dataTransfer.getData("chance-card"));
+			function handleTouchEnd(event: TouchEvent) {
+				inital();
+				const touch = event.changedTouches[0];
+				eventEmitter.emit(ChanceCardOperateType.DROG, chanceCard, touch.pageX, touch.pageY);
+			}
+
+			el.addEventListener("touchstart", (event: TouchEvent) => {
+				document.body.appendChild(svg);
+				eventEmitter.emit(ChanceCardOperateType.HOVER, chanceCard);
+
+				document.addEventListener("touchcancel", inital);
+
+				document.addEventListener("touchmove", handleTouchMove);
+				document.addEventListener("touchend", handleTouchEnd);
+			});
+		} else {
+			//pc端
+			function handleMouseMove(event: MouseEvent) {
+				document.body.style.cursor = "none";
+				const boundingRect = el.getBoundingClientRect();
+
+				const startX = boundingRect.left + (boundingRect.right - boundingRect.left) / 2;
+				const startY = boundingRect.top + 20;
+
+				const endX = event.pageX;
+				const endY = event.pageY;
+
+				if (startX && startY && endX && endY) {
+					setPath(startX, startY, endX, endY);
+				}
+			}
+
+			function inital() {
+				document.body.style.cursor = "initial";
+				path.setAttribute("d", "");
+				document.body.removeChild(svg);
+				window.removeEventListener("mouseleave", inital);
+				document.removeEventListener("mousemove", handleMouseMove);
+				document.removeEventListener("mouseup", handleMouseUp);
+			}
+
+			function handleMouseUp(event: MouseEvent) {
+				inital();
 				eventEmitter.emit(ChanceCardOperateType.DROG, chanceCard, event.pageX, event.pageY);
 			}
-			event.preventDefault();
-		});
+
+			el.addEventListener("mousedown", (event: MouseEvent) => {
+				document.body.appendChild(svg);
+				eventEmitter.emit(ChanceCardOperateType.HOVER, chanceCard);
+
+				window.addEventListener("mouseleave", inital);
+
+				document.addEventListener("mousemove", handleMouseMove);
+				document.addEventListener("mouseup", handleMouseUp);
+			});
+		}
 	},
 };
+
+// export const chanceCardTarget: Directive = {
+// 	mounted: (el: HTMLElement, binding: DirectiveBinding) => {
+// 		el.addEventListener("dragover", (event: DragEvent) => {
+// 			if (event.dataTransfer) {
+// 				event.dataTransfer.effectAllowed = "move";
+// 			}
+// 			event.preventDefault();
+// 		});
+
+// 		eventEmitter.on("chance-card-directive-drop", (e: any) => {});
+
+// 		el.addEventListener("drop", (event: DragEvent) => {
+// 			const dataTransfer = event.dataTransfer;
+// 			if (dataTransfer) {
+// 				const chanceCard = JSON.parse(dataTransfer.getData("chance-card"));
+// 				eventEmitter.emit(ChanceCardOperateType.DROG, chanceCard, event.pageX, event.pageY);
+// 			}
+// 			event.preventDefault();
+// 		});
+// 	},
+// };

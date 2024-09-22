@@ -16,7 +16,6 @@ const isMobile = isMobileDevice();
 const router = useRoute();
 const isInGame = computed(() => router.name === "game");
 const canChat = computed(() => router.name === "room" || router.name === "game");
-const isLogin = computed(() => router.name === "login");
 const isMusicPlayerVisiable = ref(false);
 
 useEventBus().once(NormalEvents.WebSocketConnected, () => {
@@ -32,7 +31,7 @@ useEventBus().once(NormalEvents.WebSocketConnected, () => {
   <Background v-if="!isInGame"/>
   <Loading/>
   <RouterView></RouterView>
-  <Ping v-if="!isLogin"/>
+  <Ping v-if="canChat"/>
   <MusicPlayer v-if="isMusicPlayerVisiable"/>
 </template>
 

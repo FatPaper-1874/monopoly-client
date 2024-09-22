@@ -22,9 +22,9 @@ export enum ChanceCardType {
 }
 
 export enum ChanceCardOperateType {
-    HOVER = "HOVER",
-    DROG = "DROG",
-    USE = "USE",
+    HOVER = "ChanceCardOperate-HOVER",
+    DROG = "ChanceCardOperate-DROG",
+    USE = "ChanceCardOperate-USE",
 }
 
 //与spine导出的角色文件中的动画名对应

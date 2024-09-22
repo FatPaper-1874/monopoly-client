@@ -106,12 +106,18 @@ function handleTouristLogin() {
 		return;
 	}
 	const userInfo = {
-		userId: "temp-player-" + randomString(32),
+		userId: "temp-player-" + randomString(8),
 		useraccount: "",
 		username: touristLoginForm.userName,
 		color: touristLoginForm.color,
 		avatar: "",
 	};
+	if (touristLoginForm.color == "#000000") {
+		FPMessage({
+			type: "info",
+			message: "如此纯正的黑？你口味挺独特的🧐",
+		});
+	}
 	localStorage.setItem("user", JSON.stringify(userInfo));
 	getUserInfoToRoomList();
 }
@@ -154,7 +160,7 @@ function toRoomList() {
 
 			<FpDialog @submit="handleTouristLogin" v-model:visible="showTouristLogin">
 				<template #title>
-					<span style="font-size: 1.5rem">游客信息登记📝</span>
+					<span style="font-size: 1.2rem">游客信息登记📝</span>
 				</template>
 				<div class="tourist-form-container">
 					<span>用户名</span>

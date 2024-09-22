@@ -11,8 +11,10 @@ import { useUserInfo } from "@/store";
 import { getMapsList } from "@/utils/api/map";
 import { GameMap } from "@/interfaces/game";
 import { MapPreviewerRenderer } from "@/views/room/utils/MapPreviewerRenderer";
-import useMonopolyClient, { MonopolyClient } from "@/classes/websocket/MonopolyClient";
+import { MonopolyClient, useMonopolyClient } from "@/classes/monopoly-client/MonopolyClient";
 import { computed, onBeforeMount, onBeforeUnmount, onMounted, reactive, ref, toRaw, watch } from "vue";
+import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import { copyToClipboard } from "@/utils";
 
 const roomInfoStore = useRoomInfo();
 const userInfoStore = useUserInfo();
@@ -22,6 +24,7 @@ let mapPreview: MapPreviewerRenderer;
 const playerList = computed(() => roomInfoStore.userList);
 const ownerName = computed(() => roomInfoStore.ownerName);
 const ownerId = computed(() => roomInfoStore.ownerId);
+const roomId = computed(() => roomInfoStore.roomId);
 const roleList = computed(() => roomInfoStore.roleList);
 
 const isOwner = computed(() => userInfoStore.userId === roomInfoStore.ownerId);
@@ -62,16 +65,8 @@ watch(
 	{ deep: true }
 );
 
-onBeforeMount(() => {
-	if (!useRoomInfo().roomId) {
-		router.replace({ name: "room-router" });
-		return;
-	} else {
-		socketClient = useMonopolyClient();
-	}
-});
-
 onMounted(async () => {
+	socketClient = useMonopolyClient();
 	const { mapsList } = await getMapsList(1, 1000);
 	_mapList.value = mapsList;
 	_currentMap.value = _mapList.value.find((_item) => _item.id === gameSetting.value.mapId);
@@ -96,6 +91,14 @@ function handleLeaveRoom() {
 	if (socketClient) {
 		socketClient.leaveRoom();
 	}
+}
+
+async function handleCopyRoomId() {
+	await copyToClipboard(roomId.value);
+	FPMessage({
+		type: "success",
+		message: "房间ID成功复制到剪贴板, 快去邀请小伙伴吧!",
+	});
 }
 
 function handleReadyToggle() {
@@ -134,6 +137,12 @@ function handleUpdateGameSetting() {
 			<div class="room-topbar">
 				<button class="leave-room-button" @click="handleLeaveRoom">退出房间</button>
 				<span style="flex: 1; text-align: center">{{ ownerName }}的房间</span>
+			</div>
+
+			<div class="room-Id">
+				<span @click="handleCopyRoomId" style="flex: 1; text-align: center">
+					房间ID:<span>{{ roomId }}</span>
+				</span>
 			</div>
 
 			<div class="map-preview-inroom">
@@ -263,7 +272,6 @@ function handleUpdateGameSetting() {
 	line-height: 2rem;
 	width: 100%;
 	color: #ffffff;
-	margin-bottom: 0.5rem;
 	background-color: rgba(255, 255, 255, 0.65);
 	backdrop-filter: blur(3px);
 	background-color: var(--color-third);
@@ -279,6 +287,31 @@ function handleUpdateGameSetting() {
 		padding: 0 0.7rem;
 		font-size: 1rem;
 		text-shadow: var(--text-shadow);
+	}
+}
+
+.room-Id {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	background-color: rgba(255, 255, 255, 0.45);
+	margin-bottom: 0.8rem;
+	padding: 0.3rem;
+
+	& > span {
+		color: var(--color-third);
+		user-select: none;
+		font-size: 1rem;
+		& > span {
+			font-size: 1.1rem;
+			margin: 0 0.8rem;
+			user-select: text;
+			color: var(--color-second);
+			border-radius: 0.4rem;
+			padding: 0 0.4rem;
+			cursor: pointer;
+		}
 	}
 }
 

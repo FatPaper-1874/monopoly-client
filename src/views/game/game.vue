@@ -4,7 +4,7 @@ import { GameRenderer } from "@/classes/game/GameRenderer";
 import { useLoading, useMapData, useRoomInfo, useGameInfo, useUtil } from "@/store";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import router from "@/router/index";
-import useMonopolyClient, { MonopolyClient } from "@/classes/websocket/MonopolyClient";
+import { MonopolyClient, useMonopolyClient } from "@/classes/monopoly-client/MonopolyClient";
 import Dices from "./components/dices.vue";
 import ChanceCardContainer from "./components/chance-card-container.vue";
 import CountdownTimer from "./components/countdown-timer.vue";
@@ -39,23 +39,20 @@ function handleRollDice() {
 }
 
 onMounted(async () => {
-	socketClient = useMonopolyClient();
-	const mapDataStore = useMapData();
-	if (mapDataStore.mapItemsList.length === 0) router.replace("room");
-	useLoading().showLoading("加载数据中...");
+	try {
+		socketClient = useMonopolyClient();
+		const mapDataStore = useMapData();
+		if (mapDataStore.mapItemsList.length === 0) router.replace("room");
+		useLoading().showLoading("加载数据中...");
 
-	const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
-	const container = document.getElementsByClassName("game-page")[0] as HTMLDivElement;
-	gameRenderer = new GameRenderer(canvas, container);
-	await gameRenderer.init();
-	useLoading().showLoading("数据加载完成，等待其他玩家加载...");
-	socketClient.gameInitFinished();
-});
-
-onBeforeMount(() => {
-	if (!useRoomInfo().roomId) {
+		const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
+		const container = document.getElementsByClassName("game-page")[0] as HTMLDivElement;
+		gameRenderer = new GameRenderer(canvas, container);
+		await gameRenderer.init();
+		useLoading().showLoading("数据加载完成，等待其他玩家加载...");
+		socketClient.gameInitFinished();
+	} catch (e: any) {
 		router.replace({ name: "room-router" });
-		return;
 	}
 });
 
@@ -65,7 +62,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-	<div v-chance-card-target class="game-page">
+	<div class="game-page">
 		<canvas id="game-canvas" :width="windowWidth" :height="windowHeight"></canvas>
 		<div class="ui-container">
 			<div class="progress-bar ui-item">

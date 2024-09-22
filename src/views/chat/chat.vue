@@ -2,7 +2,7 @@
 import { ref, watch, computed, nextTick } from "vue";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { useChat, useRoomInfo } from "@/store";
-import useMonopolyClient from "@/classes/websocket/MonopolyClient";
+import { useMonopolyClient } from "@/classes/monopoly-client/MonopolyClient";
 import ChatMessageItem from "./components/chat-message-item.vue";
 import gsap from "gsap";
 

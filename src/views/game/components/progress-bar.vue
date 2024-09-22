@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { useGameInfo } from "@/store";
 import { lightenColor } from "@/utils";
+import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
 
 const playerList = computed(() => useGameInfo().playersList);
 
@@ -22,7 +23,8 @@ function getBlockHeight(money: number) {
 		>
 			<div class="avatar-container" :style="{ '--c': lightenColor(player.user.color, 15) }">
 				<div class="avatar">
-					<img alt="" :src="`http://${player.user.avatar}`" />
+					<img v-if="player.user.avatar" :src="`http://${player.user.avatar}`" />
+					<FontAwesomeIcon v-else :style="{ color: player.user.color }" icon="gamepad" />
 				</div>
 				<div class="money">￥{{ player.money }}</div>
 			</div>
@@ -94,6 +96,10 @@ function getBlockHeight(money: number) {
 			overflow: hidden;
 			box-shadow: var(--box-shadow);
 			transform: translate($top-bar-width, -50%);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			background-color: rgba(255, 255, 255, 0.45);
 
 			& > img {
 				width: $avatar_size;

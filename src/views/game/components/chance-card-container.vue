@@ -3,7 +3,7 @@ import { useGameInfo, useUserInfo } from "@/store";
 import { computed, provide, ref, watch, toRaw } from "vue";
 import { ChanceCardInfo } from "@/interfaces/game";
 import ChanceCard from "./chance-card.vue";
-import useMonopolyClient from "@/classes/websocket/MonopolyClient";
+import { useMonopolyClient } from "@/classes/monopoly-client/MonopolyClient";
 import { useUtil } from "@/store";
 
 const gameInfoStore = useGameInfo();

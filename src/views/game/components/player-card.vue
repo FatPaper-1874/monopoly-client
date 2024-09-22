@@ -15,7 +15,7 @@ const gameInfoStroe = useGameInfo();
 
 const _userInfo = computed(() => props.player.user);
 const _isMyTrun = computed(() => gameInfoStroe.currentPlayerInRound === props.player.id);
-const _isBankrupted = computed(() => gameInfoStroe.getMyInfo?.isBankrupted);
+const _isBankrupted = computed(() => props.player.isBankrupted);
 const avatarSrc = computed(() => {
 	return _userInfo.value.avatar ? `http://${_userInfo.value.avatar}` : "";
 });
@@ -27,11 +27,12 @@ const avatarSrc = computed(() => {
 		:class="{ is_bankrupted: _isBankrupted }"
 		:style="{ 'border-color': _isMyTrun ? 'var(--color-third)' : '' }"
 	>
-		<div class="avatar" :style="{ 'background-color': _userInfo.color }">
+		<div class="avatar">
 			<div v-if="player.isOffline" class="disconnect-marker">
 				<FontAwesomeIcon icon="link-slash" />
 			</div>
-			<img alt="" :src="avatarSrc" />
+			<img v-if="avatarSrc" :src="avatarSrc" />
+			<FontAwesomeIcon v-else :style="{ color: _userInfo.color }" icon="gamepad" />
 		</div>
 		<div class="info" :style="{ color: _userInfo.color }">
 			<span class="username">{{ _userInfo.username }}</span>
@@ -71,6 +72,9 @@ const avatarSrc = computed(() => {
 		line-height: 2.5rem;
 		text-align: center;
 		display: block;
+		border-radius: .8rem;
+		padding: .4rem;
+		background-color: rgba(255, 255, 255, 0.6);
 	}
 
 	& > .avatar {
@@ -87,6 +91,10 @@ const avatarSrc = computed(() => {
 		overflow: hidden;
 		box-shadow: var(--box-shadow);
 		position: relative;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		background-color: rgba(255, 255, 255, 0.45);
 
 		& > .disconnect-marker {
 			font-size: 1.5rem;

@@ -2,48 +2,88 @@ import Peer, { DataConnection } from "peerjs";
 import { ChatMessage, Role, RoomInfo, SocketMessage, User, UserInRoomInfo, GameSetting } from "@/interfaces/bace";
 import { GameOverRule, OperateType } from "@/enums/game";
 import { ChangeRoleOperate, ChatMessageType, SocketMsgType } from "@/enums/bace";
-import { randomString } from "@/utils";
+import { debounce, randomString } from "@/utils";
 import { getRoleList } from "@/utils/api/role";
-import GameProcessWorker from "@/worker/game-process-worker?worker";
+import GameProcessWorker from "@/classes/worker/GameProcessWorker?worker";
 import { WorkerCommMsg } from "@/interfaces/worker";
 import { WorkerCommType } from "@/enums/worker";
 import { getMapById, getMapsList } from "@/utils/api/map";
+import { emitRoomHeart } from "@/utils/api/room-router";
+import { asyncMission } from "@/utils/async-mission-queue";
 
 export class MonopolyHost {
 	private peer: Peer;
 	private room: Room;
 
-	private gameThreadWorker: Worker | null = null;
-
 	private clientList: Map<string, DataConnection> = new Map<string, DataConnection>();
 
-	private constructor(peer: Peer, room: Room) {
+	private intervalList: any[] = [];
+
+	private destoryHandler: Function | undefined;
+
+	private constructor(peer: Peer, room: Room, heartContinuationTimeMs: number) {
 		this.peer = peer;
 		this.room = room;
 
 		this.init(this.peer);
+
+		const heartInterval = setInterval(() => {
+			emitRoomHeart(this.room.getRoomId());
+		}, heartContinuationTimeMs);
+		this.intervalList.push(heartInterval);
 	}
 
 	private init(peer: Peer) {
 		const _this = this;
+		this.startHeartCheck();
 		peer.on("connection", (conn) => {
 			let clientUserId = "";
 			this.clientList.set(conn.connectionId, conn);
 			conn.once("data", (data: any) => {
 				const _data: SocketMessage = JSON.parse(data);
+				const user = _data.data as User;
+				if (this.room.isStarted) {
+					if (this.room.isUserInRoomAndOffline(user.userId)) {
+						this.room.handleUserReconnect(user.userId, conn);
+					} else {
+						conn.send(
+							JSON.stringify(<SocketMessage>{
+								type: SocketMsgType.MsgNotify,
+								data: "",
+								msg: {
+									type: "error",
+									content: "该房间已经开始游戏了!",
+								},
+								source: "server",
+							})
+						);
+						conn.close();
+						return;
+					}
+				}
 				if (_data.type === SocketMsgType.JoinRoom) {
-					const user = _data.data as User;
 					if (!this.room) throw Error("在房间没创建时加入了房间");
 					clientUserId = user.userId;
 					this.room.join(user, conn);
 				}
 			});
 
+			const noHeartHandler = debounce(
+				() => {
+					_this.room.leave(clientUserId);
+				},
+				3000,
+				true
+			);
+
 			conn.on("data", function (data: any) {
 				const socketMessage: SocketMessage = JSON.parse(data.toString());
-				console.log("Host Received: ", socketMessage);
+				// console.log("Host Received: ", socketMessage);
 
 				switch (socketMessage.type) {
+					case SocketMsgType.Heart:
+						noHeartHandler.fn();
+						break;
 					case SocketMsgType.RoomChat:
 						_this.handleRoomChat(conn, socketMessage, clientUserId);
 						break;
@@ -77,20 +117,23 @@ export class MonopolyHost {
 					case SocketMsgType.BuildHouse:
 						_this.handleBuildHouse(conn, socketMessage, clientUserId);
 						break;
+					case SocketMsgType.LeaveRoom:
+						_this.handleLeaveRoom(conn, socketMessage, clientUserId);
+						noHeartHandler.cancel();
+						break;
 				}
 			});
 
 			conn.on("close", () => {
-				console.log("🚀 ~ MonopolyHost ~ conn.close");
-			});
-
-			conn.on("error", (e) => {
-				console.log("🚀 ~ MonopolyHost ~ conn.error:", e);
+				if (clientUserId) {
+					this.room.leave(clientUserId);
+					this.clientList.delete(clientUserId);
+				}
 			});
 		});
 	}
 
-	public static async create(roomId: string, peerHost: string, peerPort: number) {
+	public static async create(roomId: string, peerHost: string, peerPort: number, heartContinuationTimeMs: number) {
 		const peer = await new Promise<Peer>((resolve) => {
 			const peer = new Peer({ host: peerHost, port: peerPort });
 			peer.on("open", () => {
@@ -101,7 +144,7 @@ export class MonopolyHost {
 		const { roleList } = await getRoleList();
 		const room = new Room(roomId, roleList);
 
-		return new MonopolyHost(peer, room);
+		return new MonopolyHost(peer, room, heartContinuationTimeMs);
 	}
 
 	public broadcast(msg: string) {
@@ -112,6 +155,19 @@ export class MonopolyHost {
 
 	public getPeerId() {
 		return this.peer.id;
+	}
+
+	private startHeartCheck() {
+		this.intervalList.push(
+			setInterval(() => {
+				this.broadcast(
+					JSON.stringify(<SocketMessage>{
+						type: SocketMsgType.Heart,
+						data: Date.now(),
+					})
+				);
+			}, 1000)
+		);
 	}
 
 	private handleRoomChat(socketClient: DataConnection, data: SocketMessage, clientUserId: string) {
@@ -171,10 +227,38 @@ export class MonopolyHost {
 		const operateType: OperateType = data.data;
 		this.room.emitOperationToWorker(clientUserId, operateType, data.extra);
 	}
+
+	private handleLeaveRoom(socketClient: DataConnection, data: SocketMessage, clientUserId: string) {
+		if (this.room.leave(clientUserId)) {
+			//没人了
+			this.destory();
+		}
+		socketClient.send(
+			JSON.stringify(<SocketMessage>{
+				type: SocketMsgType.LeaveRoom,
+				source: "server",
+			})
+		);
+		socketClient.close();
+		this.clientList.delete(clientUserId);
+	}
+
+	public addDestoryListener(fn: Function) {
+		this.destoryHandler = fn;
+	}
+
+	public destory() {
+		this.room.destory();
+		this.intervalList.forEach((i) => {
+			clearInterval(i);
+		});
+		this.destoryHandler && this.destoryHandler();
+	}
 }
 
 interface UserInRoom extends UserInRoomInfo {
 	socketClient: DataConnection;
+	isOffLine: boolean;
 }
 
 class Room {
@@ -183,7 +267,7 @@ class Room {
 	private ownerId: string = "";
 	private gameSetting: GameSetting;
 	private roleList: Role[];
-	private gameProcess: Worker | undefined;
+	private gameProcess: Worker | null = null;
 	public isStarted: boolean;
 
 	constructor(roomId: string, roleList: Role[]) {
@@ -340,6 +424,7 @@ class Room {
 			const userInRoom: UserInRoom = {
 				...user,
 				socketClient: conn,
+				isOffLine: false,
 				role: this.roleList[Math.floor(Math.random() * this.roleList.length)],
 				isReady: false,
 			};
@@ -355,6 +440,10 @@ class Room {
 				},
 				this.roomId
 			);
+			this.roomBroadcast(<SocketMessage>{
+				type: SocketMsgType.MsgNotify,
+				msg: { type: "success", content: `${userInRoom.username}加入了房间` },
+			});
 			this.roomInfoBroadcast();
 			return true;
 		}
@@ -367,35 +456,66 @@ class Room {
 	 */
 	public leave(userId: string): boolean {
 		//房间中还有更多玩家的情况
-		// if (this.isStarted) {
-		//     //游戏已经开始，处理断线
-		//     this.handleUserOffline(userId);
-		//     if (this.gameProcess && this.gameProcess.getIsAllPlayerOffline()) {
-		//         //如果所有人都断线了, 解散房间
-		//         this.gameProcess.destroy();
-		//         return true;
-		//     } else {
-		//         return false;
-		//     }
-		// } else {
-		//游戏没有开始，仍在房间页面
-		if (this.userList.size === 1) {
-			//房间最后一个人退出, 退出后解散房间
-			this.userList.delete(userId);
-			// if (this.gameProcess) this.gameProcess.destroy();
-			return true;
+		if (this.isStarted) {
+			//游戏已经开始，处理断线
+			this.handleUserOffline(userId);
+			return Array.from(this.userList.values()).every((u) => u.isOffLine);
 		} else {
-			if (this.ownerId === userId) {
-				//如果是房主离开, 转移房主
-				this.ownerId = Array.from(this.userList.keys())[0];
-				const owner = this.userList.get(this.ownerId);
-				if (owner) owner.isReady = false;
+			//游戏没有开始，仍在房间页面
+			if (this.userList.size === 1) {
+				//房间最后一个人退出, 退出后解散房间
+				this.userList.delete(userId);
+				return true;
+			} else {
+				const user = this.userList.get(userId);
+				if (user)
+					this.roomBroadcast(<SocketMessage>{
+						type: SocketMsgType.MsgNotify,
+						msg: { type: "warning", content: `${user.username}离开了房间` },
+					});
+				this.userList.delete(userId);
+				this.roomInfoBroadcast();
+				return false;
 			}
-			this.userList.delete(userId);
-			this.roomInfoBroadcast();
-			return false;
 		}
-		// }
+	}
+
+	private handleUserOffline(userId: string) {
+		const user = this.userList.get(userId);
+		if (!user) return;
+		user.isOffLine = true;
+		if (this.gameProcess) {
+			this.gameProcess.postMessage(<WorkerCommMsg>{
+				type: WorkerCommType.UserOffLine,
+				data: { userId },
+			});
+		}
+		this.roomBroadcast(<SocketMessage>{
+			type: SocketMsgType.MsgNotify,
+			msg: { type: "error", content: `${user.username}断开了连接` },
+		});
+		this.roomInfoBroadcast();
+	}
+
+	public handleUserReconnect(userId: string, newCoon: DataConnection) {
+		const oldUser = this.userList.get(userId);
+		if (oldUser) {
+			oldUser.socketClient = newCoon;
+			this.roomInfoBroadcast();
+			if (this.gameProcess) {
+				this.gameProcess.postMessage(<WorkerCommMsg>{
+					type: WorkerCommType.UserReconnect,
+					data: { userId: oldUser.userId },
+				});
+
+				this.roomBroadcast(<SocketMessage>{
+					type: SocketMsgType.MsgNotify,
+					msg: { type: "success", content: `${oldUser.username}重新连接` },
+				});
+			}
+		} else {
+			console.log("奇怪的玩家 in room");
+		}
 	}
 
 	public changeRole(_userId: string, operate: ChangeRoleOperate): void {
@@ -451,9 +571,18 @@ class Room {
 				case WorkerCommType.SendToUsers:
 					handleSendToUsers(msg.data);
 					break;
+				case WorkerCommType.GameStart:
+					handleGameStart();
+					break;
+				case WorkerCommType.GameOver:
+					this.handleGameOver();
+					break;
 			}
 		});
-		this.isStarted = false;
+
+		window.addEventListener("beforeunload", () => {
+			this.gameProcess && this.gameProcess.terminate();
+		});
 
 		const handleWorkerReady = async () => {
 			if (!this.gameSetting.mapId || !this.gameProcess) return;
@@ -478,6 +607,18 @@ class Room {
 				user && user.socketClient.send(JSON.stringify(data.data));
 			}
 		};
+		const handleGameStart = () => {};
+	}
+
+	private handleGameOver() {
+		Array.from(this.userList.values()).forEach((u) => {
+			u.isReady = false;
+		});
+		this.roomInfoBroadcast();
+		console.log("🚀 ~ Room ~ handleGameOver ~ 游戏结束啦:");
+		this.gameProcess && this.gameProcess.terminate();
+		this.gameProcess = null;
+		this.isStarted = false;
 	}
 
 	/**
@@ -488,39 +629,10 @@ class Room {
 		return this.userList.size;
 	}
 
-	/**
-	 * 处理user在游戏时断线
-	 * @param userId 要查找的用户的id或实例
-	 */
-	// private handleUserOffline(userId: string) {
-	//     const user = this.userList.get(userId);
-	//     if (!user) return;
-	//     if (this.gameProcess) {
-	//         this.gameProcess.handlePlayerDisconnect(userId);
-	//     }
-	//     this.roomInfoBroadcast();
-	// }
-
-	// public handleUserReconnect(user: UserInRoom) {
-	//     const oldUser = this.userList.get(user.userId);
-	//     if (oldUser) {
-	//         oldUser.socketClient = user.socketClient;
-	//         this.roomInfoBroadcast();
-	//         this.gameProcess && this.gameProcess.handlePlayerReconnect(user);
-	//     } else {
-	//         console.log("奇怪的玩家 in room");
-	//     }
-	// }
-
-	/**
-	 * 房间中是否存在该用户
-	 * @param _user 要查找的用户的id或实例
-	 */
-	public hasUser(_user: UserInRoomInfo | undefined): boolean;
-	public hasUser(_user: string): boolean;
-	public hasUser(_user: UserInRoomInfo | undefined | string): boolean {
-		if (!_user) return false;
-		return this.userList.has(typeof _user === "string" ? _user : _user.userId);
+	public isUserInRoomAndOffline(userId: string) {
+		const user = Array.from(this.userList.values()).find((u) => u.userId === userId);
+		if (!user) return false;
+		return user.isOffLine;
 	}
 
 	public emitOperationToWorker(userId: string, operateType: OperateType, ...data: any) {
@@ -558,5 +670,9 @@ class Room {
 			msg,
 		};
 		socketClient.send(JSON.stringify(msgToSend));
+	}
+
+	public destory() {
+		this.gameProcess && this.gameProcess.terminate();
 	}
 }

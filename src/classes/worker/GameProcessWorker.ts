@@ -13,6 +13,7 @@ import { WorkerCommMsg } from "@/interfaces/worker";
 import { WorkerCommType } from "@/enums/worker";
 
 const operateListener = new OperateListener();
+let gameProcess: GameProcess | null = null;
 
 self.postMessage(<WorkerCommMsg>{
 	type: WorkerCommType.WorkerReady,
@@ -22,13 +23,29 @@ self.addEventListener("message", (ev) => {
 	const data: WorkerCommMsg = ev.data;
 	switch (data.type) {
 		case WorkerCommType.LoadGameInfo:
-			const { mapInfo, setting, userList } = data.data;
-			const gameProcess = new GameProcess(mapInfo, setting, userList);
-			gameProcess.start();
+			{
+				const { mapInfo, setting, userList } = data.data;
+				gameProcess = new GameProcess(mapInfo, setting, userList);
+				gameProcess.start();
+			}
 			break;
 		case WorkerCommType.EmitOperation:
-			const { userId, operateType, data: _data } = data.data;
-			operateListener.emit(userId, operateType, _data);
+			{
+				const { userId, operateType, data: _data } = data.data;
+				operateListener.emit(userId, operateType, _data);
+			}
+			break;
+		case WorkerCommType.UserOffLine:
+			{
+				const { userId } = data.data;
+				gameProcess && gameProcess.handlePlayerOffline(userId);
+			}
+			break;
+		case WorkerCommType.UserReconnect:
+			{
+				const { userId } = data.data;
+				gameProcess && gameProcess.handlePlayerReconnect(userId);
+			}
 			break;
 	}
 });
@@ -252,6 +269,7 @@ class GameProcess {
 				}
 				this.currentPlayerInRound = this.playerList[currentPlayerIndex];
 				this.roundTurnNotify(this.currentPlayerInRound);
+				this.gameInfoBroadcast();
 
 				await this.gameRound(this.currentPlayerInRound);
 				currentPlayerIndex++;
@@ -642,16 +660,73 @@ class GameProcess {
 		return;
 	}
 
+	public handlePlayerOffline(userId: string) {
+		const player = this.getPlayerById(userId);
+		if (player) {
+			player.setIsOffline(true);
+			this.gameInfoBroadcast();
+		}
+	}
+
+	public handlePlayerReconnect(userId: string) {
+		const player = this.playerList.find((player) => player.getUser().userId === userId);
+		if (player) {
+			player.setIsOffline(false);
+			const {
+				id: mapId,
+				name: mapName,
+				background: mapBackground,
+				indexList: mapIndexList,
+				itemTypes: itemTypesList,
+				streets: streetsList,
+			} = this.mapInfo;
+			const gameInitInfo: GameInitInfo = {
+				mapId: mapId,
+				mapName: mapName,
+				mapBackground: mapBackground,
+				mapItemsList: Array.from(this.mapItemList.values()),
+				mapIndexList: mapIndexList,
+				itemTypesList: itemTypesList,
+				streetsList: streetsList,
+				playerList: this.playerList.map((player) => player.getPlayerInfo()),
+				properties: Array.from(this.propertyList.values()).map((property) => property.getPropertyInfo()),
+				chanceCards: this.chanceCardInfoList,
+				currentPlayerInRound: this.currentPlayerInRound ? this.currentPlayerInRound.getId() : "",
+				currentRound: this.currentRound,
+				currentMultiplier: this.currentMultiplier,
+			};
+			sendToUsers([userId], <SocketMessage>{
+				type: SocketMsgType.GameInit,
+				source: "server",
+				data: gameInitInfo,
+			});
+			operateListener.once(player.getId(), OperateType.GameInitFinished, () => {
+				sendToUsers([userId], <SocketMessage>{
+					type: SocketMsgType.GameInitFinished,
+					data: "",
+					source: "server",
+				});
+			});
+			this.gameInfoBroadcast();
+		} else {
+			console.log("奇怪的玩家 in game");
+		}
+	}
+
 	private sleep(ms: number) {
 		return new Promise((resolve) => setTimeout(resolve, ms));
 	}
 
 	private gameOver() {
+		this.gameInfoBroadcast();
 		this.gameBroadcast({
 			type: SocketMsgType.GameOver,
 			source: "server",
 			data: "游戏结束",
 			msg: { content: "游戏结束", type: "info" },
+		});
+		self.postMessage(<WorkerCommMsg>{
+			type: WorkerCommType.GameOver,
 		});
 		this.isGameOver = true;
 		this.destroy();

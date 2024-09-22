@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { onBeforeMount, onMounted, computed, ref, onUpdated } from "vue";
 import { useUserInfo, useUserList, useRoomList, useRoomInfo, useLoading } from "@/store";
-import useMonopolyClient from "@/classes/websocket/MonopolyClient";
+import { useMonopolyClient } from "@/classes/monopoly-client/MonopolyClient";
 import userCard from "@/components/common/user-card.vue";
 import router from "@/router";
 import { getUserByToken } from "@/utils/api/user";
-import { setTimeOutAsync } from "@/utils";
 import FPMessage from "@/components/utils/fp-message";
 import { __FATPAPER_HOST__, __ICE_SERVER_PORT__, __WEBSOCKET_PORT__ } from "../../../global.config";
 
@@ -22,11 +21,16 @@ onMounted(async () => {
 		let token = localStorage.getItem("token") || "";
 		if (token) {
 			//账号登录
-			const { id: userId, useraccount, username, avatar, color } = await getUserByToken(token);
-			const userInfoStore = useUserInfo();
-			userInfoStore.$patch({ userId, useraccount, username, avatar, color });
-			useLoading().hideLoading();
-			return;
+			try {
+				const { id: userId, useraccount, username, avatar, color } = await getUserByToken(token);
+				const userInfoStore = useUserInfo();
+				userInfoStore.$patch({ userId, useraccount, username, avatar, color });
+				useLoading().hideLoading();
+				return;
+			} catch (e: any) {
+				FPMessage({ type: "error", message: e.message || e });
+				handleLogout();
+			}
 		}
 		let userInfo = localStorage.getItem("user") || "";
 		if (userInfo) {
@@ -37,7 +41,8 @@ onMounted(async () => {
 				userInfoStore.$patch({ userId, useraccount, username, avatar, color });
 				useLoading().hideLoading();
 				return;
-			} catch (e) {
+			} catch (e: any) {
+				FPMessage({ type: "error", message: "读取用户信息失败, 请重新进行游客登记" });
 				handleLogout();
 			}
 		}
@@ -58,10 +63,6 @@ async function joinRoom() {
 		return;
 	}
 	const monopolyClient = await useMonopolyClient({
-		webSocket: {
-			host: __FATPAPER_HOST__,
-			port: __WEBSOCKET_PORT__,
-		},
 		iceServer: {
 			host: __FATPAPER_HOST__,
 			port: __ICE_SERVER_PORT__,
@@ -70,8 +71,6 @@ async function joinRoom() {
 	try {
 		useLoading().showLoading("正在尝试连接");
 		await monopolyClient.joinRoom(_roomId);
-	} catch (e: any) {
-		FPMessage({ type: "error", message: e.message });
 	} finally {
 		useLoading().hideLoading();
 	}
@@ -149,8 +148,8 @@ async function joinRoom() {
 			display: inline-block;
 			font-size: 1.6rem;
 			color: var(--color-primary);
-			margin-bottom: 0.5rem;
-			background-color: rgba(255, 255, 255, 0.3);
+			margin-bottom: 0.7rem;
+			background-color: rgba(255, 255, 255, 0.45);
 			padding: 0.4rem 0.8rem;
 			border-radius: 1rem;
 		}
@@ -158,7 +157,7 @@ async function joinRoom() {
 		& .describe {
 			font-size: 0.9rem;
 			color: #393939;
-			margin-bottom: 0.7rem;
+			margin-bottom: 0.8rem;
 			padding-left: 0.8rem;
 		}
 

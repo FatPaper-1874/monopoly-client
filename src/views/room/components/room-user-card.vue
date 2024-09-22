@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { lightenColor, randomString } from "@/utils";
-import { computed, ref, reactive, onMounted, watch, nextTick } from "vue";
+import { computed, ref, reactive, onMounted, watch, nextTick, onBeforeUnmount } from "vue";
 import { Role, User, UserInRoomInfo } from "@/interfaces/bace";
 import { useRoomInfo, useUserInfo } from "@/store";
 import { ChangeRoleOperate } from "@/enums/bace";
-import useMonopolyClient from "@/classes/websocket/MonopolyClient";
+import { useMonopolyClient } from "@/classes/monopoly-client/MonopolyClient";
 import { RolePreviewer } from "@/views/room/utils/RolePreviewer";
 
 const props = defineProps<{ user: UserInRoomInfo | undefined }>();
@@ -23,7 +23,7 @@ function handleChangeRole(operate: ChangeRoleOperate) {
 }
 
 const canvasId = randomString(16);
-let rolePreviewer: RolePreviewer | undefined;
+let rolePreviewer: RolePreviewer | null = null;
 
 onMounted(() => {
 	nextTick(() => {
@@ -40,6 +40,12 @@ onMounted(() => {
 		);
 	});
 });
+
+onBeforeUnmount(() => {
+	if (!rolePreviewer) return;
+	rolePreviewer.destroy();
+	rolePreviewer = null;
+});
 </script>
 
 <template>
@@ -48,12 +54,7 @@ onMounted(() => {
 		<div class="choose-role" v-else-if="user && user.role" :style="{ 'background-color': user.role.color }">
 			<FontAwesomeIcon v-if="isMe" @click="handleChangeRole(ChangeRoleOperate.Prev)" class="icon" icon="angle-left" />
 			<span>{{ user.role.roleName }}</span>
-			<FontAwesomeIcon
-				v-if="isMe"
-				@click="handleChangeRole(ChangeRoleOperate.Next)"
-				class="icon"
-				icon="angle-right"
-			/>
+			<FontAwesomeIcon v-if="isMe" @click="handleChangeRole(ChangeRoleOperate.Next)" class="icon" icon="angle-right" />
 		</div>
 		<div class="choose-role" v-else-if="user && !user.role">
 			<span>选择角色</span>

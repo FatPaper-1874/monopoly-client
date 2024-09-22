@@ -39,6 +39,10 @@ const color = user.color
     border-radius: 50%;
     border: 0.15rem solid #ffffff;
     overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.45);
 
     & > img {
       $avatar_size: 2rem;
