@@ -1,7 +1,7 @@
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
-import { __MONOPOLYSERVER__ } from "../../../global.config";
+import { __MONOPOLYSERVER__ } from "@G/global.config";
 import { GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-import {getDracoLoader} from "@/utils/three/draco";
+import { getDracoLoader } from "@/utils/three/draco";
 
 const gltfLoader = new GLTFLoader();
 gltfLoader.setDRACOLoader(getDracoLoader());

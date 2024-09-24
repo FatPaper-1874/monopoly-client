@@ -7,13 +7,14 @@ import { useRoomInfo, useUserInfo } from "@/store";
 import { ChangeRoleOperate } from "@/enums/bace";
 import { useMonopolyClient } from "@/classes/monopoly-client/MonopolyClient";
 import { RolePreviewer } from "@/views/room/utils/RolePreviewer";
+import { __PROTOCOL__ } from "@G/global.config";
 
 const props = defineProps<{ user: UserInRoomInfo | undefined }>();
 
 const user = computed(() => props.user);
 const lightColor = computed(() => (user.value ? lightenColor(user.value.color, 15) : "#ffffff"));
 const avatarSrc = computed(() => {
-	return user.value && (user.value.avatar ? `http://${user.value.avatar}` : "");
+	return user.value && (user.value.avatar ? `${__PROTOCOL__}://${user.value.avatar}` : "");
 });
 const isMe = computed(() => (user.value ? user.value.userId === useUserInfo().userId : false));
 
@@ -33,7 +34,7 @@ onMounted(() => {
 			() => props.user,
 			(newUser, oldUser) => {
 				if (rolePreviewer && newUser && newUser.role.id !== (oldUser?.role.id || "")) {
-					rolePreviewer.loadRole(`http://${newUser.role.baseUrl}/`, newUser.role.fileName);
+					rolePreviewer.loadRole(`${__PROTOCOL__}://${newUser.role.baseUrl}/`, newUser.role.fileName);
 				}
 			},
 			{ immediate: true, deep: true }

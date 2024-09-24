@@ -1,4 +1,4 @@
-import { __USERSERVER__ } from "../../../global.config";
+import { __USERSERVER__ } from "@G/global.config";
 import axios from "axios";
 
 interface UserInfo {
@@ -7,7 +7,8 @@ interface UserInfo {
 	id: string;
 	avatar: string;
 	color: string;
-}2
+}
+2;
 
 export async function getUserByToken(token: string) {
 	const res = await axios.get(`${__USERSERVER__}/user/info`, { data: { token } });

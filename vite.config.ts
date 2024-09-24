@@ -38,6 +38,10 @@ export default defineConfig({
                 find: "@",
                 replacement: path.resolve(path.dirname("./"), "src"),
             },
+            {
+                find: "@G",
+                replacement: path.resolve(path.dirname("./"), "./"),
+            }
         ],
     },
     server: {

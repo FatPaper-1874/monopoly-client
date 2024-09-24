@@ -48,6 +48,7 @@ import useEventBus from "@/utils/event-bus";
 import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
 import { storeToRefs } from "pinia";
+import { __PROTOCOL__ } from "@G/global.config";
 
 const BLOCK_HEIGHT = 0.09;
 const PLAY_MODEL_SIZE = 0.7;
@@ -238,7 +239,7 @@ export class GameRenderer {
 	private initBackground() {
 		const bgTextureLoader = new TextureLoader();
 		const mapData = useMapData();
-		const bgTexture = bgTextureLoader.load(`http://${mapData.mapBackground}`);
+		const bgTexture = bgTextureLoader.load(`${__PROTOCOL__}://${mapData.mapBackground}`);
 
 		this.scene.background = bgTexture;
 		this.scene.add(this.mapContainer);
@@ -810,7 +811,7 @@ export class GameRenderer {
 				this.playerPosition.set(playerInfo.id, toRaw(playerInfo.positionIndex));
 				const playerEntity = new PlayerEntity(
 					PLAY_MODEL_SIZE,
-					`http://${playerInfo.user.role.baseUrl}/`,
+					`${__PROTOCOL__}://${playerInfo.user.role.baseUrl}/`,
 					playerInfo.user.role.fileName,
 					playerInfo
 				);
@@ -862,7 +863,7 @@ export class GameRenderer {
 			if (mapItem.arrivedEvent) {
 				const mapItemsInMapIndex = mapItemsList.filter((i) => mapIndex.includes(i.id));
 				const arrivedEvent = mapItem.arrivedEvent;
-				textureLoader.load(`http://${arrivedEvent.iconUrl}`, (texture) => {
+				textureLoader.load(`${__PROTOCOL__}://${arrivedEvent.iconUrl}`, (texture) => {
 					// texture.matrixAutoUpdate = false
 
 					texture.colorSpace = SRGBColorSpace;

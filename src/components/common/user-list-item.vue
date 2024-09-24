@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { __PROTOCOL__ } from "@G/global.config";
 import { computed } from "vue";
 const props = defineProps<{ username: string; color: string; avatar: string }>();
 const avatarSrc = computed(() => {
-	return props.avatar ? `http://${props.avatar}` : "";
+	return props.avatar ? `${__PROTOCOL__}://${props.avatar}` : "";
 });
 </script>
 

@@ -1,4 +1,4 @@
-import { __MONOPOLYSERVER__ } from "../../../global.config";
+import { __MONOPOLYSERVER__ } from "@G/global.config";
 import axios from "axios";
 
 export async function joinRoomApi(roomId: string) {

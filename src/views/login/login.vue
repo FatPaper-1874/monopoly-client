@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onBeforeMount, onBeforeUnmount, reactive, onMounted, nextTick } from "vue";
 import router from "@/router";
-import { __LOGINPAGEURL__ } from "../../../global.config";
+import { __LOGINPAGEURL__, __PROTOCOL__ } from "@G/global.config";
 import { getUserByToken } from "@/utils/api/user";
 import { createLoginIframeOnBody, exitFullScreen, randomString, setTimeOutAsync } from "@/utils";
 import FPMessage from "@/components/utils/fp-message/index";
@@ -66,7 +66,7 @@ async function getUserInfoToRoomList() {
 			const userInfoStore = useUserInfo();
 			userInfoStore.$patch({ userId, useraccount, username, avatar, color });
 			await setTimeOutAsync(1500);
-			if (loginCodeRenderer) await loginCodeRenderer.showImage(`http://${avatar}`);
+			if (loginCodeRenderer) await loginCodeRenderer.showImage(`${__PROTOCOL__}://${avatar}`);
 			await setTimeOutAsync(2000, toRoomList);
 			return;
 		}

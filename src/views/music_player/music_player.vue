@@ -5,6 +5,7 @@ import { Music } from "@/interfaces/bace";
 import { throttle } from "@/utils";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import MusicListItem from "@/views/music_player/components/music_list_item.vue";
+import { __PROTOCOL__ } from "@G/global.config";
 
 const musicList = ref<Music[]>([]);
 
@@ -36,7 +37,7 @@ function selectMusic(id: string) {
 		//   currentMusic.value = musicToPlay;
 		//   isPlaying.value = true;
 		// }
-		_musicPlayerEl.src = `http://${musicToPlay.url}`;
+		_musicPlayerEl.src = `${__PROTOCOL__}://${musicToPlay.url}`;
 
 		nextTick(() => {
 			_musicPlayerEl.play();
@@ -126,7 +127,7 @@ onMounted(async () => {
 		<audio
 			@ended="handleMusicEnded"
 			ref="musicPlayerEl"
-			:src="currentMusic ? `http://${currentMusic.url}` : ''"
+			:src="currentMusic ? `${__PROTOCOL__}://${currentMusic.url}` : ''"
 			loop
 		></audio>
 		<div @click="toggleMusic()" class="icon_container">
@@ -233,55 +234,53 @@ onMounted(async () => {
 	}
 
 	& > .common {
-    display: inline-block;
+		display: inline-block;
 		color: var(--color-second);
-    white-space: nowrap;
+		white-space: nowrap;
 	}
 
 	& > .music_name {
 		display: inline-block;
-    flex: 1;
-    overflow-x: hidden;
-    
-    & > span{
-      animation: 15s wordsLoop linear infinite normal;
-      white-space: nowrap;
-      color: var(--color-primary-110);
-      display: inline-block;
-      
-      @keyframes wordsLoop {
-			0% {
-				transform: translateX(0px);
-				-webkit-transform: translateX(0px);
+		flex: 1;
+		overflow-x: hidden;
+
+		& > span {
+			animation: 15s wordsLoop linear infinite normal;
+			white-space: nowrap;
+			color: var(--color-primary-110);
+			display: inline-block;
+
+			@keyframes wordsLoop {
+				0% {
+					transform: translateX(0px);
+					-webkit-transform: translateX(0px);
+				}
+				50% {
+					transform: translateX(-100%);
+					-webkit-transform: translateX(-100%);
+				}
+				100% {
+					transform: translateX(0px);
+					-webkit-transform: translateX(0px);
+				}
 			}
-			50% {
-				transform: translateX(-100%);
-				-webkit-transform: translateX(-100%);
-			}
-      100% {
-				transform: translateX(0px);
-				-webkit-transform: translateX(0px);
+
+			@-webkit-keyframes wordsLoop {
+				0% {
+					transform: translateX(0px);
+					-webkit-transform: translateX(0px);
+				}
+
+				50% {
+					transform: translateX(-100%);
+					-webkit-transform: translateX(-100%);
+				}
+				100% {
+					transform: translateX(0px);
+					-webkit-transform: translateX(0px);
+				}
 			}
 		}
-
-		@-webkit-keyframes wordsLoop {
-			0% {
-				transform: translateX(0px);
-				-webkit-transform: translateX(0px);
-			}
-      
-			50% {
-				transform: translateX(-100%);
-				-webkit-transform: translateX(-100%);
-			}
-      100% {
-				transform: translateX(0px);
-				-webkit-transform: translateX(0px);
-			}
-		}
-    }
-
-		
 	}
 }
 

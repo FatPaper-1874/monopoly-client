@@ -3,6 +3,7 @@ import { PlayerInfo } from "@/interfaces/game";
 import { PropType, computed } from "vue";
 import { useGameInfo } from "@/store/index";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import { __PROTOCOL__ } from "@G/global.config";
 
 // const props = defineProps({
 // 	player: { type: Object as PropType<PlayerInfo>, default: {} },
@@ -17,7 +18,7 @@ const _userInfo = computed(() => props.player.user);
 const _isMyTrun = computed(() => gameInfoStroe.currentPlayerInRound === props.player.id);
 const _isBankrupted = computed(() => props.player.isBankrupted);
 const avatarSrc = computed(() => {
-	return _userInfo.value.avatar ? `http://${_userInfo.value.avatar}` : "";
+	return _userInfo.value.avatar ? `${__PROTOCOL__}://${_userInfo.value.avatar}` : "";
 });
 </script>
 
@@ -72,8 +73,8 @@ const avatarSrc = computed(() => {
 		line-height: 2.5rem;
 		text-align: center;
 		display: block;
-		border-radius: .8rem;
-		padding: .4rem;
+		border-radius: 0.8rem;
+		padding: 0.4rem;
 		background-color: rgba(255, 255, 255, 0.6);
 	}
 
