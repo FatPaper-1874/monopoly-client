@@ -1,4 +1,5 @@
 import { useLoading } from "@/store";
+import { __ICE_SERVER_PATH__, __ICE_SERVER_PORT__, __PROTOCOL__ } from "@G/global.config";
 import Peer, { DataConnection } from "peerjs";
 
 export class PeerClient {
@@ -37,7 +38,8 @@ export class PeerClient {
 	public static async create(host: string, port: number) {
 		//向服务器和获取自己的peerId
 		const peer = await new Promise<Peer>((resolve, reject) => {
-			const peer = new Peer({ host, port });
+			const isHTTP = __PROTOCOL__ === "http";
+			const peer = new Peer(isHTTP ? { host, port } : { host, path: `/${__ICE_SERVER_PATH__}`, secure: true });
 			peer.addListener("open", (id) => {
 				console.log("ice服务器连接成功, ID:", id);
 				peer.removeAllListeners();
