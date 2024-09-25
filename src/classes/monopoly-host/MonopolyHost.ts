@@ -10,6 +10,7 @@ import { WorkerCommType } from "@/enums/worker";
 import { getMapById, getMapsList } from "@/utils/api/map";
 import { emitRoomHeart } from "@/utils/api/room-router";
 import { asyncMission } from "@/utils/async-mission-queue";
+import { __ICE_SERVER_PATH__, __PROTOCOL__ } from "@G/global.config";
 
 export class MonopolyHost {
 	private peer: Peer;
@@ -133,9 +134,10 @@ export class MonopolyHost {
 		});
 	}
 
-	public static async create(roomId: string, peerHost: string, peerPort: number, heartContinuationTimeMs: number) {
+	public static async create(roomId: string, host: string, port: number, heartContinuationTimeMs: number) {
 		const peer = await new Promise<Peer>((resolve) => {
-			const peer = new Peer({ host: peerHost, port: peerPort });
+			const isHTTP = __PROTOCOL__ === "http";
+			const peer = new Peer(isHTTP ? { host, port } : { host, path: `/${__ICE_SERVER_PATH__}`, secure: true });
 			peer.on("open", () => {
 				console.info("MonopolyHost开启成功");
 				resolve(peer);
@@ -528,8 +530,8 @@ class Room {
 						? 0
 						: roleIndex + 1
 					: roleIndex - 1 < 0
-					? this.roleList.length - 1
-					: roleIndex - 1;
+						? this.roleList.length - 1
+						: roleIndex - 1;
 			user.role = this.roleList[newIndex];
 
 			this.roomInfoBroadcast();
@@ -607,7 +609,7 @@ class Room {
 				user && user.socketClient.send(JSON.stringify(data.data));
 			}
 		};
-		const handleGameStart = () => {};
+		const handleGameStart = () => { };
 	}
 
 	private handleGameOver() {

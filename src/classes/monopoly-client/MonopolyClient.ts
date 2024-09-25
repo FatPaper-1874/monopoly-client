@@ -1,680 +1,499 @@
 import Peer, { DataConnection } from "peerjs";
-import { ChatMessage, Role, RoomInfo, SocketMessage, User, UserInRoomInfo, GameSetting } from "@/interfaces/bace";
-import { GameOverRule, OperateType } from "@/enums/game";
-import { ChangeRoleOperate, ChatMessageType, SocketMsgType } from "@/enums/bace";
-import { debounce, randomString } from "@/utils";
-import { getRoleList } from "@/utils/api/role";
-import GameProcessWorker from "@/classes/worker/GameProcessWorker?worker";
-import { WorkerCommMsg } from "@/interfaces/worker";
-import { WorkerCommType } from "@/enums/worker";
-import { getMapById, getMapsList } from "@/utils/api/map";
-import { emitRoomHeart } from "@/utils/api/room-router";
-import { asyncMission } from "@/utils/async-mission-queue";
-import { __ICE_SERVER_PATH__, __PROTOCOL__ } from "@G/global.config";
+import { ChangeRoleOperate, MonopolyWebSocketMsgType, SocketMsgType } from "@/enums/bace";
+import { ChatMessage, GameSetting, MonopolyWebSocketMsg, Room, RoomInfo, SocketMessage, User } from "@/interfaces/bace";
+import { base64ToFileUrl, debounce, throttle } from "@/utils";
+import { asyncMissionQueue } from "@/utils/async-mission-queue";
+import { MonopolyHost } from "@/classes/monopoly-host/MonopolyHost";
+import { PeerClient } from "@/classes/monopoly-client/PeerClient";
+import FPMessage from "@/components/utils/fp-message";
+import {
+	useChat,
+	useGameInfo,
+	useLoading,
+	useMapData,
+	useRoomInfo,
+	useRoomList,
+	useUserInfo,
+	useUserList,
+	useUtil,
+} from "@/store";
+import router from "@/router";
+import { GameInfo, GameInitInfo, PropertyInfo } from "@/interfaces/game";
+import useEventBus from "@/utils/event-bus";
+import { createVNode } from "vue";
+import PropertyInfoVue from "@/components/common/property-info.vue";
+import { FPMessageBox } from "@/components/utils/fp-message-box";
+import { OperateType } from "@/enums/game";
+import { emitHostPeerId, emitRoomHeart, joinRoomApi } from "@/utils/api/room-router";
 
-export class MonopolyHost {
-	private peer: Peer;
-	private room: Room;
+type MonopolyClientOptions = {
+	iceServer: {
+		host: string;
+		port: number;
+	};
+};
 
-	private clientList: Map<string, DataConnection> = new Map<string, DataConnection>();
+export class MonopolyClient {
+	private userId: string | undefined;
+	private peerId: string | undefined;
+	private roomId: string | undefined;
+
+	private options: MonopolyClientOptions;
+	private iceServerHost: string;
+	private iceServerPort: number;
+
+	private peerClient: PeerClient | null = null;
+	private conn: DataConnection | null = null;
+	private gameHost: MonopolyHost | null = null;
 
 	private intervalList: any[] = [];
 
-	private destoryHandler: Function | undefined;
+	private static instance: MonopolyClient | null;
 
-	private constructor(peer: Peer, room: Room, heartContinuationTimeMs: number) {
-		this.peer = peer;
-		this.room = room;
+	public static getInstance(): MonopolyClient;
+	public static getInstance(options: MonopolyClientOptions): Promise<MonopolyClient>;
+	public static getInstance(options?: MonopolyClientOptions) {
+		if (this.instance) {
+			return this.instance;
+		}
+		if (options) {
+			return (async () => {
+				this.instance = new MonopolyClient(options);
 
-		this.init(this.peer);
-
-		const heartInterval = setInterval(() => {
-			emitRoomHeart(this.room.getRoomId());
-		}, heartContinuationTimeMs);
-		this.intervalList.push(heartInterval);
+				return this.instance;
+			})();
+		} else {
+			// if (!this.instance) {
+			// 	throw Error("在调用MonopolyClient之前应该先对其初始化, 使用useMonopolyClient时提供options以初始化");
+			// }
+			return this.instance;
+		}
 	}
 
-	private init(peer: Peer) {
-		const _this = this;
-		this.startHeartCheck();
-		peer.on("connection", (conn) => {
-			let clientUserId = "";
-			this.clientList.set(conn.connectionId, conn);
-			conn.once("data", (data: any) => {
-				const _data: SocketMessage = JSON.parse(data);
-				const user = _data.data as User;
-				if (this.room.isStarted) {
-					if (this.room.isUserInRoomAndOffline(user.userId)) {
-						this.room.handleUserReconnect(user.userId, conn);
-					} else {
-						conn.send(
-							JSON.stringify(<SocketMessage>{
-								type: SocketMsgType.MsgNotify,
-								data: "",
-								msg: {
-									type: "error",
-									content: "该房间已经开始游戏了!",
-								},
-								source: "server",
-							})
-						);
-						conn.close();
-						return;
-					}
-				}
-				if (_data.type === SocketMsgType.JoinRoom) {
-					if (!this.room) throw Error("在房间没创建时加入了房间");
-					clientUserId = user.userId;
-					this.room.join(user, conn);
-				}
+	private constructor(options: MonopolyClientOptions) {
+		const {
+			iceServer: { host: iceHost, port: icePort },
+		} = options;
+
+		this.options = options;
+		this.iceServerHost = iceHost;
+		this.iceServerPort = icePort;
+	}
+
+	public async joinRoom(roomId: string) {
+		const data = await joinRoomApi(roomId);
+		let hostPeerId = data.hostPeerId;
+
+		if (data.needCreate) {
+			useLoading().showLoading("正在创建主机...");
+			if (this.gameHost) throw Error("你已经是主机了,为什么要再次创建房间!!!");
+			// 创建一个临时的 URL 指向 Blob 数据
+			this.gameHost = await MonopolyHost.create(roomId, this.iceServerHost, this.iceServerPort, data.deleteIntervalMs);
+			this.gameHost.addDestoryListener(() => {
+				this.gameHost = null;
+				this.peerClient = null;
 			});
-
-			const noHeartHandler = debounce(
-				() => {
-					_this.room.leave(clientUserId);
-				},
-				3000,
-				true
-			);
-
-			conn.on("data", function (data: any) {
-				const socketMessage: SocketMessage = JSON.parse(data.toString());
-				// console.log("Host Received: ", socketMessage);
-
-				switch (socketMessage.type) {
-					case SocketMsgType.Heart:
-						noHeartHandler.fn();
-						break;
-					case SocketMsgType.RoomChat:
-						_this.handleRoomChat(conn, socketMessage, clientUserId);
-						break;
-					case SocketMsgType.ReadyToggle:
-						_this.handleReadyToggle(conn, socketMessage, clientUserId);
-						break;
-					case SocketMsgType.ChangeRole:
-						_this.handleChangeRole(conn, socketMessage, clientUserId);
-						break;
-					case SocketMsgType.ChangeGameSetting:
-						_this.handleChangeGameSetting(conn, socketMessage, clientUserId);
-						break;
-					case SocketMsgType.GameStart:
-						_this.handleGameStart();
-						break;
-					case SocketMsgType.GameInitFinished:
-						_this.handleGameInitFinished(conn, socketMessage, clientUserId);
-						break;
-					case SocketMsgType.RollDiceResult:
-						_this.handleRollDiceResult(conn, socketMessage, clientUserId);
-						break;
-					case SocketMsgType.UseChanceCard:
-						_this.handleUseChanceCard(conn, socketMessage, clientUserId);
-						break;
-					case SocketMsgType.Animation:
-						_this.handleAnimationComplete(conn, socketMessage, clientUserId);
-						break;
-					case SocketMsgType.BuyProperty:
-						_this.handleBuyProperty(conn, socketMessage, clientUserId);
-						break;
-					case SocketMsgType.BuildHouse:
-						_this.handleBuildHouse(conn, socketMessage, clientUserId);
-						break;
-					case SocketMsgType.LeaveRoom:
-						_this.handleLeaveRoom(conn, socketMessage, clientUserId);
-						noHeartHandler.cancel();
-						break;
-				}
-			});
-
-			conn.on("close", () => {
-				if (clientUserId) {
-					this.room.leave(clientUserId);
-					this.clientList.delete(clientUserId);
-				}
-			});
-		});
+			hostPeerId = this.gameHost.getPeerId();
+			useLoading().showLoading("主机创建成功，正在和服务器报喜...");
+			await emitHostPeerId(roomId, hostPeerId);
+		}
+		useLoading().showLoading("连接主机中...");
+		await this.linkToGameHost(hostPeerId);
 	}
 
-	public static async create(roomId: string, host: string, port: number, heartContinuationTimeMs: number) {
-		const peer = await new Promise<Peer>((resolve) => {
-			const isHTTP = __PROTOCOL__ === "http";
-			const peer = new Peer(isHTTP ? { host, port } : { host, path: `/${__ICE_SERVER_PATH__}`, secure: true });
-			peer.on("open", () => {
-				console.info("MonopolyHost开启成功");
-				resolve(peer);
-			});
-		});
-		const { roleList } = await getRoleList();
-		const room = new Room(roomId, roleList);
-
-		return new MonopolyHost(peer, room, heartContinuationTimeMs);
-	}
-
-	public broadcast(msg: string) {
-		Array.from(this.clientList.values()).forEach((c) => {
-			c.send(msg);
-		});
-	}
-
-	public getPeerId() {
-		return this.peer.id;
-	}
-
-	private startHeartCheck() {
-		this.intervalList.push(
-			setInterval(() => {
-				this.broadcast(
-					JSON.stringify(<SocketMessage>{
-						type: SocketMsgType.Heart,
-						data: Date.now(),
-					})
-				);
-			}, 1000)
-		);
-	}
-
-	private handleRoomChat(socketClient: DataConnection, data: SocketMessage, clientUserId: string) {
-		const message = data.data as string;
-		this.room.chatBroadcast(message, clientUserId);
-	}
-
-	private handleReadyToggle(socketClient: DataConnection, data: SocketMessage, clientUserId: string) {
-		this.room.readyToggle(clientUserId);
-	}
-
-	private handleChangeRole(socketClient: DataConnection, data: SocketMessage, clientUserId: string) {
-		this.room.changeRole(clientUserId, data.data);
-	}
-
-	private handleChangeGameSetting(socketClient: DataConnection, data: SocketMessage, clientUserId: string) {
-		this.room.changeGameSetting(data.data);
-	}
-
-	private handleGameStart() {
-		this.room.startGame();
-	}
-
-	private handleGameInitFinished(socketClient: DataConnection, data: SocketMessage, clientUserId: string) {
-		this.room.emitOperationToWorker(clientUserId, OperateType.GameInitFinished);
-	}
-
-	private handleRollDiceResult(socketClient: DataConnection, data: SocketMessage, clientUserId: string) {
-		this.room.emitOperationToWorker(clientUserId, OperateType.RollDice);
-	}
-
-	private handleUseChanceCard(socketClient: DataConnection, data: SocketMessage, clientUserId: string) {
-		const chanceCardId: string = data.data;
-		const targetId: string | string[] = data.extra;
-		if (targetId) {
-			if (typeof targetId === "string") {
-				this.room.emitOperationToWorker(clientUserId, OperateType.UseChanceCard, chanceCardId, [targetId]);
-			} else {
-				this.room.emitOperationToWorker(clientUserId, OperateType.UseChanceCard, chanceCardId, targetId);
+	private async linkToGameHost(hostPeerId: string) {
+		try {
+			if (!this.peerClient) {
+				this.peerClient = await PeerClient.create(this.iceServerHost, this.iceServerPort);
 			}
-		} else {
-			this.room.emitOperationToWorker(clientUserId, OperateType.UseChanceCard, chanceCardId);
-		}
-	}
-
-	private handleAnimationComplete(socketClient: DataConnection, data: SocketMessage, clientUserId: string) {
-		const operateType: OperateType = data.data;
-		this.room.emitOperationToWorker(clientUserId, operateType);
-	}
-
-	private handleBuyProperty(socketClient: DataConnection, data: SocketMessage, clientUserId: string) {
-		const operateType: OperateType = data.data;
-		this.room.emitOperationToWorker(clientUserId, operateType, data.extra);
-	}
-
-	private handleBuildHouse(socketClient: DataConnection, data: SocketMessage, clientUserId: string) {
-		const operateType: OperateType = data.data;
-		this.room.emitOperationToWorker(clientUserId, operateType, data.extra);
-	}
-
-	private handleLeaveRoom(socketClient: DataConnection, data: SocketMessage, clientUserId: string) {
-		if (this.room.leave(clientUserId)) {
-			//没人了
-			this.destory();
-		}
-		socketClient.send(
-			JSON.stringify(<SocketMessage>{
-				type: SocketMsgType.LeaveRoom,
-				source: "server",
-			})
-		);
-		socketClient.close();
-		this.clientList.delete(clientUserId);
-	}
-
-	public addDestoryListener(fn: Function) {
-		this.destoryHandler = fn;
-	}
-
-	public destory() {
-		this.room.destory();
-		this.intervalList.forEach((i) => {
-			clearInterval(i);
-		});
-		this.destoryHandler && this.destoryHandler();
-	}
-}
-
-interface UserInRoom extends UserInRoomInfo {
-	socketClient: DataConnection;
-	isOffLine: boolean;
-}
-
-class Room {
-	private roomId: string;
-	private userList: Map<string, UserInRoom>;
-	private ownerId: string = "";
-	private gameSetting: GameSetting;
-	private roleList: Role[];
-	private gameProcess: Worker | null = null;
-	public isStarted: boolean;
-
-	constructor(roomId: string, roleList: Role[]) {
-		this.roomId = roomId;
-		this.ownerId = "";
-		this.roleList = roleList;
-		this.isStarted = false;
-		this.userList = new Map();
-		this.gameSetting = {
-			gameOverRule: GameOverRule.Earn100000,
-			initMoney: 20000,
-			multiplier: 1,
-			multiplierIncreaseRounds: 2,
-			mapId: "",
-			roundTime: 20,
-			diceNum: 2,
-		};
-	}
-
-	public getRoomId() {
-		return this.roomId;
-	}
-
-	public getOwner() {
-		return {
-			userId: this.ownerId,
-			username: this.userList.get(this.ownerId)?.username || "",
-		};
-	}
-
-	public getUserList(): UserInRoom[] {
-		return Array.from(this.userList.values());
-	}
-
-	// public isUserOffLine(userId: string): boolean {
-	//     let res = false;
-	//     //没有这个用户以及游戏尚未开启均判断为不是断线 无需重连
-	//     if (this.hasUser(userId) && this.gameProcess && this.gameProcess.getPlayerIsOffline(userId)) {
-	//         res = true;
-	//     }
-	//     return res;
-	// }
-
-	public chatBroadcast(content: string, userId: string) {
-		if (!content) return;
-		const user = this.userList.get(userId);
-		if (!user) return;
-		const userInfo: UserInRoomInfo = {
-			userId: user.userId,
-			username: user.username,
-			avatar: user.avatar,
-			color: user.color,
-			role: user.role,
-			isReady: user.isReady,
-		};
-		const message: ChatMessage = {
-			id: randomString(16),
-			type: ChatMessageType.Text,
-			content,
-			user: userInfo,
-			time: Date.now(),
-		};
-		this.roomBroadcast({
-			type: SocketMsgType.RoomChat,
-			data: message,
-			source: "room",
-		});
-	}
-
-	/**
-	 * 将房间的信息广播到房间内的全部用户, 通常在房间界面会用到
-	 */
-	public roomInfoBroadcast() {
-		const roomInfo = this.getRoomInfo();
-		const msg: SocketMessage = {
-			type: SocketMsgType.RoomInfo,
-			source: "server",
-			roomId: this.roomId,
-			data: roomInfo,
-		};
-		this.roomBroadcast(msg);
-	}
-
-	/**
-	 * 将信息广播到房间内的全部用户
-	 */
-	public roomBroadcast(msg: SocketMessage) {
-		Array.from(this.userList.values()).forEach((user: UserInRoom) => {
-			user.socketClient.send(JSON.stringify(msg));
-		});
-	}
-
-	/**
-	 * 获取房间的信息
-	 * @returns 返回房间的信息
-	 */
-	private getRoomInfo(): RoomInfo {
-		const roomInfo: RoomInfo = {
-			roomId: this.roomId,
-			userList: Array.from(this.userList.values()).map((user) => ({
-				userId: user.userId,
-				username: user.username,
-				isReady: user.isReady,
-				color: user.color,
-				avatar: user.avatar,
-				role: user.role,
-			})),
-			isStarted: this.isStarted,
-			ownerId: this.getOwner().userId,
-			ownerName: this.getOwner().username,
-			roleList: this.roleList,
-			gameSetting: this.gameSetting,
-		};
-		return roomInfo;
-	}
-
-	/**
-	 * 转变某个用户的准备状态
-	 * @param _user 要转变准备状态用户的id或实例
-	 */
-	readyToggle(_user: UserInRoomInfo): boolean;
-	readyToggle(_user: string): boolean;
-	public readyToggle(_user: UserInRoomInfo | string) {
-		const user = this.userList.get(typeof _user === "string" ? _user : _user.userId);
-		if (user) {
-			user.isReady = !user.isReady;
-			this.roomInfoBroadcast();
-			return user.isReady;
-		}
-		return false;
-	}
-
-	/**
-	 * 用户加入房间
-	 * @param user 加入房间的用户的id或实例
-	 * @param conn peer链接
-	 * @returns 是否加入成功
-	 */
-	public join(user: User, conn: DataConnection) {
-		if (this.userList.has(user.userId)) {
-			//用户已在房间内
-			this.sendToClient(
-				conn,
-				SocketMsgType.JoinRoom,
-				{ roomId: this.roomId },
-				{
-					type: "warning",
-					content: "你已在房间中",
-				},
-				this.roomId
-			);
-			return false;
-		} else {
-			const userInRoom: UserInRoom = {
-				...user,
-				socketClient: conn,
-				isOffLine: false,
-				role: this.roleList[Math.floor(Math.random() * this.roleList.length)],
+			const { conn, peer } = await this.peerClient.linkToHost(hostPeerId);
+			this.conn = conn;
+			const { userId, username, color, avatar } = useUserInfo();
+			const user: User = {
+				userId,
+				username,
+				color,
+				avatar,
 				isReady: false,
 			};
-			if (Array.from(this.userList.values()).length === 0) this.ownerId = userInRoom.userId;
-			this.userList.set(user.userId, userInRoom);
-			this.sendToClient(
-				conn,
-				SocketMsgType.JoinRoom,
-				{ roomId: this.roomId },
-				{
-					type: "success",
-					content: "加入房间成功",
-				},
-				this.roomId
-			);
-			this.roomBroadcast(<SocketMessage>{
-				type: SocketMsgType.MsgNotify,
-				msg: { type: "success", content: `${userInRoom.username}加入了房间` },
-			});
-			this.roomInfoBroadcast();
-			return true;
-		}
-	}
+			this.sendMsg(SocketMsgType.JoinRoom, user);
 
-	/**
-	 * 用户离开房间
-	 * @param user 离开房间的用户的id
-	 * @returns 玩家离开后房间是否为空
-	 */
-	public leave(userId: string): boolean {
-		//房间中还有更多玩家的情况
-		if (this.isStarted) {
-			//游戏已经开始，处理断线
-			this.handleUserOffline(userId);
-			return Array.from(this.userList.values()).every((u) => u.isOffLine);
-		} else {
-			//游戏没有开始，仍在房间页面
-			if (this.userList.size === 1) {
-				//房间最后一个人退出, 退出后解散房间
-				this.userList.delete(userId);
-				return true;
-			} else {
-				const user = this.userList.get(userId);
-				if (user)
-					this.roomBroadcast(<SocketMessage>{
-						type: SocketMsgType.MsgNotify,
-						msg: { type: "warning", content: `${user.username}离开了房间` },
+			FPMessage({
+				type: "success",
+				message: "主机连接成功🤗",
+			});
+
+			this.conn.on("data", (_data: any) => {
+				// const data = JSON.parse(_data as string);
+				const data: SocketMessage = JSON.parse(_data);
+				if (data.msg) {
+					FPMessage({
+						type: data.msg.type as "info" | "success" | "warning" | "error",
+						message: data.msg.content,
 					});
-				this.userList.delete(userId);
-				this.roomInfoBroadcast();
-				return false;
-			}
-		}
-	}
+				}
+				// console.log("Client Receive: ", data);
 
-	private handleUserOffline(userId: string) {
-		const user = this.userList.get(userId);
-		if (!user) return;
-		user.isOffLine = true;
-		if (this.gameProcess) {
-			this.gameProcess.postMessage(<WorkerCommMsg>{
-				type: WorkerCommType.UserOffLine,
-				data: { userId },
+				switch (data.type) {
+					case SocketMsgType.Heart:
+						this.handleHeart(data);
+						break;
+					case SocketMsgType.ConfirmIdentity:
+						this.handleConfirmIdentity();
+						break;
+					case SocketMsgType.UserList:
+						this.handleUserListReply(data.data);
+						break;
+					case SocketMsgType.RoomList:
+						this.handleRoomListReply(data.data);
+						break;
+					case SocketMsgType.JoinRoom:
+						this.handleJoinRoomReply(data);
+						break;
+					case SocketMsgType.LeaveRoom:
+						this.handleLeaveRoomReply(data);
+						break;
+					case SocketMsgType.RoomInfo:
+						this.handleRoomInfoReply(data);
+						break;
+					case SocketMsgType.RoomChat:
+						this.handleRoomChatReply(data);
+						break;
+					case SocketMsgType.GameStart:
+						this.handleGameStart(data);
+						break;
+					case SocketMsgType.GameInit:
+						this.handleGameInit(data);
+						break;
+					case SocketMsgType.GameInitFinished:
+						this.handleGameInitFinished();
+						break;
+					case SocketMsgType.GameInfo:
+						this.handleGameInfo(data);
+						break;
+					case SocketMsgType.RemainingTime:
+						this.handleRemainingTime(data);
+						break;
+					case SocketMsgType.RoundTurn:
+						this.handleRoundTurn();
+						break;
+					case SocketMsgType.RollDiceStart:
+						this.handleRollDiceAnimationPlay();
+						break;
+					case SocketMsgType.RollDiceResult:
+						this.handleRollDiceResult(data);
+						break;
+					case SocketMsgType.UseChanceCard:
+						this.handleUsedChanceCard(data);
+						break;
+					case SocketMsgType.PlayerWalk:
+						this.handlePlayerWalk(data);
+						break;
+					case SocketMsgType.PlayerTp:
+						this.handlePlayerTp(data);
+						break;
+					case SocketMsgType.BuyProperty:
+						this.handleBuyProperty(data);
+						break;
+					case SocketMsgType.BuildHouse:
+						this.handleBuildHouse(data);
+						break;
+					case SocketMsgType.GameOver:
+						this.handleGameOver(data);
+					default:
+						break;
+				}
 			});
-		}
-		this.roomBroadcast(<SocketMessage>{
-			type: SocketMsgType.MsgNotify,
-			msg: { type: "error", content: `${user.username}断开了连接` },
-		});
-		this.roomInfoBroadcast();
-	}
-
-	public handleUserReconnect(userId: string, newCoon: DataConnection) {
-		const oldUser = this.userList.get(userId);
-		if (oldUser) {
-			oldUser.socketClient = newCoon;
-			this.roomInfoBroadcast();
-			if (this.gameProcess) {
-				this.gameProcess.postMessage(<WorkerCommMsg>{
-					type: WorkerCommType.UserReconnect,
-					data: { userId: oldUser.userId },
-				});
-
-				this.roomBroadcast(<SocketMessage>{
-					type: SocketMsgType.MsgNotify,
-					msg: { type: "success", content: `${oldUser.username}重新连接` },
-				});
-			}
-		} else {
-			console.log("奇怪的玩家 in room");
+		} catch (e: any) {
+			FPMessage({ type: "error", message: e });
 		}
 	}
 
-	public changeRole(_userId: string, operate: ChangeRoleOperate): void {
-		const user = this.userList.get(_userId);
-		if (user) {
-			const roleIndex = this.roleList.findIndex((role) => role.id === user.role!.id);
-			const newIndex =
-				operate === ChangeRoleOperate.Next
-					? roleIndex + 1 >= this.roleList.length
-						? 0
-						: roleIndex + 1
-					: roleIndex - 1 < 0
-					? this.roleList.length - 1
-					: roleIndex - 1;
-			user.role = this.roleList[newIndex];
-
-			this.roomInfoBroadcast();
-		} else {
-			return;
-		}
+	private handleHeart(data: SocketMessage) {
+		const gameInfoStore = useGameInfo();
+		gameInfoStore.ping = Date.now() - data.data;
+		this.sendMsg(SocketMsgType.Heart, "");
+		this.handleNoHeart.fn();
 	}
 
-	public changeGameSetting(gameSetting: GameSetting): void {
-		this.gameSetting = gameSetting;
-		this.roomBroadcast({
-			type: SocketMsgType.MsgNotify,
-			source: "server",
-			data: "",
-			msg: { type: "info", content: "地图设置有变更" },
-		});
-		this.roomInfoBroadcast();
-	}
-
-	public async startGame() {
-		if (!Array.from(this.userList.values()).every((item) => item.userId == this.ownerId || item.isReady)) {
-			this.roomBroadcast({
-				type: SocketMsgType.GameStart,
-				source: "server",
-				data: "error",
-				msg: { type: "warning", content: "有玩家未准备" },
-			});
-			return;
-		}
-		if (this.isStarted || this.gameProcess) return;
-		this.isStarted = true;
-		this.gameProcess = new GameProcessWorker();
-		this.gameProcess.addEventListener("message", (ev) => {
-			const msg: WorkerCommMsg = ev.data;
-			switch (msg.type) {
-				case WorkerCommType.WorkerReady:
-					handleWorkerReady();
-					break;
-				case WorkerCommType.SendToUsers:
-					handleSendToUsers(msg.data);
-					break;
-				case WorkerCommType.GameStart:
-					handleGameStart();
-					break;
-				case WorkerCommType.GameOver:
-					this.handleGameOver();
-					break;
-			}
-		});
-
-		window.addEventListener("beforeunload", () => {
-			this.gameProcess && this.gameProcess.terminate();
-		});
-
-		const handleWorkerReady = async () => {
-			if (!this.gameSetting.mapId || !this.gameProcess) return;
-			const mapInfo = await getMapById(this.gameSetting.mapId);
-			this.gameProcess.postMessage(<WorkerCommMsg>{
-				type: WorkerCommType.LoadGameInfo,
-				data: {
-					setting: this.gameSetting,
-					mapInfo,
-					userList: Array.from(this.userList.values()).map((u) => {
-						const { socketClient, ...userInfo } = u;
-						return userInfo;
-					}),
+	private handleNoHeart = debounce(
+		() => {
+			FPMessage({
+				type: "error",
+				message: "与主机断开连接, 即将返回主页",
+				onClosed: () => {
+					router.replace("room-router");
+					this.destory();
 				},
 			});
-		};
+		},
+		3000,
+		true
+	);
 
-		const handleSendToUsers = (data: { userIdList: string[]; data: SocketMessage }) => {
-			for (let index = 0; index < data.userIdList.length; index++) {
-				const userId = data.userIdList[index];
-				const user = this.userList.get(userId);
-				user && user.socketClient.send(JSON.stringify(data.data));
-			}
-		};
-		const handleGameStart = () => {};
+	private handleConfirmIdentity() {}
+
+	private handleUserListReply(data: User[]) {
+		const userListStore = useUserList();
+		userListStore.userList = data;
 	}
 
-	private handleGameOver() {
-		Array.from(this.userList.values()).forEach((u) => {
-			u.isReady = false;
-		});
-		this.roomInfoBroadcast();
-		console.log("🚀 ~ Room ~ handleGameOver ~ 游戏结束啦:");
-		this.gameProcess && this.gameProcess.terminate();
-		this.gameProcess = null;
-		this.isStarted = false;
+	private handleRoomListReply(data: Room[]) {
+		const roomListStore = useRoomList();
+		roomListStore.roomList = data;
 	}
 
-	/**
-	 * 获取房间内用户数量
-	 * @return  用户数量
-	 */
-	public getUserNum() {
-		return this.userList.size;
+	private handleJoinRoomReply(data: SocketMessage) {
+		if (data.roomId) {
+			useRoomInfo().roomId = data.roomId;
+			router.replace({ name: "room" });
+		}
 	}
 
-	public isUserInRoomAndOffline(userId: string) {
-		const user = Array.from(this.userList.values()).find((u) => u.userId === userId);
-		if (!user) return false;
-		return user.isOffLine;
+	private handleLeaveRoomReply(data: SocketMessage) {
+		this.destory();
+		useRoomInfo().$reset(); //重置房间信息
+		router.replace({ name: "room-router" });
 	}
 
-	public emitOperationToWorker(userId: string, operateType: OperateType, ...data: any) {
-		if (!this.gameProcess) throw Error("在worker还没创建时给worker发信息");
-		this.gameProcess.postMessage(<WorkerCommMsg>{
-			type: WorkerCommType.EmitOperation,
-			data: {
-				userId,
-				operateType,
-				data,
-			},
-		});
+	private handleRoomInfoReply(data: SocketMessage) {
+		const roomInfoData = data.data as RoomInfo;
+		const roomInfoStore = useRoomInfo();
+		roomInfoData &&
+			roomInfoStore.$patch({
+				roomId: roomInfoData.roomId,
+				ownerId: roomInfoData.ownerId,
+				ownerName: roomInfoData.ownerName,
+				userList: roomInfoData.userList,
+				roleList: roomInfoData.roleList,
+				gameSetting: roomInfoData.gameSetting,
+			});
 	}
 
-	/**
-	 * 向指定客户端发送信息
-	 * @param socketClient 要发送信息的客户端/或者用户id
-	 * @param type 发送的信息类型
-	 * @param data 发送的信息本体
-	 * @param msg 可以使客户端触发message组件的信息
-	 * @param roomId 房间Id
-	 */
-	public sendToClient(
-		socketClient: DataConnection,
-		type: SocketMsgType,
-		data: any,
-		msg?: { type: "success" | "warning" | "error" | "info"; content: string },
-		roomId?: string
-	) {
-		const msgToSend: SocketMessage = {
-			type,
-			data,
-			source: "server",
-			roomId,
-			msg,
-		};
-		socketClient.send(JSON.stringify(msgToSend));
+	private handleRoomChatReply(res: SocketMessage) {
+		const message = res.data as ChatMessage;
+		useChat().addNewMessage(message);
+	}
+
+	private handleGameStart(data: SocketMessage) {
+		const loadingStore = useLoading();
+		loadingStore.loading = true;
+	}
+
+	private handleGameInit(data: SocketMessage) {
+		console.log("INIT!!!");
+
+		if (data.data) {
+			const loadingStore = useLoading();
+			loadingStore.text = "获取数据成功，加载中...";
+
+			const gameInitInfo = data.data as GameInitInfo;
+
+			const mapDataStore = useMapData();
+			mapDataStore.$patch(gameInitInfo);
+
+			const gameInfoStore = useGameInfo();
+			gameInitInfo &&
+				gameInfoStore.$patch({
+					currentRound: gameInitInfo.currentRound,
+					currentPlayerInRound: gameInitInfo.currentPlayerInRound,
+					currentMultiplier: gameInitInfo.currentMultiplier,
+				});
+
+			router.replace({ name: "game" });
+		} else {
+			FPMessage({ type: "error", message: "获取地图初始数据失败" });
+		}
+	}
+
+	private handleGameInitFinished() {
+		useLoading().hideLoading();
+	}
+
+	private handleGameInfo(data: SocketMessage) {
+		if (data.data == "error") return;
+		const gameInfoStore = useGameInfo();
+		const gameInfo: GameInfo = data.data;
+		gameInfo &&
+			gameInfoStore.$patch({
+				currentPlayerInRound: gameInfo.currentPlayerInRound,
+				currentRound: gameInfo.currentRound,
+				currentMultiplier: gameInfo.currentMultiplier,
+				playersList: gameInfo.playerList,
+				propertiesList: gameInfo.properties,
+			});
+	}
+
+	private handleRemainingTime(data: SocketMessage) {
+		const remainingTime = data.data;
+		const utilStore = useUtil();
+		utilStore.remainingTime = remainingTime;
+		utilStore.timeOut = remainingTime <= 0;
+		if (remainingTime <= 0) {
+			utilStore.canRoll = false;
+		}
+	}
+
+	private handleRoundTurn() {
+		const utilStore = useUtil();
+		utilStore.canRoll = true;
+		useEventBus().emit("RoundTurn");
+	}
+
+	private handleRollDiceAnimationPlay() {
+		const utilStore = useUtil();
+		utilStore.isRollDiceAnimationPlay = true;
+	}
+
+	private handleRollDiceResult(data: SocketMessage) {
+		const rollDiceResult: number[] = data.data.rollDiceResult;
+
+		const utilStore = useUtil();
+		utilStore.rollDiceResult = rollDiceResult;
+		utilStore.isRollDiceAnimationPlay = false;
+	}
+
+	private handleUsedChanceCard(data: SocketMessage) {
+		const { userId, chanceCardId } = data.data as { userId: string; chanceCardId: string };
+	}
+
+	private handlePlayerWalk(data: SocketMessage) {
+		const { playerId, step } = data.data as { playerId: string; step: number };
+		useEventBus().emit("player-walk", playerId, step);
+	}
+
+	private handlePlayerTp(data: SocketMessage) {
+		const { playerId, positionIndex } = data.data as { playerId: string; positionIndex: number };
+		useEventBus().emit("player-tp", playerId, positionIndex);
+	}
+
+	private handleBuyProperty(data: SocketMessage) {
+		const property: PropertyInfo = data.data;
+
+		const vnode = createVNode(PropertyInfoVue, { property });
+
+		FPMessageBox({
+			title: "购买地皮",
+			content: vnode,
+			cancelText: "不买",
+			confirmText: "买！",
+		})
+			.then(() => {
+				this.sendMsg(SocketMsgType.BuyProperty, OperateType.BuyProperty, undefined, true);
+			})
+			.catch(() => {
+				this.sendMsg(SocketMsgType.BuyProperty, OperateType.BuyProperty, undefined, false);
+			});
+	}
+
+	private handleBuildHouse(data: SocketMessage) {
+		const property: PropertyInfo = data.data;
+
+		const vnode = createVNode(PropertyInfoVue, { property });
+
+		FPMessageBox({
+			title: "升级房子",
+			content: vnode,
+			cancelText: "不升级",
+			confirmText: "升级！",
+		})
+			.then(() => {
+				this.sendMsg(SocketMsgType.BuildHouse, OperateType.BuildHouse, undefined, true);
+			})
+			.catch(() => {
+				this.sendMsg(SocketMsgType.BuildHouse, OperateType.BuildHouse, undefined, false);
+			});
+	}
+
+	private handleGameOver(data: SocketMessage) {
+		const gameInfoStore = useGameInfo();
+		gameInfoStore.isGameOver = true;
+	}
+
+	public sendRoomChatMessage(message: string, roomId: string) {
+		this.sendMsg(SocketMsgType.RoomChat, message, roomId);
+	}
+
+	public leaveRoom() {
+		this.sendMsg(SocketMsgType.LeaveRoom, "");
+		this.peerClient = null;
+		this.gameHost && this.gameHost.destory();
+		const roomInfoStore = useRoomInfo();
+		roomInfoStore.$reset();
+		useChat().$reset();
+	}
+
+	public readyToggle() {
+		this.sendMsg(SocketMsgType.ReadyToggle, "");
+	}
+
+	public changeRole(operate: ChangeRoleOperate) {
+		this.sendMsg(SocketMsgType.ChangeRole, operate);
+	}
+
+	public changeGameSetting(gameSetting: GameSetting) {
+		this.sendMsg(SocketMsgType.ChangeGameSetting, gameSetting);
+	}
+
+	public startGame() {
+		this.sendMsg(SocketMsgType.GameStart, "");
+	}
+
+	public gameInitFinished() {
+		this.sendMsg(SocketMsgType.GameInitFinished, "");
+	}
+
+	public rollDice() {
+		this.sendMsg(SocketMsgType.RollDiceResult, OperateType.RollDice);
+		const utilStore = useUtil();
+		utilStore.canRoll = false;
+	}
+
+	public useChanceCard(cardId: string, target?: string | string[]) {
+		this.sendMsg(SocketMsgType.UseChanceCard, cardId, undefined, target);
+	}
+
+	public AnimationComplete() {
+		this.sendMsg(SocketMsgType.Animation, OperateType.Animation);
 	}
 
 	public destory() {
-		this.gameProcess && this.gameProcess.terminate();
+		this.handleNoHeart.cancel();
+		this.conn = null;
+		this.peerClient && this.peerClient.destory();
+		this.peerClient = null;
+		this.gameHost && this.gameHost.destory();
+	}
+
+	public disConnect() {
+		this.conn && this.conn.close();
+		this.destory();
+	}
+
+	private sendMsg(type: SocketMsgType, data: any, roomId: string = useRoomInfo().roomId, extra: any = undefined) {
+		const userInfo = useUserInfo();
+		const msgToSend: SocketMessage = {
+			type,
+			source: userInfo.userId,
+			roomId,
+			data,
+			extra,
+		};
+		this.conn && this.conn.send(JSON.stringify(msgToSend));
+	}
+
+	public static destoryInstance() {
+		this.instance && this.instance.destory();
+		this.instance = null;
 	}
 }
+
+function useMonopolyClient(): MonopolyClient;
+function useMonopolyClient(options: MonopolyClientOptions): Promise<MonopolyClient>;
+function useMonopolyClient(options?: MonopolyClientOptions) {
+	return options ? MonopolyClient.getInstance(options) : MonopolyClient.getInstance();
+}
+
+function destoryMonopolyClient() {}
+
+export { useMonopolyClient, destoryMonopolyClient };
