@@ -61,10 +61,10 @@ function handleChatShow() {
 			</div>
 		</div>
 
-		<div class="chat_input-container">
+		<form @submit="sendChatMessage" class="chat_input-container">
 			<input v-model="inputMessage" type="text" />
-			<button @click="sendChatMessage">发送</button>
-		</div>
+			<input type="submit" value="发送" />
+		</form>
 	</div>
 </template>
 
@@ -136,15 +136,18 @@ function handleChatShow() {
 			height: 1.8rem;
 			line-height: 1.8rem;
 			border-radius: 0.3rem;
-			margin-right: 0.3rem;
+			margin-right: 0.6rem;
 			caret-color: var(--color-primary);
 			font-size: unset;
 		}
 
-		& > button {
+		& > input[type="submit"] {
 			width: fit-content;
 			word-break: keep-all;
 			border-radius: 0.3rem;
+			box-sizing: border-box;
+			font-size: 1.2rem;
+			// padding: 0;
 		}
 	}
 }
