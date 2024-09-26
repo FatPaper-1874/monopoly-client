@@ -120,9 +120,9 @@ const isMusicListVisible = ref(false);
 onMounted(async () => {
 	initMusicPlayer();
 	musicList.value = await loadMusicList();
-	if (musicList.value?.length > 0) {
-		playMusic();
-	}
+	// if (musicList.value?.length > 0) {
+	// 	playMusic();
+	// }
 });
 </script>
 
