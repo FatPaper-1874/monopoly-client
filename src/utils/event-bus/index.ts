@@ -1,4 +1,4 @@
-export default function useEventBus(){
+export default function useEventBus() {
 	return EventBus.getInstance();
 }
 
@@ -55,7 +55,11 @@ class EventBus {
 		}
 	}
 
-	public removeAll(eventName: string) {
+	public removeAllByEventName(eventName: string) {
 		if (this.eventMap.has(eventName)) this.eventMap.delete(eventName);
+	}
+
+	public removeAll(){
+		this.eventMap.clear();
 	}
 }
