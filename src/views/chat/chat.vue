@@ -36,7 +36,8 @@ watch(isChatShow, (isShow) => {
 	});
 });
 
-function handleChatShow() {
+function handleChatShow(e:Event) {
+	e.preventDefault();
 	const chatStore = useChat();
 	chatStore.chatShow = !chatStore.chatShow;
 	chatStore.resetNewMessageNum();
