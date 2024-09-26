@@ -158,6 +158,19 @@ class GameProcess {
 				const addCardsList = this.getRandomChanceCard(num);
 				player.setCardsList(cardsList.concat(addCardsList));
 			});
+			player.addEventListener(PlayerEvents.SetBankrupted, (isBankrupted: boolean) => {
+				if (isBankrupted) {
+					//破产剥夺财产
+					Array.from(this.propertyList.values()).map((property) => {
+						const owner = property.getOwner();
+						if (owner && owner.id === player.getId()) {
+							property.setOwner(undefined);
+						}
+					});
+					player.setCardsList([]);
+					this.gameOverCheck();
+				}
+			});
 			return player;
 		});
 
@@ -180,7 +193,7 @@ class GameProcess {
 			case GameOverRule.Earn100000:
 				if (
 					this.playerList.some((player) => player.getMoney() >= 100000) ||
-					(this.playerList.length > 1 && this.playerList.filter((player) => !player.getIsBankrupted()).length <= 1)
+					(this.playerList.length > 0 && this.playerList.filter((player) => !player.getIsBankrupted()).length <= 1)
 				)
 					this.gameOver();
 				break;
@@ -331,6 +344,13 @@ class GameProcess {
 							) {
 								case ChanceCardType.ToSelf:
 									chanceCard.use(sourcePlayer, sourcePlayer); //直接使用
+									this.gameBroadcast(<SocketMessage>{
+										type: SocketMsgType.MsgNotify,
+										msg: {
+											type: "info",
+											content: `${sourcePlayer.getName()} 对自己使用了机会卡: "${chanceCard.getName()}"`,
+										},
+									});
 									break;
 								case ChanceCardType.ToOtherPlayer:
 								case ChanceCardType.ToPlayer:
@@ -340,6 +360,13 @@ class GameProcess {
 										break;
 									}
 									chanceCard.use(sourcePlayer, _targetPlayer);
+									this.gameBroadcast(<SocketMessage>{
+										type: SocketMsgType.MsgNotify,
+										msg: {
+											type: "info",
+											content: `${sourcePlayer.getName()} 对玩家 ${_targetPlayer.getName()} 使用了机会卡: "${chanceCard.getName()}"`,
+										},
+									});
 									break;
 								case ChanceCardType.ToProperty:
 									const _targetProperty = this.propertyList.get(targetIdList[0]);
@@ -348,6 +375,13 @@ class GameProcess {
 										break;
 									}
 									chanceCard.use(sourcePlayer, _targetProperty);
+									this.gameBroadcast(<SocketMessage>{
+										type: SocketMsgType.MsgNotify,
+										msg: {
+											type: "info",
+											content: `${sourcePlayer.getName()} 对地皮 ${_targetProperty.getName()} 使用了机会卡: "${chanceCard.getName()}"`,
+										},
+									});
 									break;
 								case ChanceCardType.ToMapItem:
 									const _targetIdList = targetIdList as string[];

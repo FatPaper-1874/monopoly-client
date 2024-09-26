@@ -16,7 +16,7 @@ export interface PropertyInterface {
 	getPassCost: () => number;
 
 	//设置房产信息
-	setOwner: (player: PlayerInterface) => void;
+	setOwner: (player: PlayerInterface | undefined) => void;
 	buildUp: () => void;
 
 	getPropertyInfo: () => PropertyInfo;

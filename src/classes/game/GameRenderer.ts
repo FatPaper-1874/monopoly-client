@@ -407,8 +407,7 @@ export class GameRenderer {
 			watchers.moneyWatcher && watchers.moneyWatcher();
 			watchers.bankruptWatcher && watchers.bankruptWatcher();
 		});
-		useEventBus().removeAll("player-walk");
-		useEventBus().removeAll("player-tp");
+		useEventBus().removeAll();
 		this.commonWatchers.forEach((f) => f());
 	}
 
@@ -467,6 +466,9 @@ export class GameRenderer {
 					if (!isBankrupted) return;
 					// const playerEntity = this.getPlayerEntity(player.id);
 					// playerEntity && playerEntity.doAnimation("failed", true);
+					const playerEntity = this.getPlayerEntity(player.id);
+					playerEntity && this.scene.remove(playerEntity.model);
+					this.playerEntities.delete(player.id);
 					const watchers = this.playerWatchers.get(player.id);
 					if (watchers) {
 						watchers.InfoWatcher && watchers.InfoWatcher();

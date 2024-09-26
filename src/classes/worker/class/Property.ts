@@ -40,13 +40,15 @@ export class Property implements PropertyInterface {
 		}
 	};
 
-	public setOwner = (player: PlayerInterface) => {
-		this.owner = {
-			id: player.getId(),
-			name: player.getUser().username,
-			color: player.getUser().color,
-			avatar: player.getUser().avatar,
-		};
+	public setOwner = (player: PlayerInterface | undefined) => {
+		this.owner = player
+			? {
+					id: player.getId(),
+					name: player.getUser().username,
+					color: player.getUser().color,
+					avatar: player.getUser().avatar,
+			  }
+			: undefined;
 	};
 
 	public getPassCost(): number {
