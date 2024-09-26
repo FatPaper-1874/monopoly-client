@@ -40,7 +40,7 @@ function selectMusic(id: string) {
 		_musicPlayerEl.src = `${__PROTOCOL__}://${musicToPlay.url}`;
 
 		nextTick(() => {
-			_musicPlayerEl.play();
+			_musicPlayerEl.play().catch(() => {});
 			currentMusic.value = musicToPlay;
 			isPlaying.value = true;
 		});
@@ -64,7 +64,9 @@ function playMusic() {
 				selectMusic(musicList.value[0].id);
 			}
 		}
-		musicPlayerEl.value.play();
+		musicPlayerEl.value.play().catch(() => {
+			isPlaying.value = false;
+		});
 	}
 }
 
@@ -77,7 +79,9 @@ function initMusicPlayer() {
 	if (_musicPlayerEl) {
 		_musicPlayerEl.addEventListener("loadeddata", () => {
 			musicDurationTime.value = Math.floor(_musicPlayerEl.duration);
-			_musicPlayerEl.play();
+			_musicPlayerEl.play().catch(() => {
+				isPlaying.value = false;
+			});
 		});
 		_musicPlayerEl.addEventListener(
 			"timeupdate",
@@ -128,6 +132,7 @@ onMounted(async () => {
 			@ended="handleMusicEnded"
 			ref="musicPlayerEl"
 			:src="currentMusic ? `${__PROTOCOL__}://${currentMusic.url}` : ''"
+			autoplay
 			loop
 		></audio>
 		<div @click="toggleMusic()" class="icon_container">
@@ -140,9 +145,9 @@ onMounted(async () => {
 		</div>
 		<div class="info-container">
 			<div :style="{ width: `${(musicCurrentTime / musicDurationTime) * 100}%` }" class="progress_bar"></div>
-			<div class="common">{{ currentMusic ? "正在播放：" : "" }}</div>
-			<div class="music_name">
-				<span>{{ currentMusic ? currentMusic.name : "点击唱片播放音乐" }}</span>
+			<div v-if="!isPlaying" class="common" style="width: 100%">点击唱片播放音乐</div>
+			<div v-else class="music_name">
+				<span>{{ currentMusic && currentMusic.name }}</span>
 			</div>
 		</div>
 		<div class="music_list-toggle">
@@ -237,6 +242,7 @@ onMounted(async () => {
 		display: inline-block;
 		color: var(--color-second);
 		white-space: nowrap;
+		text-align: center;
 	}
 
 	& > .music_name {

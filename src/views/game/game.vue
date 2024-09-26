@@ -20,7 +20,7 @@ const windowWidth = computed(() => window.innerWidth);
 const windowHeight = computed(() => window.innerHeight);
 
 let socketClient: MonopolyClient;
-let gameRenderer: GameRenderer;
+let gameRenderer: GameRenderer | null;
 const islockingCamera = ref(true);
 const lockCameraIcon = computed(() => (islockingCamera.value ? "fa-video" : "fa-video-slash"));
 
@@ -29,7 +29,7 @@ const _isMyTurn = computed(() => gameInfoStore.isMyTurn);
 const _propertiesList = computed(() => gameInfoStore.propertiesList);
 
 function handleToggleLockCamera() {
-	islockingCamera.value = gameRenderer.toggleLockCamera();
+	if (gameRenderer) islockingCamera.value = gameRenderer.toggleLockCamera();
 }
 
 function handleRollDice() {
@@ -58,6 +58,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
 	if (gameRenderer) gameRenderer.destroy();
+	gameRenderer = null;
 });
 </script>
 

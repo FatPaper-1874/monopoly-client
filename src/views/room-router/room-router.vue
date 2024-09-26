@@ -7,6 +7,7 @@ import router from "@/router";
 import { getUserByToken } from "@/utils/api/user";
 import FPMessage from "@/components/utils/fp-message";
 import { __FATPAPER_HOST__, __ICE_SERVER_PORT__ } from "@G/global.config";
+import LoginExtra from "@/views/login/components/login-extra.vue";
 
 const userInfoStore = useUserInfo();
 const userListStore = useUserList();
@@ -16,6 +17,7 @@ const user = computed(() => userInfoStore);
 const roomId = ref("");
 
 onMounted(async () => {
+	roomListStore.$reset();
 	if (!userInfoStore.hasUserInfo()) {
 		useLoading().showLoading("读取用户信息中");
 		let token = localStorage.getItem("token") || "";
@@ -78,6 +80,7 @@ async function joinRoom() {
 </script>
 
 <template>
+	<LoginExtra></LoginExtra>
 	<div class="hall-page">
 		<div class="user-container">
 			<userCard :avatar="user.avatar" :username="user.username" :color="user.color" />

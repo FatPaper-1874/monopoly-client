@@ -147,7 +147,7 @@ function handleChatShow() {
 			border-radius: 0.3rem;
 			box-sizing: border-box;
 			font-size: 1.2rem;
-			// padding: 0;
+			padding: 0;
 		}
 	}
 }

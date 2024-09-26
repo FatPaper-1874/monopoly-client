@@ -2,9 +2,9 @@
 import { ref } from "vue";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 
-const { visible, sumbitDisable } = defineProps({
+const { visible, submitDisable } = defineProps({
 	visible: { type: Boolean, default: false },
-	sumbitDisable: { type: Boolean, default: false },
+	submitDisable: { type: Boolean, default: false },
 });
 
 const emits = defineEmits(["update:visible", "submit", "cancel"]);
@@ -41,7 +41,7 @@ function closeDialog() {
 			</div>
 
 			<div class="fp-dialog-footer">
-				<button :disabled="sumbitDisable" @click="handleSumbit">确认</button>
+				<button :disabled="submitDisable" @click="handleSumbit">确认</button>
 			</div>
 		</div>
 	</div>
