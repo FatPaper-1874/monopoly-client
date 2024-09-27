@@ -137,7 +137,27 @@ export class MonopolyHost {
 	public static async create(roomId: string, host: string, port: number, heartContinuationTimeMs: number) {
 		const peer = await new Promise<Peer>((resolve) => {
 			const isHTTP = __PROTOCOL__ === "http";
-			const peer = new Peer(isHTTP ? { host, port } : { host, path: `/${__ICE_SERVER_PATH__}`, secure: true });
+			const peer = new Peer(
+				isHTTP
+					? { host, port }
+					: {
+							host,
+							path: `/${__ICE_SERVER_PATH__}`,
+							secure: true,
+							config: {
+								iceServers: [
+									{
+										urls: "stun:fatpaper.site:3478", // STUN 服务器
+									},
+									{
+										urls: "turn:fatpaper.site:5349", // TURN 服务器
+										username: "fatpaper",
+										credential: "turn_password",
+									},
+								],
+							},
+					  }
+			);
 			peer.on("open", () => {
 				console.info("MonopolyHost开启成功");
 				resolve(peer);
@@ -530,8 +550,8 @@ class Room {
 						? 0
 						: roleIndex + 1
 					: roleIndex - 1 < 0
-						? this.roleList.length - 1
-						: roleIndex - 1;
+					? this.roleList.length - 1
+					: roleIndex - 1;
 			user.role = this.roleList[newIndex];
 
 			this.roomInfoBroadcast();
@@ -609,7 +629,7 @@ class Room {
 				user && user.socketClient.send(JSON.stringify(data.data));
 			}
 		};
-		const handleGameStart = () => { };
+		const handleGameStart = () => {};
 	}
 
 	private handleGameOver() {

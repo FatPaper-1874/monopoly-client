@@ -39,7 +39,27 @@ export class PeerClient {
 		//向服务器和获取自己的peerId
 		const peer = await new Promise<Peer>((resolve, reject) => {
 			const isHTTP = __PROTOCOL__ === "http";
-			const peer = new Peer(isHTTP ? { host, port } : { host, path: `/${__ICE_SERVER_PATH__}`, secure: true });
+			const peer = new Peer(
+				isHTTP
+					? { host, port }
+					: {
+							host,
+							path: `/${__ICE_SERVER_PATH__}`,
+							secure: true,
+							config: {
+								iceServers: [
+									{
+										urls: "stun:fatpaper.site:3478", // STUN 服务器
+									},
+									{
+										urls: "turn:fatpaper.site:5349", // TURN 服务器
+										username: "fatpaper",
+										credential: "turn_password",
+									},
+								],
+							},
+					  }
+			);
 			peer.addListener("open", (id) => {
 				console.log("ice服务器连接成功, ID:", id);
 				peer.removeAllListeners();
