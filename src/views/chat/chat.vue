@@ -15,7 +15,8 @@ const newMessageNotify = computed(() => (newMessageNum.value > 0 ? `(${newMessag
 const inputMessage = ref("");
 const roomId = useRoomInfo().roomId;
 
-function sendChatMessage() {
+function sendChatMessage(e: Event) {
+	e.preventDefault();
 	const socketClient = useMonopolyClient();
 	socketClient && socketClient.sendRoomChatMessage(inputMessage.value, roomId);
 	inputMessage.value = "";
@@ -36,8 +37,7 @@ watch(isChatShow, (isShow) => {
 	});
 });
 
-function handleChatShow(e:Event) {
-	e.preventDefault();
+function handleChatShow(e: Event) {
 	const chatStore = useChat();
 	chatStore.chatShow = !chatStore.chatShow;
 	chatStore.resetNewMessageNum();
