@@ -3,14 +3,11 @@ import { useGameInfo, useUserInfo } from "@/store";
 import { computed, provide, ref, watch, toRaw } from "vue";
 import { ChanceCardInfo } from "@/interfaces/game";
 import ChanceCard from "./chance-card.vue";
-import { useMonopolyClient } from "@/classes/monopoly-client/MonopolyClient";
 import { useUtil } from "@/store";
 
 const gameInfoStore = useGameInfo();
 const userInfoStore = useUserInfo();
 const utilStore = useUtil();
-
-const socketClient = useMonopolyClient();
 
 const _chanceCardsList = computed(() => {
 	const player = gameInfoStore.playersList.find((player) => player.id === userInfoStore.userId);
@@ -21,42 +18,7 @@ const _chanceCardsList = computed(() => {
 	}
 });
 
-const _useChanceCardVisible = ref<boolean>(false);
-const _currentChanceCard = ref<ChanceCardInfo | null>(null);
-
-const _selectedId = ref<string | string[]>("");
-const _canUseChanceCard = computed(() => utilStore.canRoll);
-
-function handleChangeCardClick(card: ChanceCardInfo) {
-	if (_canUseChanceCard.value) {
-		_useChanceCardVisible.value = true;
-		_currentChanceCard.value = card;
-	}
-}
-
-function handleUseChanceCard() {
-	if (_currentChanceCard.value) {
-		const targetId = toRaw(_selectedId.value);
-		socketClient.useChanceCard(_currentChanceCard.value.id, targetId);
-	}
-}
-
-function handleCancleChanceCard() {
-	_currentChanceCard.value = null;
-}
-
-watch(
-	() => utilStore.timeOut,
-	(newVal) => {
-		if (newVal) {
-			_selectedId.value = "";
-			_currentChanceCard.value = null;
-			_useChanceCardVisible.value = false;
-		}
-	}
-);
-
-provide("selectedId", _selectedId);
+const _canUseChanceCard = computed(() => utilStore.canUseCard);
 </script>
 
 <template>
