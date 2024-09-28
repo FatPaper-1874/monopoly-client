@@ -42,17 +42,14 @@ function selectMusic(id: string) {
 		nextTick(() => {
 			_musicPlayerEl.play().catch(() => {});
 			currentMusic.value = musicToPlay;
-			isPlaying.value = true;
 		});
 	}
 }
 
 function toggleMusic() {
 	if (isPlaying.value) {
-		isPlaying.value = false;
 		pauseMusic();
 	} else {
-		isPlaying.value = true;
 		playMusic();
 	}
 }
@@ -64,9 +61,7 @@ function playMusic() {
 				selectMusic(musicList.value[0].id);
 			}
 		}
-		musicPlayerEl.value.play().catch(() => {
-			isPlaying.value = false;
-		});
+		musicPlayerEl.value.play().catch(() => {});
 	}
 }
 
@@ -79,9 +74,7 @@ function initMusicPlayer() {
 	if (_musicPlayerEl) {
 		_musicPlayerEl.addEventListener("loadeddata", () => {
 			musicDurationTime.value = Math.floor(_musicPlayerEl.duration);
-			_musicPlayerEl.play().catch(() => {
-				isPlaying.value = false;
-			});
+			_musicPlayerEl.play().catch(() => {});
 		});
 		_musicPlayerEl.addEventListener(
 			"timeupdate",
@@ -90,6 +83,10 @@ function initMusicPlayer() {
 			}, 300)
 		);
 	}
+}
+
+function handleAudioStateChange(isPlay: boolean) {
+	isPlaying.value = isPlay;
 }
 
 function handleMusicEnded() {
@@ -120,15 +117,17 @@ const isMusicListVisible = ref(false);
 onMounted(async () => {
 	initMusicPlayer();
 	musicList.value = await loadMusicList();
-	// if (musicList.value?.length > 0) {
-	// 	playMusic();
-	// }
+	if (musicList.value?.length > 0) {
+		playMusic();
+	}
 });
 </script>
 
 <template>
 	<div class="music-player">
 		<audio
+			@play="handleAudioStateChange(true)"
+			@pause="handleAudioStateChange(false)"
 			@ended="handleMusicEnded"
 			ref="musicPlayerEl"
 			:src="currentMusic ? `${__PROTOCOL__}://${currentMusic.url}` : ''"
