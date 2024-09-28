@@ -62,13 +62,20 @@ async function getUserInfoToRoomList() {
 		let token = localStorage.getItem("token") || "";
 		if (token) {
 			//账号登录
-			const { id: userId, useraccount, username, avatar, color } = await getUserByToken(token);
-			const userInfoStore = useUserInfo();
-			userInfoStore.$patch({ userId, useraccount, username, avatar, color });
-			await setTimeOutAsync(1500);
-			if (loginCodeRenderer) await loginCodeRenderer.showImage(`${__PROTOCOL__}://${avatar}`);
-			await setTimeOutAsync(2000, toRoomList);
-			return;
+			try {
+				const { id: userId, useraccount, username, avatar, color } = await getUserByToken(token);
+				const userInfoStore = useUserInfo();
+				userInfoStore.$patch({ userId, useraccount, username, avatar, color });
+				await setTimeOutAsync(1500);
+				if (loginCodeRenderer) await loginCodeRenderer.showImage(`${__PROTOCOL__}://${avatar}`);
+				await setTimeOutAsync(2000, toRoomList);
+				return;
+			} catch (e: any) {
+				console.log("🚀 ~ getUserInfoToRoomList ~ e:", e)
+				localStorage.removeItem("token");
+				showDice.value = false;
+				showLoginMode.value = true;
+			}
 		}
 		let userInfo = localStorage.getItem("user") || "";
 		if (userInfo) {
