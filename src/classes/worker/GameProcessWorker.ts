@@ -11,6 +11,7 @@ import Dice from "./class/Dice";
 import { OperateListener } from "./class/OperateListener";
 import { WorkerCommMsg } from "@/interfaces/worker";
 import { WorkerCommType } from "@/enums/worker";
+import { RoundTimeTimer } from "./class/RoundTimeTimer";
 
 const operateListener = new OperateListener();
 let gameProcess: GameProcess | null = null;
@@ -62,7 +63,7 @@ function sendToUsers(userIdList: string[], msg: SocketMessage) {
 
 (async () => {})();
 
-class GameProcess {
+export class GameProcess {
 	private mapInfo: GameMap;
 	private gameSetting: GameSetting;
 	private playerList: Player[] = [];
@@ -77,6 +78,7 @@ class GameProcess {
 	private currentMultiplier: number = 1; //当前过路费倍数
 	private timeoutList: any[] = []; //计时器列表
 	private intervalTimerList: any[] = []; //计时器列表
+	private roundTimeTimer: RoundTimeTimer;
 
 	//Setting
 	private animationStepDuration_ms: number = 600;
@@ -88,6 +90,7 @@ class GameProcess {
 		this.mapInfo = mapInfo;
 		this.gameSetting = gameSetting;
 		this.dice = new Dice(gameSetting.diceNum);
+		this.roundTimeTimer = new RoundTimeTimer(gameSetting.roundTime, 1000);
 
 		this.loadGameMap(mapInfo);
 		this.initPlayer(users);
@@ -125,25 +128,38 @@ class GameProcess {
 			);
 
 			player.setCardsList(this.getRandomChanceCard(4));
+
 			player.addEventListener(PlayerEvents.SetMoney, () => {
 				this.gameOverCheck();
 			});
+
 			player.addEventListener(PlayerEvents.Cost, () => {
 				this.gameOverCheck();
 			});
-			player.addEventListener(PlayerEvents.Walk, (step: number) => {
+
+			player.addEventListener(PlayerEvents.Walk, async (step: number) => {
 				const msg: SocketMessage = {
 					type: SocketMsgType.PlayerWalk,
 					source: "server",
 					data: { playerId: player.getId(), step },
 				};
-				player.setPositionIndex(
-					(player.getPositionIndex() + this.dice.getResultNumber()) % this.mapInfo.indexList.length
-				);
+				player.setPositionIndex((player.getPositionIndex() + step) % this.mapInfo.indexList.length);
 				this.gameInfoBroadcast();
 				this.gameBroadcast(msg);
+
+				//在计划的动画完成事件后取消监听, 防止客户端因特殊情况没有发送动画完成的指令造成永久等待
+				const animationDuration = this.animationStepDuration_ms * (this.dice.getResultNumber() + 5);
+				let animationTimer = setTimeout(() => {
+					operateListener.emit(player.getId(), OperateType.Animation);
+				}, animationDuration);
+				await operateListener.onceAsync(player.getId(), OperateType.Animation, () => {
+					console.log("收到动画回调", Date.now());
+					clearTimeout(animationTimer);
+				});
+				player.emit(PlayerEvents.AnimationFinished);
 			});
-			player.addEventListener(PlayerEvents.Tp, (positionIndex: number) => {
+
+			player.addEventListener(PlayerEvents.Tp, async (positionIndex: number) => {
 				const msg: SocketMessage = {
 					type: SocketMsgType.PlayerTp,
 					source: "server",
@@ -152,12 +168,24 @@ class GameProcess {
 				player.setPositionIndex(positionIndex);
 				this.gameInfoBroadcast();
 				this.gameBroadcast(msg);
+
+				//在计划的动画完成事件后取消监听, 防止客户端因特殊情况没有发送动画完成的指令造成永久等待
+				const animationDuration = this.animationStepDuration_ms * (this.dice.getResultNumber() + 5);
+				let animationTimer = setTimeout(() => {
+					operateListener.emit(player.getId(), OperateType.Animation);
+				}, animationDuration);
+				await operateListener.onceAsync(player.getId(), OperateType.Animation, () => {
+					clearTimeout(animationTimer);
+				});
+				player.emit(PlayerEvents.AnimationFinished);
 			});
+
 			player.addEventListener(PlayerEvents.GainCard, (num: number) => {
 				const cardsList = player.getCardsList();
 				const addCardsList = this.getRandomChanceCard(num);
 				player.setCardsList(cardsList.concat(addCardsList));
 			});
+
 			player.addEventListener(PlayerEvents.SetBankrupted, (isBankrupted: boolean) => {
 				if (isBankrupted) {
 					//破产剥夺财产
@@ -193,7 +221,8 @@ class GameProcess {
 			case GameOverRule.Earn100000:
 				if (
 					this.playerList.some((player) => player.getMoney() >= 100000) ||
-					(this.playerList.length > 0 && this.playerList.filter((player) => !player.getIsBankrupted()).length <= 1)
+					(this.playerList.length === 1 && this.playerList.every((p) => p.getIsBankrupted())) || //一个人游戏
+					(this.playerList.length > 1 && this.playerList.filter((player) => !player.getIsBankrupted()).length <= 1)
 				)
 					this.gameOver();
 				break;
@@ -259,7 +288,9 @@ class GameProcess {
 	}
 
 	private async gameLoop() {
+		this.roundTimeTimer.setIntervalFunction(this.roundRemainingTimeBroadcast);
 		while (!this.isGameOver) {
+			console.log("🚀 ~ GameProcess ~ gameLoop ~ this.isGameOver):", this.isGameOver);
 			let currentPlayerIndex = 0;
 			while (currentPlayerIndex < this.playerList.length) {
 				this.gameInfoBroadcast();
@@ -289,9 +320,11 @@ class GameProcess {
 			}
 			this.nextRound();
 		}
+		this.roundTimeTimer.clearInterval();
 	}
 
 	private async gameRound(currentPlayer: Player) {
+		this.roundTimeTimer.setTimeOutFunction(null); //开始倒计时
 		this.useChanceCardListener(currentPlayer);
 		await this.waitRollDice(currentPlayer); //监听投骰子
 		await this.handleArriveEvent(currentPlayer); //处理玩家到达某个格子的事件
@@ -304,35 +337,44 @@ class GameProcess {
 		await new Promise(async (resolve, reject) => {
 			let roundRemainingTime = roundTime;
 			let isRoundEnd = false;
-			let intervalTimer = setInterval(() => {
-				this.roundRemainingTimeBroadcast(roundRemainingTime);
-				if (roundRemainingTime > 0) {
-					roundRemainingTime--;
-				} else {
-					clearInterval(intervalTimer);
-					isRoundEnd = true;
-					operateListener.remove(userId, OperateType.RollDice, rollDiceCallBack);
-					operateListener.removeAll(userId, OperateType.UseChanceCard);
-					operateListener.emit(userId, OperateType.RollDice); //帮玩家自动投骰子
-					resolve("TimeOut");
-				}
-			}, 1000);
-			this.intervalTimerList.push(intervalTimer);
+			// let intervalTimer = setInterval(() => {
+			// 	this.roundRemainingTimeBroadcast(roundRemainingTime);
+			// 	if (roundRemainingTime > 0) {
+			// 		roundRemainingTime--;
+			// 	} else {
+			// 		clearInterval(intervalTimer);
+			// 		isRoundEnd = true;
+			// 		operateListener.remove(userId, OperateType.RollDice, rollDiceCallBack);
+			// 		operateListener.removeAll(userId, OperateType.UseChanceCard);
+			// 		operateListener.emit(userId, OperateType.RollDice); //帮玩家自动投骰子
+			// 		resolve("TimeOut");
+			// 	}
+			// }, 1000);
+			// this.intervalTimerList.push(intervalTimer);
 
-			function rollDiceCallBack() {
-				clearInterval(intervalTimer);
+			const handleRollDice = () => {
+				this.roundTimeTimer.clearTimeout();
 				isRoundEnd = true;
 				operateListener.removeAll(userId, OperateType.UseChanceCard); //取消监听器
 				resolve("RollDice");
-			}
+			};
+
+			const handleUseChanceCardTimeOut = () => {
+				isRoundEnd = true;
+				operateListener.remove(userId, OperateType.RollDice, handleRollDice);
+				operateListener.removeAll(userId, OperateType.UseChanceCard);
+				operateListener.emit(userId, OperateType.RollDice); //帮玩家自动投骰子
+			};
+
+			//超时自动投骰子
 
 			//摇骰子就取消监听机会卡的使用
-			operateListener.once(userId, OperateType.RollDice, rollDiceCallBack);
+			operateListener.once(userId, OperateType.RollDice, handleRollDice);
 
 			while (!isRoundEnd) {
 				//监听使用机会卡事件并且处理事件
-				await operateListener.onceAsync(userId, OperateType.UseChanceCard, (resultArr: any) => {
-					console.log("🚀 ~ GameProcess ~ awaitoperateListener.onceAsync ~ resultArr:", resultArr);
+				this.roundTimeTimer.setTimeOutFunction(handleUseChanceCardTimeOut);
+				await operateListener.onceAsync(userId, OperateType.UseChanceCard, async (resultArr: any) => {
 					roundRemainingTime = roundTime; //重置回合剩余时间
 					const [chanceCardId, targetIdList = new Array<string>()] = resultArr;
 					const chanceCard = sourcePlayer.getCardById(chanceCardId);
@@ -343,7 +385,7 @@ class GameProcess {
 								chanceCard.getType() //根据机会卡的类型执行不同操作
 							) {
 								case ChanceCardType.ToSelf:
-									chanceCard.use(sourcePlayer, sourcePlayer); //直接使用
+									await chanceCard.use(sourcePlayer, sourcePlayer, this); //直接使用
 									this.gameBroadcast(<SocketMessage>{
 										type: SocketMsgType.MsgNotify,
 										msg: {
@@ -359,7 +401,7 @@ class GameProcess {
 										error = "目标玩家不存在";
 										break;
 									}
-									chanceCard.use(sourcePlayer, _targetPlayer);
+									await chanceCard.use(sourcePlayer, _targetPlayer, this);
 									this.gameBroadcast(<SocketMessage>{
 										type: SocketMsgType.MsgNotify,
 										msg: {
@@ -374,7 +416,7 @@ class GameProcess {
 										error = "目标建筑/地皮不存在";
 										break;
 									}
-									chanceCard.use(sourcePlayer, _targetProperty);
+									await chanceCard.use(sourcePlayer, _targetProperty, this);
 									this.gameBroadcast(<SocketMessage>{
 										type: SocketMsgType.MsgNotify,
 										msg: {
@@ -397,7 +439,7 @@ class GameProcess {
 										error = "选中的玩家不存在";
 										break;
 									}
-									chanceCard.use(sourcePlayer, _targetPlayerList);
+									await chanceCard.use(sourcePlayer, _targetPlayerList, this);
 									break;
 							}
 						} catch (e: any) {
@@ -414,6 +456,12 @@ class GameProcess {
 								},
 							};
 							sendToUsers([sourcePlayer.getId()], errorMsg);
+							const callBackMsg: SocketMessage = {
+								type: SocketMsgType.UseChanceCard,
+								data: "",
+								source: "server",
+							};
+							sendToUsers([sourcePlayer.getId()], callBackMsg);
 						} else {
 							sourcePlayer.loseCard(chanceCardId);
 							const successMsg: SocketMessage = {
@@ -426,6 +474,12 @@ class GameProcess {
 								},
 							};
 							sendToUsers([sourcePlayer.getId()], successMsg);
+							const callBackMsg: SocketMessage = {
+								type: SocketMsgType.UseChanceCard,
+								data: "",
+								source: "server",
+							};
+							sendToUsers([sourcePlayer.getId()], callBackMsg);
 						}
 
 						this.gameInfoBroadcast();
@@ -476,18 +530,9 @@ class GameProcess {
 		//通知全部客户端
 		this.gameBroadcast(msgToRollDice);
 		//设置玩家的位置
-		player.walk(this.dice.getResultNumber());
+		await player.walk(this.dice.getResultNumber());
 		//更新游戏信息
 		this.gameInfoBroadcast();
-
-		//在计划的动画完成事件后取消监听, 防止客户端因特殊情况没有发送动画完成的指令造成永久等待
-		const animationDuration = this.animationStepDuration_ms * (this.dice.getResultNumber() + 5);
-		let animationTimer = setTimeout(() => {
-			operateListener.emit(userId, OperateType.Animation);
-		}, animationDuration);
-		await operateListener.onceAsync(userId, OperateType.Animation, () => {
-			clearTimeout(animationTimer);
-		});
 	}
 
 	private async handleArriveEvent(arrivedPlayer: Player) {
@@ -511,8 +556,7 @@ class GameProcess {
 				},
 			};
 
-			let roundRemainingTime = this.gameSetting.roundTime;
-			let intervalTimer: any;
+			// let roundRemainingTime = this.gameSetting.roundTime;
 			const owner = property.getOwner();
 			if (owner) {
 				//地皮有主人
@@ -520,16 +564,21 @@ class GameProcess {
 					//地产是自己的
 					if (property.getBuildingLevel() < 2) {
 						//添加定时器计算操作剩余时间
-						this.roundRemainingTimeBroadcast(roundRemainingTime);
-						intervalTimer = setInterval(() => {
-							this.roundRemainingTimeBroadcast(roundRemainingTime);
-							if (roundRemainingTime > 0) {
-								roundRemainingTime--;
-							} else {
-								operateListener.emit(arrivedPlayer.getId(), OperateType.BuildHouse, false);
-							}
-						}, 1000);
-						this.intervalTimerList.push(intervalTimer);
+						// this.roundRemainingTimeBroadcast(roundRemainingTime);
+						// intervalTimer = setInterval(() => {
+						// 	this.roundRemainingTimeBroadcast(roundRemainingTime);
+						// 	if (roundRemainingTime > 0) {
+						// 		roundRemainingTime--;
+						// 	} else {
+						// 		operateListener.emit(arrivedPlayer.getId(), OperateType.BuildHouse, false);
+						// 	}
+						// }, 1000);
+						// this.intervalTimerList.push(intervalTimer);
+
+						this.roundTimeTimer.setTimeOutFunction(() => {
+							operateListener.emit(arrivedPlayer.getId(), OperateType.BuildHouse, false);
+						}); //到时间就结束操作
+
 						//已有房产, 升级房屋
 						arrivePropertyMsg.type = SocketMsgType.BuildHouse;
 						arrivePropertyMsg.msg = {
@@ -540,10 +589,9 @@ class GameProcess {
 						const playerRes = await operateListener.onceAsync(
 							arrivedPlayer.getId(),
 							OperateType.BuildHouse,
-							(data) => data
+							(data) => data[0]
 						);
 						this.roundRemainingTimeBroadcast(0);
-						clearInterval(intervalTimer);
 						if (playerRes) {
 							this.handlePlayerBuildUp(arrivedPlayer, property);
 						}
@@ -569,16 +617,19 @@ class GameProcess {
 			} else {
 				//地皮没有主人
 				//添加定时器计算操作剩余时间
-				this.roundRemainingTimeBroadcast(roundRemainingTime);
-				intervalTimer = setInterval(() => {
-					this.roundRemainingTimeBroadcast(roundRemainingTime);
-					if (roundRemainingTime > 0) {
-						roundRemainingTime--;
-					} else {
-						operateListener.emit(arrivedPlayer.getId(), OperateType.BuyProperty, false);
-					}
-				}, 1000);
-				this.intervalTimerList.push(intervalTimer);
+				// this.roundRemainingTimeBroadcast(roundRemainingTime);
+				// intervalTimer = setInterval(() => {
+				// 	this.roundRemainingTimeBroadcast(roundRemainingTime);
+				// 	if (roundRemainingTime > 0) {
+				// 		roundRemainingTime--;
+				// 	} else {
+				// 		operateListener.emit(arrivedPlayer.getId(), OperateType.BuyProperty, false);
+				// 	}
+				// }, 1000);
+				this.roundTimeTimer.setTimeOutFunction(() => {
+					operateListener.emit(arrivedPlayer.getId(), OperateType.BuyProperty, false);
+				}); //到时间就结束操作
+
 				//地皮没有购买
 				arrivePropertyMsg.type = SocketMsgType.BuyProperty;
 				arrivePropertyMsg.msg = {
@@ -591,11 +642,9 @@ class GameProcess {
 				const playerRes = await operateListener.onceAsync(
 					arrivedPlayer.getId(),
 					OperateType.BuyProperty,
-					(data) => data
+					(data) => data[0]
 				);
-				console.log("🚀 ~ GameProcess ~ playerRes ~ playerRes:", playerRes);
 				this.roundRemainingTimeBroadcast(0);
-				clearInterval(intervalTimer);
 				if (playerRes) {
 					this.handlePlayerBuyProperty(arrivedPlayer, property);
 				}
@@ -764,6 +813,15 @@ class GameProcess {
 		});
 		this.isGameOver = true;
 		this.destroy();
+	}
+
+	public gameMsgNotifyBroadcast(type: "success" | "warning" | "error" | "info", msg: string) {
+		this.gameBroadcast({
+			type: SocketMsgType.MsgNotify,
+			data: "",
+			msg: { type, content: msg },
+			source: "server",
+		});
 	}
 
 	public gameBroadcast(msg: SocketMessage) {

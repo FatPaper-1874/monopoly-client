@@ -1,6 +1,7 @@
 import { ChanceCardType } from "@/enums/game";
 import { User } from "@/interfaces/bace";
 import { ChanceCardInfo, PropertyInfo } from "@/interfaces/game";
+import { GameProcess } from "./GameProcessWorker";
 
 export interface PropertyInterface {
 	//房产信息
@@ -52,8 +53,8 @@ export interface PlayerInterface {
 	getStop: () => number;
 	setPositionIndex: (newIndex: number) => void;
 	getPositionIndex: () => number;
-	walk: (step: number) => void;
-	tp: (positionIndex: number) => void;
+	walk: (step: number) => Promise<void>;
+	tp: (positionIndex: number) => Promise<void>;
 }
 
 export interface ChanceCardInterface {
@@ -66,8 +67,9 @@ export interface ChanceCardInterface {
 	getEffectCode: () => string;
 	use: (
 		sourcePlayer: PlayerInterface,
-		target: PlayerInterface | PropertyInterface | PlayerInterface[] | PropertyInterface[]
-	) => void;
+		target: PlayerInterface | PropertyInterface | PlayerInterface[] | PropertyInterface[],
+		gameProcess: GameProcess
+	) => Promise<void>;
 
 	getChanceCardInfo: () => ChanceCardInfo;
 }

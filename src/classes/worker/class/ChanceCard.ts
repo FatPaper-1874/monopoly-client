@@ -1,6 +1,7 @@
 import { ChanceCardType } from "@/enums/game";
 import { ChanceCard as ChanceCardFromDB, ChanceCardInfo } from "@/interfaces/game";
 import { ChanceCardInterface, PlayerInterface, PropertyInterface } from "../interface";
+import { GameProcess } from "../GameProcessWorker";
 
 export class ChanceCard implements ChanceCardInterface {
 	private id: string;
@@ -20,7 +21,8 @@ export class ChanceCard implements ChanceCardInterface {
 		this.color = chanceCard.color;
 		this.icon = chanceCard.icon;
 		this.effectCode = chanceCard.effectCode;
-		this.effectFunction = new Function("sourcePlayer", "target", this.effectCode);
+		const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+		this.effectFunction = new AsyncFunction("sourcePlayer", "target", "gameProcess", this.effectCode);
 	}
 
 	public getId = () => this.id;
@@ -31,12 +33,13 @@ export class ChanceCard implements ChanceCardInterface {
 	public getIcon = () => this.icon;
 	public getEffectCode = () => this.effectCode;
 
-	public use(
+	public async use(
 		sourcePlayer: PlayerInterface,
-		target: PlayerInterface | PropertyInterface | PlayerInterface[] | PropertyInterface[] | null
+		target: PlayerInterface | PropertyInterface | PlayerInterface[] | PropertyInterface[] | null,
+		gameProcess: GameProcess
 	) {
 		try {
-			this.effectFunction(sourcePlayer, target);
+			await this.effectFunction(sourcePlayer, target, gameProcess);
 		} catch (e: any) {
 			throw Error(e.message);
 		}

@@ -139,12 +139,18 @@ export class Player implements PlayerInterface {
 		return this.positionIndex;
 	};
 
-	public walk = (step: number) => {
+	public walk = async (step: number): Promise<void> => {
 		this.emit(PlayerEvents.Walk, step);
+		return new Promise((resolve) => {
+			this.addEventListener(PlayerEvents.AnimationFinished, resolve);
+		});
 	};
 
-	public tp = (positionIndex: number) => {
+	public tp = async (positionIndex: number): Promise<void> => {
 		this.emit(PlayerEvents.Tp, positionIndex);
+		return new Promise((resolve) => {
+			this.addEventListener(PlayerEvents.AnimationFinished, resolve);
+		});
 	};
 
 	public setBankrupted = (isBankrupted: boolean) => {
@@ -181,7 +187,7 @@ export class Player implements PlayerInterface {
 		fnArr && fnArr.push({ fn, isOnce: once });
 	}
 
-	private emit(eventName: PlayerEvents, ...args: any[]) {
+	public emit(eventName: PlayerEvents, ...args: any[]) {
 		const fnArr = this.callBackMap.get(eventName);
 		if (fnArr) {
 			for (let index = 0; index < fnArr.length; index++) {

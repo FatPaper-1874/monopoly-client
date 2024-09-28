@@ -510,6 +510,7 @@ export class GameRenderer {
 
 				//拆散重叠的玩家模型;
 				this.breakUpPlayersInSameMapItem();
+				useMonopolyClient().AnimationComplete();
 			}
 		});
 
@@ -535,6 +536,7 @@ export class GameRenderer {
 				});
 				this.playerPosition.set(walkPlayerId, positionIndex);
 				this.breakUpPlayersInSameMapItem();
+				useMonopolyClient().AnimationComplete();
 			}
 		});
 	}

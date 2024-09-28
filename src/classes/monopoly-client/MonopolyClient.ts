@@ -337,6 +337,7 @@ export class MonopolyClient {
 	private handleRoundTurn() {
 		const utilStore = useUtil();
 		utilStore.canRoll = true;
+		utilStore.canUseCard = true;
 		useEventBus().emit("RoundTurn");
 	}
 
@@ -354,7 +355,9 @@ export class MonopolyClient {
 	}
 
 	private handleUsedChanceCard(data: SocketMessage) {
-		const { userId, chanceCardId } = data.data as { userId: string; chanceCardId: string };
+		const utilStore = useUtil();
+		utilStore.canRoll = true;
+		utilStore.canUseCard = true;
 	}
 
 	private handlePlayerWalk(data: SocketMessage) {
@@ -447,9 +450,13 @@ export class MonopolyClient {
 		this.sendMsg(SocketMsgType.RollDiceResult, OperateType.RollDice);
 		const utilStore = useUtil();
 		utilStore.canRoll = false;
+		utilStore.canUseCard = false;
 	}
 
 	public useChanceCard(cardId: string, target?: string | string[]) {
+		const utilStore = useUtil();
+		utilStore.canRoll = false;
+		utilStore.canUseCard = false;
 		this.sendMsg(SocketMsgType.UseChanceCard, cardId, undefined, target);
 	}
 

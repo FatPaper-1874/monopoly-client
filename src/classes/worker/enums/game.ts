@@ -9,12 +9,14 @@ export enum PlayerEvents {
 	LoseCard = "LoseCard",
 	GetMoney = "GetMoney",
 	SetMoney = "SetMoney",
-	Gain = 'Gain',
-	Cost = 'Cont',
-	GetStop = 'GetStop',
-	SetStop = 'SetStop',
-	Walk = 'Walk',
-	Tp = 'Tp',
-	SetBankrupted = 'SetBankrupted',
-	GetIsBankrupted = 'GetIsBankrupted'
+	Gain = "Gain",
+	Cost = "Cont",
+	GetStop = "GetStop",
+	SetStop = "SetStop",
+	Walk = "Walk",
+	Tp = "Tp",
+	SetBankrupted = "SetBankrupted",
+	GetIsBankrupted = "GetIsBankrupted",
+
+	AnimationFinished = "AnimationFinished",
 }
