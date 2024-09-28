@@ -71,7 +71,6 @@ async function getUserInfoToRoomList() {
 				await setTimeOutAsync(2000, toRoomList);
 				return;
 			} catch (e: any) {
-				console.log("🚀 ~ getUserInfoToRoomList ~ e:", e)
 				localStorage.removeItem("token");
 				showDice.value = false;
 				showLoginMode.value = true;
