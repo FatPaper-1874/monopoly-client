@@ -7,17 +7,19 @@ const roomInfoStore = useRoomInfo();
 const utilStore = useUtil();
 
 const _roundTotalTime = roomInfoStore.gameSetting.roundTime;
-const _remainingTime = computed(() => utilStore.remainingTime);
+const _waitingFor = computed(() => utilStore.waitingFor);
 const _timeOut = computed(() => utilStore.timeOut);
 
-const _blockWidth = computed(() => `${(_remainingTime.value / _roundTotalTime) * 100}%`);
+const _blockWidth = computed(() => `${(_waitingFor.value.remainingTime / _roundTotalTime) * 100}%`);
 </script>
 
 <template>
 	<div class="countdown-timer">
 		<div class="block" :style="{ width: _blockWidth }"></div>
 		<div class="text" v-if="!_timeOut">
-			<FontAwesomeIcon icon="clock" /><span>剩余时间: {{ _remainingTime }} 秒</span>
+			<FontAwesomeIcon icon="clock" /><span
+				>{{ _waitingFor.eventMsg }}: {{ _waitingFor.remainingTime }} 秒</span
+			>
 		</div>
 		<div class="text" v-else><FontAwesomeIcon icon="clock-rotate-left" /><span>等待下一步</span></div>
 	</div>
@@ -25,7 +27,7 @@ const _blockWidth = computed(() => `${(_remainingTime.value / _roundTotalTime) *
 
 <style lang="scss" scoped>
 .countdown-timer {
-	width: 16rem;
+	width: max-content;
 	display: flex;
 	justify-content: space-around;
 	align-items: center;
@@ -37,6 +39,7 @@ const _blockWidth = computed(() => `${(_remainingTime.value / _roundTotalTime) *
 	box-sizing: border-box;
 	box-shadow: var(--box-shadow);
 	overflow: hidden;
+	transition: width 0.5s ease-in-out;
 
 	position: relative;
 

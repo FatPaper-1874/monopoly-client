@@ -325,11 +325,11 @@ export class MonopolyClient {
 	}
 
 	private handleRemainingTime(data: SocketMessage) {
-		const remainingTime = data.data;
+		const waitingFor = data.data;
 		const utilStore = useUtil();
-		utilStore.remainingTime = remainingTime;
-		utilStore.timeOut = remainingTime <= 0;
-		if (remainingTime <= 0) {
+		utilStore.waitingFor = waitingFor;
+		utilStore.timeOut = waitingFor.remainingTime <= 0;
+		if (waitingFor.remainingTime <= 0) {
 			utilStore.canRoll = false;
 		}
 	}

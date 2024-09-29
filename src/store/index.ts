@@ -121,7 +121,7 @@ export const useUtil = defineStore("util", {
 			canUseCard: false,
 			isRollDiceAnimationPlay: false,
 			rollDiceResult: new Array<number>(),
-			remainingTime: 0,
+			waitingFor: { eventMsg: "", remainingTime: 0 },
 			timeOut: false,
 			canRoll: false,
 		};

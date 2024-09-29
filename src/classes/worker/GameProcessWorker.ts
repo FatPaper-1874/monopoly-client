@@ -78,7 +78,8 @@ export class GameProcess {
 	private currentMultiplier: number = 1; //当前过路费倍数
 	private timeoutList: any[] = []; //计时器列表
 	private intervalTimerList: any[] = []; //计时器列表
-	private roundTimeTimer: RoundTimeTimer;
+	private roundTimeTimer: RoundTimeTimer; //倒计时
+	private eventMsg: string = ""; //等待事件的信息
 
 	//Setting
 	private animationStepDuration_ms: number = 600;
@@ -335,27 +336,12 @@ export class GameProcess {
 		const roundTime = this.gameSetting.roundTime;
 
 		await new Promise(async (resolve, reject) => {
-			let roundRemainingTime = roundTime;
 			let isRoundEnd = false;
-			// let intervalTimer = setInterval(() => {
-			// 	this.roundRemainingTimeBroadcast(roundRemainingTime);
-			// 	if (roundRemainingTime > 0) {
-			// 		roundRemainingTime--;
-			// 	} else {
-			// 		clearInterval(intervalTimer);
-			// 		isRoundEnd = true;
-			// 		operateListener.remove(userId, OperateType.RollDice, rollDiceCallBack);
-			// 		operateListener.removeAll(userId, OperateType.UseChanceCard);
-			// 		operateListener.emit(userId, OperateType.RollDice); //帮玩家自动投骰子
-			// 		resolve("TimeOut");
-			// 	}
-			// }, 1000);
-			// this.intervalTimerList.push(intervalTimer);
 
 			const handleRollDice = () => {
-				this.roundTimeTimer.clearTimeout();
 				isRoundEnd = true;
 				operateListener.removeAll(userId, OperateType.UseChanceCard); //取消监听器
+				this.roundTimeTimer.stop();
 				resolve("RollDice");
 			};
 
@@ -373,9 +359,10 @@ export class GameProcess {
 
 			while (!isRoundEnd) {
 				//监听使用机会卡事件并且处理事件
+				this.eventMsg = `等待 ${sourcePlayer.getName()} 执行回合`;
 				this.roundTimeTimer.setTimeOutFunction(handleUseChanceCardTimeOut);
 				await operateListener.onceAsync(userId, OperateType.UseChanceCard, async (resultArr: any) => {
-					roundRemainingTime = roundTime; //重置回合剩余时间
+					this.roundTimeTimer.stop();
 					const [chanceCardId, targetIdList = new Array<string>()] = resultArr;
 					const chanceCard = sourcePlayer.getCardById(chanceCardId);
 					if (chanceCard) {
@@ -575,6 +562,7 @@ export class GameProcess {
 						// }, 1000);
 						// this.intervalTimerList.push(intervalTimer);
 
+						this.eventMsg = `等待 ${arrivedPlayer.getName()} 升级房子`;
 						this.roundTimeTimer.setTimeOutFunction(() => {
 							operateListener.emit(arrivedPlayer.getId(), OperateType.BuildHouse, false);
 						}); //到时间就结束操作
@@ -615,17 +603,7 @@ export class GameProcess {
 					sendToUsers([ownerPlayer.getId()], arrivePropertyMsg);
 				}
 			} else {
-				//地皮没有主人
-				//添加定时器计算操作剩余时间
-				// this.roundRemainingTimeBroadcast(roundRemainingTime);
-				// intervalTimer = setInterval(() => {
-				// 	this.roundRemainingTimeBroadcast(roundRemainingTime);
-				// 	if (roundRemainingTime > 0) {
-				// 		roundRemainingTime--;
-				// 	} else {
-				// 		operateListener.emit(arrivedPlayer.getId(), OperateType.BuyProperty, false);
-				// 	}
-				// }, 1000);
+				this.eventMsg = `等待 ${arrivedPlayer.getName()} 购买地皮`;
 				this.roundTimeTimer.setTimeOutFunction(() => {
 					operateListener.emit(arrivedPlayer.getId(), OperateType.BuyProperty, false);
 				}); //到时间就结束操作
@@ -711,10 +689,11 @@ export class GameProcess {
 	}
 
 	public roundRemainingTimeBroadcast = (remainingTime: number) => {
+		const eventMsg = this.eventMsg;
 		const msg: SocketMessage = {
 			type: SocketMsgType.RemainingTime,
 			source: "server",
-			data: remainingTime,
+			data: { eventMsg, remainingTime },
 		};
 		this.gameBroadcast(msg);
 	};

@@ -28,8 +28,14 @@ export class RoundTimeTimer {
 		});
 	}
 
+	public stop() {
+		this.clearTimeout();
+		this.clearInterval();
+	}
+
 	public async setTimeOutFunction(newFunction: Function | null) {
 		this.timeOutFunction = newFunction;
+		this.intervalFunction && this.setIntervalFunction(this.intervalFunction);
 		await this.start(newFunction);
 	}
 
@@ -50,8 +56,8 @@ export class RoundTimeTimer {
 
 	private runIntervalFunction() {
 		if (!this.intervalFunction) return;
-		if (this.currentRemainingTime > 0) this.currentRemainingTime--;
 		this.intervalFunction(this.currentRemainingTime);
+		if (this.currentRemainingTime > 0) this.currentRemainingTime--;
 	}
 
 	private runTimeOutFunction() {
