@@ -18,7 +18,7 @@ export interface PropertyInterface {
 
 	//设置房产信息
 	setOwner: (player: PlayerInterface | undefined) => void;
-	buildUp: () => void;
+	setBuildingLevel: (level: 0 | 1 | 2) => void;
 
 	getPropertyInfo: () => PropertyInfo;
 }

@@ -34,11 +34,15 @@ export class Property implements PropertyInterface {
 	public getCost_lv2 = () => this.cost_lv2;
 	public getOwner = () => this.owner;
 
-	public buildUp = () => {
+	public buildUp() {
 		if (this.buildingLevel < 2) {
 			this.buildingLevel++;
 		}
-	};
+	}
+
+	public setBuildingLevel(level: 0 | 1 | 2) {
+		this.buildingLevel = level;
+	}
 
 	public setOwner = (player: PlayerInterface | undefined) => {
 		this.owner = player
