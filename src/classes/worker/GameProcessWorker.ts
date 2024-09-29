@@ -629,7 +629,11 @@ export class GameProcess {
 			}
 		} else if (arriveItem.arrivedEvent) {
 			const effectCode = arriveItem.arrivedEvent.effectCode;
-			effectCode && new Function("arrivedPlayer", effectCode)(arrivedPlayer);
+			if (effectCode) {
+				const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+				const arrivedFunction = new AsyncFunction("arrivedPlayer", "gameProcess", effectCode);
+				await arrivedFunction(arrivedPlayer, this);
+			}
 		}
 		this.gameInfoBroadcast();
 	}
