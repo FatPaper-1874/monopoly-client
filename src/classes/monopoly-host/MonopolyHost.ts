@@ -62,10 +62,26 @@ export class MonopolyHost {
 						return;
 					}
 				}
-				if (_data.type === SocketMsgType.JoinRoom) {
-					if (!this.room) throw Error("在房间没创建时加入了房间");
-					clientUserId = user.userId;
-					this.room.join(user, conn);
+				if (this.room.getUserList().length >= 6) {
+					conn.send(
+						JSON.stringify(<SocketMessage>{
+							type: SocketMsgType.MsgNotify,
+							data: "",
+							msg: {
+								type: "error",
+								content: "该房间已经满人了!",
+							},
+							source: "server",
+						})
+					);
+					conn.close();
+				} else {
+					if (_data.type === SocketMsgType.JoinRoom) {
+						if (!this.room) throw Error("在房间没创建时加入了房间");
+						clientUserId = user.userId;
+						const isSuccess = this.room.join(user, conn);
+						if (!isSuccess) conn.close();
+					}
 				}
 			});
 
