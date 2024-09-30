@@ -79,23 +79,24 @@ export class MonopolyHost {
 					if (_data.type === SocketMsgType.JoinRoom) {
 						if (!this.room) throw Error("在房间没创建时加入了房间");
 						clientUserId = user.userId;
-						const isSuccess = this.room.join(user, conn);
-						if (!isSuccess) conn.close();
+						this.room.join(user, conn);
 					}
 				}
 			});
 
 			const noHeartHandler = debounce(
 				() => {
+					console.log("🚀 ~ MonopolyHost ~ peer.on ~ noHeartHandler:", clientUserId);
+					if (!clientUserId) return;
 					_this.room.leave(clientUserId);
+					_this.clientList.delete(clientUserId);
 				},
-				3000,
+				5000,
 				true
 			);
 
 			conn.on("data", function (data: any) {
 				const socketMessage: SocketMessage = JSON.parse(data.toString());
-				// console.log("Host Received: ", socketMessage);
 
 				switch (socketMessage.type) {
 					case SocketMsgType.Heart:
@@ -145,6 +146,15 @@ export class MonopolyHost {
 				if (clientUserId) {
 					this.room.leave(clientUserId);
 					this.clientList.delete(clientUserId);
+					noHeartHandler.cancel();
+				}
+			});
+
+			conn.on("iceStateChanged", (state) => {
+				if (clientUserId && (state === "closed" || state === "disconnected")) {
+					this.room.leave(clientUserId);
+					this.clientList.delete(clientUserId);
+					noHeartHandler.cancel();
 				}
 			});
 		});
@@ -267,16 +277,17 @@ export class MonopolyHost {
 	}
 
 	private handleLeaveRoom(socketClient: DataConnection, data: SocketMessage, clientUserId: string) {
-		if (this.room.leave(clientUserId)) {
-			//没人了
-			this.destory();
-		}
 		socketClient.send(
 			JSON.stringify(<SocketMessage>{
 				type: SocketMsgType.LeaveRoom,
 				source: "server",
 			})
 		);
+		if (this.room.leave(clientUserId)) {
+			//没人了
+			console.log("🚀 ~ MonopolyHost ~ handleLeaveRoom ~ 没人了:");
+			this.destory();
+		}
 		socketClient.close();
 		this.clientList.delete(clientUserId);
 	}
@@ -287,6 +298,7 @@ export class MonopolyHost {
 
 	public destory() {
 		this.room.destory();
+		this.peer.destroy();
 		this.intervalList.forEach((i) => {
 			clearInterval(i);
 		});
@@ -500,7 +512,7 @@ class Room {
 			return Array.from(this.userList.values()).every((u) => u.isOffLine);
 		} else {
 			//游戏没有开始，仍在房间页面
-			if (this.userList.size === 1) {
+			if (this.userList.size <= 1) {
 				//房间最后一个人退出, 退出后解散房间
 				this.userList.delete(userId);
 				return true;

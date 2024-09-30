@@ -735,6 +735,7 @@ export class GameProcess {
 	}
 
 	public handlePlayerReconnect(userId: string) {
+		console.log("🚀 ~ GameProcess ~ handlePlayerReconnect ~ userId:", userId)
 		const player = this.playerList.find((player) => player.getUser().userId === userId);
 		if (player) {
 			player.setIsOffline(false);

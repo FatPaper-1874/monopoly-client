@@ -132,7 +132,7 @@ export class MonopolyClient {
 						message: data.msg.content,
 					});
 				}
-				// console.log("Client Receive: ", data);
+				console.log("Client Receive: ", data);
 
 				switch (data.type) {
 					case SocketMsgType.Heart:
@@ -227,7 +227,7 @@ export class MonopolyClient {
 				},
 			});
 		},
-		3000,
+		5000,
 		true
 	);
 
@@ -250,11 +250,7 @@ export class MonopolyClient {
 		}
 	}
 
-	private handleLeaveRoomReply(data: SocketMessage) {
-		this.destory();
-		useRoomInfo().$reset(); //重置房间信息
-		router.replace({ name: "room-router" });
-	}
+	private handleLeaveRoomReply(data: SocketMessage) {}
 
 	private handleRoomInfoReply(data: SocketMessage) {
 		const roomInfoData = data.data as RoomInfo;
@@ -417,13 +413,14 @@ export class MonopolyClient {
 		this.sendMsg(SocketMsgType.RoomChat, message, roomId);
 	}
 
-	public leaveRoom() {
-		this.sendMsg(SocketMsgType.LeaveRoom, "");
-		this.peerClient = null;
-		this.gameHost && this.gameHost.destory();
+	public async leaveRoom() {
+		await this.sendMsg(SocketMsgType.LeaveRoom, "");
+		this.destory();
 		const roomInfoStore = useRoomInfo();
 		roomInfoStore.$reset();
 		useChat().$reset();
+		this.destory();
+		router.replace({ name: "room-router" });
 	}
 
 	public readyToggle() {
@@ -477,7 +474,7 @@ export class MonopolyClient {
 		this.destory();
 	}
 
-	private sendMsg(type: SocketMsgType, data: any, roomId: string = useRoomInfo().roomId, extra: any = undefined) {
+	private async sendMsg(type: SocketMsgType, data: any, roomId: string = useRoomInfo().roomId, extra: any = undefined) {
 		const userInfo = useUserInfo();
 		const msgToSend: SocketMessage = {
 			type,
@@ -486,7 +483,10 @@ export class MonopolyClient {
 			data,
 			extra,
 		};
-		this.conn && this.conn.send(JSON.stringify(msgToSend));
+		// this.conn && this.conn.send(JSON.stringify(msgToSend));
+		if (this.conn) {
+			await this.conn.send(JSON.stringify(msgToSend));
+		}
 	}
 
 	public static destoryInstance() {
@@ -498,9 +498,16 @@ export class MonopolyClient {
 function useMonopolyClient(): MonopolyClient;
 function useMonopolyClient(options: MonopolyClientOptions): Promise<MonopolyClient>;
 function useMonopolyClient(options?: MonopolyClientOptions) {
+	window.addEventListener("beforeunload", destoryMonopolyClient);
 	return options ? MonopolyClient.getInstance(options) : MonopolyClient.getInstance();
 }
 
-function destoryMonopolyClient() {}
+function destoryMonopolyClient() {
+	// try {
+	// 	MonopolyClient.getInstance() && MonopolyClient.destoryInstance();
+	// } catch (e) {
+	// 	console.log(e);
+	// }
+}
 
 export { useMonopolyClient, destoryMonopolyClient };
