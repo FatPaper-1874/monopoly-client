@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { getMusicList } from "@/utils/api/music";
 import { Music } from "@/interfaces/bace";
 import { throttle } from "@/utils";
@@ -120,6 +120,11 @@ onMounted(async () => {
 	if (musicList.value?.length > 0) {
 		playMusic();
 	}
+});
+
+onBeforeUnmount(() => {
+	musicPlayerEl.value = null;
+	pauseMusic();
 });
 </script>
 
