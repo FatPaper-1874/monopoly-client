@@ -64,15 +64,17 @@ async function joinRoom() {
 		FPMessage({ type: "error", message: "请输入房间号" });
 		return;
 	}
-	const monopolyClient = await useMonopolyClient({
-		iceServer: {
-			host: __FATPAPER_HOST__,
-			port: __ICE_SERVER_PORT__,
-		},
-	});
 	try {
+		const monopolyClient = await useMonopolyClient({
+			iceServer: {
+				host: __FATPAPER_HOST__,
+				port: __ICE_SERVER_PORT__,
+			},
+		});
 		useLoading().showLoading("正在尝试连接");
 		await monopolyClient.joinRoom(_roomId);
+	} catch (e: any) {
+		FPMessage({ type: "error", message: e.message || e });
 	} finally {
 		useLoading().hideLoading();
 	}
@@ -91,9 +93,12 @@ async function joinRoom() {
 		</div>
 		<div class="join-room">
 			<div class="title">Room-Router</div>
-			<div class="describe">输入房间号可加入房间，第一个使用房间号的将成为主机(房主)</div>
+			<div class="describe">
+				·输入房间号可加入房间，第一个使用房间号的将成为主机(房主)<br />
+				·建议使用稍微复杂的房间号(防止误入别人的房间)<br />
+			</div>
 			<div>
-				<input v-model="roomId" type="text" placeholder="房间号" />
+				<input v-model="roomId" type="text" placeholder="房间号(1-12个字符)" />
 				<button @click="joinRoom">加入/创建房间</button>
 			</div>
 		</div>
