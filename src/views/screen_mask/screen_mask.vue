@@ -6,18 +6,19 @@ import {useDeviceStatus} from "@/store";
 
 const deviceStatus = useDeviceStatus();
 
-const isFullScreen = computed(() => deviceStatus.isFullScreen);
+// const isFullScreen = computed(() => deviceStatus.isFullScreen);
 const isLandscape = computed(() => deviceStatus.isLandscape);
 
 </script>
 
 <template>
-  <div v-show="!isFullScreen || !isLandscape" @click="requestFullScreen" id="screen-mask">
+  <!-- <div v-show="!isFullScreen || !isLandscape" @click="requestFullScreen" id="screen-mask"> -->
+    <div v-show="!isLandscape" @click="requestFullScreen" id="screen-mask">
 
-    <div v-show="!isFullScreen" class="text_container">
+    <!-- <div v-show="!isFullScreen" class="text_container">
       <span>请点击任意区域进入全屏</span>
       <FontAwesomeIcon beat class="icon" icon="expand"/>
-    </div>
+    </div> -->
 
     <div v-show="!isLandscape" class="text_container">
       <span>请解除屏幕锁定并进入横屏状态</span>
