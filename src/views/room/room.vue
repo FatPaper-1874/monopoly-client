@@ -191,7 +191,9 @@ function handleUpdateGameSetting() {
 			</div>
 
 			<div class="room-footbar">
-				<button v-if="isOwner" :disabled="canStart" class="ready-button" @click="handleGameStart">开始游戏</button>
+				<button v-if="isOwner" :disabled="canStart" class="ready-button" @click="handleGameStart">
+					{{ _currentMap ? "开始游戏" : "先选择地图吧" }}
+				</button>
 				<button v-else class="ready-button" @click="handleReadyToggle">
 					{{ isReady ? "取消准备" : "准备" }}
 				</button>
@@ -206,7 +208,7 @@ function handleUpdateGameSetting() {
 		</div>
 	</div>
 	<FpDialog @submit="handleChangeMap" v-model:visible="mapSelectorVisible">
-		<template #title>选择地图</template>
+		<template #title>选择地图 (点击想玩的地图然后确认)</template>
 		<template #default>
 			<ItemSelector
 				:column="1"
