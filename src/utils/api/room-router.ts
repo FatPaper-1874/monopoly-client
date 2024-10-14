@@ -10,10 +10,14 @@ export async function joinRoomApi(roomId: string) {
 	return { hostPeerId, needCreate, deleteIntervalMs };
 }
 
-export async function emitHostPeerId(roomId: string, hostPeerId: string) {
-	await axios.post(`${__MONOPOLYSERVER__}/room-router/emit-host`, { roomId, hostPeerId });
+export async function emitHostPeerId(roomId: string, hostPeerId: string, hostName: string, hostId: string) {
+	await axios.post(`${__MONOPOLYSERVER__}/room-router/emit-host`, { roomId, hostPeerId, hostName, hostId });
 }
 
 export async function emitRoomHeart(roomId: string) {
 	await axios.get(`${__MONOPOLYSERVER__}/room-router/heart`, { params: { roomId } });
+}
+
+export function deleteRoom(roomId: string) {
+	navigator.sendBeacon(`${__MONOPOLYSERVER__}/room-router/delete?roomId=${roomId}`);
 }

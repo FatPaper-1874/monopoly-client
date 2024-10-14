@@ -8,7 +8,7 @@ import GameProcessWorker from "@/classes/worker/GameProcessWorker?worker";
 import { WorkerCommMsg } from "@/interfaces/worker";
 import { WorkerCommType } from "@/enums/worker";
 import { getMapById, getMapsList } from "@/utils/api/map";
-import { emitRoomHeart } from "@/utils/api/room-router";
+import { deleteRoom, emitRoomHeart } from "@/utils/api/room-router";
 import { asyncMission } from "@/utils/async-mission-queue";
 import { __ICE_SERVER_PATH__, __PROTOCOL__ } from "@G/global.config";
 
@@ -32,6 +32,8 @@ export class MonopolyHost {
 			emitRoomHeart(this.room.getRoomId());
 		}, heartContinuationTimeMs);
 		this.intervalList.push(heartInterval);
+
+		window.addEventListener("beforeunload", this.destory);
 	}
 
 	private init(peer: Peer) {
@@ -326,11 +328,13 @@ export class MonopolyHost {
 	}
 
 	public destory() {
+		deleteRoom(this.room.getRoomId());
 		this.room.destory();
 		this.peer.destroy();
 		this.intervalList.forEach((i) => {
 			clearInterval(i);
 		});
+		window.removeEventListener("beforeunload", this.destory);
 		this.destoryHandler && this.destoryHandler();
 	}
 }

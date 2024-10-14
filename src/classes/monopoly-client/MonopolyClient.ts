@@ -83,6 +83,7 @@ export class MonopolyClient {
 
 	public async joinRoom(roomId: string) {
 		const data = await joinRoomApi(roomId);
+		const userStore = useUserInfo();
 		let hostPeerId = data.hostPeerId;
 
 		if (data.needCreate) {
@@ -96,7 +97,7 @@ export class MonopolyClient {
 			});
 			hostPeerId = this.gameHost.getPeerId();
 			useLoading().showLoading("主机创建成功，正在和服务器报喜...");
-			await emitHostPeerId(roomId, hostPeerId);
+			await emitHostPeerId(roomId, hostPeerId, userStore.username, userStore.userId);
 		}
 		useLoading().showLoading("连接主机中...");
 		await this.linkToGameHost(hostPeerId);
