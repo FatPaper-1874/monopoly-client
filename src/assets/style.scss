@@ -55,6 +55,7 @@ html {
       from {
         transform: rotate(0deg);
       }
+
       to {
         transform: rotate(360deg);
       }
@@ -113,7 +114,8 @@ html {
 }
 
 ::-webkit-scrollbar {
-  width: 10px;
+  width: .6rem;
+  height: .6rem;
   background-color: var(--color-bg-light);
 }
 
@@ -124,7 +126,7 @@ html {
 
 /*定义滑块：内阴影+圆角*/
 ::-webkit-scrollbar-thumb {
-  border-radius: 3px;
+  border-radius: .2rem;
   background-color: var(--color-bg);
 }
 
