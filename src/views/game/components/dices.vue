@@ -23,9 +23,10 @@ watch(isRollDiceAnimationPlay, (animationPlay) => {
 	}
 });
 
-onMounted(() => {
+onMounted(async () => {
 	const canvasEl = document.getElementById("game_dice_canvas") as HTMLCanvasElement;
 	diceRenderer = new DiceRenderer(canvasEl, false, roomInfoStore.gameSetting.diceNum, 1.1, false, 2.1);
+	await diceRenderer.initDice();
 });
 
 const emit = defineEmits(["roll"]);

@@ -55,38 +55,39 @@ async function getUserInfoToRoomList() {
 	try {
 		showLoginMode.value = false;
 		showDice.value = true;
-		nextTick(() => {
+		nextTick(async () => {
 			const canvasEl = document.getElementById("dice-canvas") as HTMLCanvasElement;
 			loginCodeRenderer = new LoginDiceRenderer(canvasEl, diceRotate);
-		});
-		let token = localStorage.getItem("token") || "";
-		if (token) {
-			//账号登录
-			try {
-				const { id: userId, useraccount, username, avatar, color } = await getUserByToken(token);
+			await loginCodeRenderer.initDice();
+			let token = localStorage.getItem("token") || "";
+			if (token) {
+				//账号登录
+				try {
+					const { id: userId, useraccount, username, avatar, color } = await getUserByToken(token);
+					const userInfoStore = useUserInfo();
+					userInfoStore.$patch({ userId, useraccount, username, avatar, color });
+					await setTimeOutAsync(1500);
+					if (loginCodeRenderer) await loginCodeRenderer.showImage(`${__PROTOCOL__}://${avatar}`);
+					await setTimeOutAsync(2000, toRoomList);
+					return;
+				} catch (e: any) {
+					localStorage.removeItem("token");
+					showDice.value = false;
+					showLoginMode.value = true;
+				}
+			}
+			let userInfo = localStorage.getItem("user") || "";
+			if (userInfo) {
+				//游客登录
+				const { userId, useraccount = "", username, avatar = "", color } = JSON.parse(userInfo);
 				const userInfoStore = useUserInfo();
 				userInfoStore.$patch({ userId, useraccount, username, avatar, color });
 				await setTimeOutAsync(1500);
-				if (loginCodeRenderer) await loginCodeRenderer.showImage(`${__PROTOCOL__}://${avatar}`);
+				if (loginCodeRenderer) await loginCodeRenderer.showImage("");
 				await setTimeOutAsync(2000, toRoomList);
 				return;
-			} catch (e: any) {
-				localStorage.removeItem("token");
-				showDice.value = false;
-				showLoginMode.value = true;
 			}
-		}
-		let userInfo = localStorage.getItem("user") || "";
-		if (userInfo) {
-			//游客登录
-			const { userId, useraccount = "", username, avatar = "", color } = JSON.parse(userInfo);
-			const userInfoStore = useUserInfo();
-			userInfoStore.$patch({ userId, useraccount, username, avatar, color });
-			await setTimeOutAsync(1500);
-			if (loginCodeRenderer) await loginCodeRenderer.showImage("");
-			await setTimeOutAsync(2000, toRoomList);
-			return;
-		}
+		});
 	} catch (e: any) {
 		FPMessage({
 			type: "error",

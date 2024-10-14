@@ -71,8 +71,6 @@ export class DiceRenderer {
 
 		this.enlargenum = enlargenum;
 
-		this.loadDiceModel(dicenum);
-
 		window.addEventListener(
 			"resize",
 			debounce(() => {
@@ -83,6 +81,10 @@ export class DiceRenderer {
 		);
 
 		this.renderLoop();
+	}
+
+	public async initDice() {
+		await this.loadDiceModel(this.dicenum);
 	}
 
 	private rotateModelToFaceCamera(model: THREE.Object3D, targetFaceNormal: THREE.Vector3) {
