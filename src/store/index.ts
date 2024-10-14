@@ -4,6 +4,7 @@ import { MapItem, PlayerInfo, PropertyInfo, ItemType, ChanceCardInfo, Street } f
 import { GameOverRule } from "@/enums/game";
 import { isFullScreen, isLandscape, setTimeOutAsync } from "@/utils";
 import { getUserByToken } from "@/utils/api/user";
+import { CardUseMode } from "@/enums/bace";
 
 export const useLoading = defineStore("loading", {
 	state: () => {
@@ -101,7 +102,7 @@ export const useGameInfo = defineStore("gameInfo", {
 	state: () => {
 		return {
 			ping: 0,
-			currentPlayerInRound: "",
+			currentPlayerIdInRound: "",
 			currentRound: 0,
 			currentMultiplier: 0,
 			playersList: new Array<PlayerInfo>(),
@@ -166,6 +167,16 @@ export const useDeviceStatus = defineStore("deviceStatus", {
 			isLandscape: false,
 			isMobile: false,
 			isFocus: false,
+		};
+	},
+});
+
+export const useSettig = defineStore("setting", {
+	state: () => {
+		return {
+			cardUseMode: CardUseMode.Click,
+			autoMusic: true,
+			musicVolume: 1,
 		};
 	},
 });
