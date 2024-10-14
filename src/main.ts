@@ -48,9 +48,18 @@ import {
 	faCircleUser,
 	faGamepad,
 	faCopy,
+	faBookTanakh,
+	faCompress,
+	faCrown,
+	faPersonRunning,
+	faWandSparkles,
+	faGear,
+	faSquareCheck,
+	faVolumeLow,
+	faVolumeHigh,
 } from "@fortawesome/free-solid-svg-icons";
 import { chanceCardSource } from "./directives/chanceCardDrag";
-import { useDeviceStatus } from "@/store";
+import { useDeviceStatus, useSettig } from "@/store";
 import { isFullScreen as _isFullScreen, isLandscape as _isLandscape, isMobileDevice } from "@/utils";
 
 library.add(
@@ -86,17 +95,40 @@ library.add(
 	faCode,
 	faCircleUser,
 	faGamepad,
-	faCopy
+	faCopy,
+	faBookTanakh,
+	faCompress,
+	faCrown,
+	faPersonRunning,
+	faWandSparkles,
+	faGear,
+	faSquareCheck,
+	faVolumeLow,
+	faVolumeHigh,
 );
 const pinia = createPinia();
+
 createApp(App)
-	.use(router)
 	.use(pinia)
-	.directive("chanceCardSource", chanceCardSource)
+	.use(router)
 	.component("font-awesome-icon", FontAwesomeIcon)
+	.directive("chanceCardSource", chanceCardSource)
 	.mount("#app");
 
 initDeviceStatusListener();
+initSettingStore();
+
+function initSettingStore() {
+	const settingStore = useSettig();
+	const savedState = localStorage.getItem("setting");
+	if (savedState) {
+		settingStore.$patch(JSON.parse(savedState));
+	}
+
+	settingStore.$subscribe((mutation, state) => {
+		localStorage.setItem("setting", JSON.stringify(state));
+	});
+}
 
 function initDeviceStatusListener() {
 	const deviceStatus = useDeviceStatus();
@@ -104,6 +136,11 @@ function initDeviceStatusListener() {
 	deviceStatus.isLandscape = _isLandscape();
 	deviceStatus.isMobile = isMobileDevice();
 	deviceStatus.isFocus = document.visibilityState === "visible";
+	if (isMobileDevice()) {
+		document.addEventListener("touchstart", function (e) {
+			e.preventDefault();
+		});
+	}
 
 	window.addEventListener("fullscreenchange", (e) => {
 		deviceStatus.isFullScreen = _isFullScreen();

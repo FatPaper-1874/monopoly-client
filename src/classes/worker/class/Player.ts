@@ -1,28 +1,31 @@
-import { Role, SocketMessage, User, UserInRoomInfo } from "@/interfaces/bace";
-import { PlayerInfo } from "@/interfaces/game";
-import { ChanceCard } from "./ChanceCard";
-import { Property } from "./Property";
-import { SocketMsgType } from "@/enums/bace";
+import { UserInRoomInfo } from "@/interfaces/bace";
+import { Buff, PlayerInfo } from "@/interfaces/game";
 import { PlayerEvents } from "../enums/game";
-import { ChanceCardInterface, PlayerInterface, PropertyInterface } from "../interface";
+import { ChanceCardInterface, PlayerEventsCallback, PlayerInterface, PropertyInterface } from "../interface";
+import { randomString } from "@/utils";
+
+type CallbackMapValue<E extends PlayerEvents> = {
+	fn: PlayerEventsCallback[E]; // 根据 PlayerEvents 类型映射到具体的回调函数类型
+	triggerTimes: number;
+	buff?: Buff;
+};
 
 export class Player implements PlayerInterface {
 	private user: UserInRoomInfo;
 	private money: number;
-	private properties: PropertyInterface[];
-	private chanceCards: ChanceCardInterface[];
+	private properties: PropertyInterface[] = [];
+	private chanceCards: ChanceCardInterface[] = [];
+	private buff: Buff[] = [];
 	private positionIndex: number; //所在棋盘格子的下标
 	private isStop: number; //是否停止回合
 	private isBankrupted: boolean = false; //是否破产
 	private isOffline: boolean; //是否断线
 
-	private callBackMap: Map<PlayerEvents, { fn: Function; isOnce: boolean }[]> = new Map();
+	private callBackMap: Map<PlayerEvents, CallbackMapValue<PlayerEvents>[]> = new Map();
 
 	constructor(user: UserInRoomInfo, initMoney: number, initPositionIndex: number) {
 		this.user = user;
 		this.money = initMoney;
-		this.properties = [];
-		this.chanceCards = [];
 		this.positionIndex = initPositionIndex;
 		this.isStop = 0;
 		this.isOffline = false;
@@ -45,23 +48,29 @@ export class Player implements PlayerInterface {
 		return this.properties;
 	};
 	public setPropertiesList = (newPropertiesList: PropertyInterface[]) => {
-		this.emit(PlayerEvents.SetPropertiesList, newPropertiesList);
+		newPropertiesList = this.emit(PlayerEvents.BeforeSetPropertiesList, newPropertiesList) || newPropertiesList;
 		this.properties = newPropertiesList;
+		this.emit(PlayerEvents.AfterSetPropertiesList, newPropertiesList);
 	};
 
-	public gainProperty = (property: PropertyInterface) => {
-		this.emit(PlayerEvents.GainProperty, property);
-		property.setOwner(this);
-		this.properties.push(property);
-	};
+	// public gainProperty = (property: PropertyInterface) => {
+	// 	property.setOwner(this);
+	// 	property = this.emit(PlayerEvents.BeforeGainProperty, property) || property;
+	// 	const owner = property.getOwner();
+	// 	console.log("🚀 ~ Player ~ owner:", owner);
+	// 	if (owner && owner.id === this.getId()) this.properties.push(property);
+	// 	this.emit(PlayerEvents.AfterGainProperty, property);
+	// };
 
-	public loseProperty = (propertyId: string) => {
-		this.emit(PlayerEvents.LoseProperty, propertyId);
-		const index = this.properties.findIndex((property) => property.getId() === propertyId);
-		if (index != -1) {
-			this.properties.splice(index, 1);
-		}
-	};
+	// public loseProperty = (lostProperty: PropertyInterface) => {
+	// 	// this.emit(PlayerEvents.LoseProperty, propertyId);
+	// 	lostProperty = this.emit(PlayerEvents.BeforeGainProperty, lostProperty) || lostProperty;
+	// 	const index = this.properties.findIndex((property) => property.getId() === lostProperty.getId());
+	// 	if (index != -1) {
+	// 		this.properties.splice(index, 1);
+	// 	}
+	// 	this.emit(PlayerEvents.AfterLoseProperty, lostProperty);
+	// };
 
 	//机会卡相关
 	public getCardsList = () => {
@@ -70,29 +79,27 @@ export class Player implements PlayerInterface {
 	};
 
 	public setCardsList = (newChanceCardList: ChanceCardInterface[]) => {
-		this.emit(PlayerEvents.SetCardsList, newChanceCardList);
+		newChanceCardList = this.emit(PlayerEvents.BeforeSetCardsList, newChanceCardList) || newChanceCardList;
 		this.chanceCards = newChanceCardList;
+		this.emit(PlayerEvents.AfterSetCardsList, newChanceCardList);
 	};
 
-	public getCardById = (id: string) => {
-		const index = this.chanceCards.findIndex((card) => card.getId() === id);
-		return this.chanceCards[index] || undefined;
-	};
-
-	public gainCard = (num: number) => {
+	public gainCard = (gainCard: ChanceCardInterface) => {
 		if (this.chanceCards.length >= 4) return;
-		if (this.chanceCards.length + num > 4) {
-			num = 4 - this.chanceCards.length;
-		}
-		this.emit(PlayerEvents.GainCard, num);
+		gainCard = this.emit(PlayerEvents.BeforeGainCard, gainCard) || gainCard;
+		this.chanceCards.push(gainCard);
+		this.emit(PlayerEvents.AfterGainCard, gainCard);
 	};
 
 	public loseCard = (cardId: string) => {
-		this.emit(PlayerEvents.LoseCard, cardId);
-		const index = this.chanceCards.findIndex((card) => card.getId() === cardId);
+		let card = this.chanceCards.find((card) => card.getId() === cardId);
+		if (!card) return;
+		card = this.emit(PlayerEvents.BeforeLoseCard, card) || card;
+		const index = this.chanceCards.findIndex((_card) => _card.getId() === card.getId());
 		if (index != -1) {
 			this.chanceCards.splice(index, 1);
 		}
+		this.emit(PlayerEvents.AfterLoseCard, card);
 	};
 
 	//钱相关
@@ -102,28 +109,33 @@ export class Player implements PlayerInterface {
 	};
 
 	public setMoney = (money: number) => {
+		money = this.emit(PlayerEvents.BeforeSetMoney, money) || money;
 		this.money = money;
 		if (this.money <= 0) this.setBankrupted(true);
-		this.emit(PlayerEvents.SetMoney, money);
+		this.emit(PlayerEvents.AfterSetMoney, money);
 	};
 
 	public cost(money: number) {
-		this.money -= money;
+		money = this.emit(PlayerEvents.BeforeCost, money) || money;
+		this.money -= money > 0 ? money : 0;
 		if (this.money <= 0) this.setBankrupted(true);
-		this.emit(PlayerEvents.Cost, money);
+		this.emit(PlayerEvents.AfterCost, money);
 		return this.money > 0;
 	}
 
 	public gain(money: number) {
-		this.emit(PlayerEvents.Gain, money);
+		money = this.emit(PlayerEvents.BeforeGain, money) || money;
 		this.money += money;
+		this.emit(PlayerEvents.AfterGain, money);
 		return this.money;
 	}
 
 	//游戏相关
 	public setStop = (stop: number) => {
-		this.emit(PlayerEvents.SetStop, stop);
+		// this.emit(PlayerEvents.SetStop, stop);
+		stop = this.emit(PlayerEvents.BeforeStop, stop) || stop;
 		this.isStop = stop;
+		this.emit(PlayerEvents.AfterStop, stop);
 	};
 
 	public getStop = () => {
@@ -140,22 +152,36 @@ export class Player implements PlayerInterface {
 	};
 
 	public walk = async (step: number): Promise<void> => {
+		step = this.emit(PlayerEvents.BeforeWalk, step) || step;
 		this.emit(PlayerEvents.Walk, step);
 		return new Promise((resolve) => {
-			this.addEventListener(PlayerEvents.AnimationFinished, resolve);
+			this.addEventListener(
+				PlayerEvents.AnimationFinished,
+				() => {
+					this.emit(PlayerEvents.AfterWalk, step);
+					resolve();
+				},
+				1
+			);
 		});
 	};
 
 	public tp = async (positionIndex: number): Promise<void> => {
-		this.emit(PlayerEvents.Tp, positionIndex);
+		// this.emit(PlayerEvents.Tp, positionIndex);
+		positionIndex = this.emit(PlayerEvents.BeforeTp, positionIndex) || positionIndex;
 		return new Promise((resolve) => {
-			this.addEventListener(PlayerEvents.AnimationFinished, resolve);
+			this.addEventListener(PlayerEvents.AnimationFinished, () => {
+				this.emit(PlayerEvents.AfterTp, positionIndex);
+				resolve();
+			});
 		});
 	};
 
 	public setBankrupted = (isBankrupted: boolean) => {
-		this.emit(PlayerEvents.SetBankrupted, isBankrupted);
+		// this.emit(PlayerEvents.SetBankrupted, isBankrupted);
+		isBankrupted = this.emit(PlayerEvents.BeforeSetBankrupted, isBankrupted) || isBankrupted;
 		this.isBankrupted = isBankrupted;
+		this.emit(PlayerEvents.AfterSetBankrupted, isBankrupted);
 	};
 
 	public getIsBankrupted = () => {
@@ -171,6 +197,7 @@ export class Player implements PlayerInterface {
 			money: this.money,
 			properties: this.properties.map((property) => property.getPropertyInfo()),
 			chanceCards: this.chanceCards.map((card) => card.getChanceCardInfo()),
+			buff: this.getBuff(),
 			positionIndex: this.positionIndex,
 			stop: this.isStop,
 			isBankrupted: this.isBankrupted,
@@ -179,26 +206,65 @@ export class Player implements PlayerInterface {
 		return playerInfo;
 	}
 
-	public addEventListener(eventName: PlayerEvents, fn: Function, once: boolean = false) {
+	public getBuff() {
+		const buffList = Array.from(this.callBackMap.values())
+			.map((arr) => arr.map((o) => o.buff))
+			.flat()
+			.filter((item): item is Buff => item !== undefined);
+		return buffList;
+	}
+
+	public getCardById = (id: string) => {
+		const index = this.chanceCards.findIndex((card) => card.getId() === id);
+		return this.chanceCards[index] || undefined;
+	};
+
+	public addEventListener<K extends PlayerEvents>(
+		eventName: K,
+		fn: PlayerEventsCallback[K],
+		triggerTimes: number = Infinity,
+		buff?: {
+			name: string;
+			describe: string;
+			source: string;
+		}
+	) {
 		if (!this.callBackMap.has(eventName)) {
 			this.callBackMap.set(eventName, []);
 		}
 		const fnArr = this.callBackMap.get(eventName);
-		fnArr && fnArr.push({ fn, isOnce: once });
+		fnArr &&
+			fnArr.push({
+				fn,
+				triggerTimes,
+				buff: buff ? { id: randomString(16), ...buff, type: eventName, triggerTimes } : undefined,
+			});
 	}
 
-	public emit(eventName: PlayerEvents, ...args: any[]) {
+	public emit<K extends keyof PlayerEventsCallback>(
+		eventName: K,
+		...args: Parameters<PlayerEventsCallback[K]>
+	): ReturnType<PlayerEventsCallback[K]> {
 		const fnArr = this.callBackMap.get(eventName);
+		let res: ReturnType<PlayerEventsCallback[K]> = undefined as unknown as ReturnType<PlayerEventsCallback[K]>;
 		if (fnArr) {
 			for (let index = 0; index < fnArr.length; index++) {
-				const fobj = fnArr[index];
-				fobj.fn.apply(this, args);
-				if (fobj.isOnce) {
+				const item = fnArr[index];
+				res = (item.fn as (...args: Parameters<PlayerEventsCallback[K]>) => ReturnType<PlayerEventsCallback[K]>)(
+					...args
+				);
+				item.triggerTimes--;
+				if (item.buff) {
+					item.buff.triggerTimes = item.triggerTimes;
+				}
+
+				if (item.triggerTimes === 0) {
 					fnArr.splice(index, 1);
-					index--;
+					index--; // 防止跳过下一个元素
 				}
 			}
 		}
+		return res;
 	}
 
 	public remove(eventName: PlayerEvents, fn: Function) {

@@ -25,6 +25,7 @@ import PropertyInfoVue from "@/components/common/property-info.vue";
 import { FPMessageBox } from "@/components/utils/fp-message-box";
 import { OperateType } from "@/enums/game";
 import { emitHostPeerId, emitRoomHeart, joinRoomApi } from "@/utils/api/room-router";
+import { GameEvents } from "../../enums/game";
 
 type MonopolyClientOptions = {
 	iceServer: {
@@ -132,7 +133,7 @@ export class MonopolyClient {
 						message: data.msg.content,
 					});
 				}
-				console.log("Client Receive: ", data);
+				// console.log("Client Receive: ", data);
 
 				switch (data.type) {
 					case SocketMsgType.Heart:
@@ -153,6 +154,9 @@ export class MonopolyClient {
 					case SocketMsgType.LeaveRoom:
 						this.handleLeaveRoomReply(data);
 						break;
+					case SocketMsgType.KickOut:
+						this.handleKickOutReply();
+						break;
 					case SocketMsgType.RoomInfo:
 						this.handleRoomInfoReply(data);
 						break;
@@ -160,7 +164,7 @@ export class MonopolyClient {
 						this.handleRoomChatReply(data);
 						break;
 					case SocketMsgType.GameStart:
-						this.handleGameStart(data);
+						this.handleGameStartReply(data);
 						break;
 					case SocketMsgType.GameInit:
 						this.handleGameInit(data);
@@ -252,6 +256,12 @@ export class MonopolyClient {
 
 	private handleLeaveRoomReply(data: SocketMessage) {}
 
+	private handleKickOutReply() {
+		FPMessage({ type: "error", message: "你已被踢出房间" });
+		this.destory();
+		router.replace({ name: "room-router" });
+	}
+
 	private handleRoomInfoReply(data: SocketMessage) {
 		const roomInfoData = data.data as RoomInfo;
 		const roomInfoStore = useRoomInfo();
@@ -271,9 +281,11 @@ export class MonopolyClient {
 		useChat().addNewMessage(message);
 	}
 
-	private handleGameStart(data: SocketMessage) {
-		const loadingStore = useLoading();
-		loadingStore.loading = true;
+	private handleGameStartReply(data: SocketMessage) {
+		useLoading().$patch({
+			loading: true,
+			text: "正在进入游戏...",
+		});
 	}
 
 	private handleGameInit(data: SocketMessage) {
@@ -292,7 +304,7 @@ export class MonopolyClient {
 			gameInitInfo &&
 				gameInfoStore.$patch({
 					currentRound: gameInitInfo.currentRound,
-					currentPlayerInRound: gameInitInfo.currentPlayerInRound,
+					currentPlayerIdInRound: gameInitInfo.currentPlayerInRound,
 					currentMultiplier: gameInitInfo.currentMultiplier,
 				});
 
@@ -312,7 +324,7 @@ export class MonopolyClient {
 		const gameInfo: GameInfo = data.data;
 		gameInfo &&
 			gameInfoStore.$patch({
-				currentPlayerInRound: gameInfo.currentPlayerInRound,
+				currentPlayerIdInRound: gameInfo.currentPlayerInRound,
 				currentRound: gameInfo.currentRound,
 				currentMultiplier: gameInfo.currentMultiplier,
 				playersList: gameInfo.playerList,
@@ -327,6 +339,7 @@ export class MonopolyClient {
 		utilStore.timeOut = waitingFor.remainingTime <= 0;
 		if (waitingFor.remainingTime <= 0) {
 			utilStore.canRoll = false;
+			useEventBus().emit(GameEvents.TimeOut);
 		}
 	}
 
@@ -339,6 +352,8 @@ export class MonopolyClient {
 
 	private handleRollDiceAnimationPlay() {
 		const utilStore = useUtil();
+		utilStore.canRoll = false;
+		utilStore.canUseCard = false;
 		utilStore.isRollDiceAnimationPlay = true;
 	}
 
@@ -357,8 +372,8 @@ export class MonopolyClient {
 	}
 
 	private handlePlayerWalk(data: SocketMessage) {
-		const { playerId, step } = data.data as { playerId: string; step: number };
-		useEventBus().emit("player-walk", playerId, step);
+		const { playerId, step, walkId } = data.data as { playerId: string; step: number; walkId: string };
+		useEventBus().emit("player-walk", playerId, step, walkId);
 	}
 
 	private handlePlayerTp(data: SocketMessage) {
@@ -427,6 +442,14 @@ export class MonopolyClient {
 		this.sendMsg(SocketMsgType.ReadyToggle, "");
 	}
 
+	public changeColor(newColor: string) {
+		this.sendMsg(SocketMsgType.ChangeColor, newColor);
+	}
+
+	public kickOut(playerId: string) {
+		this.sendMsg(SocketMsgType.KickOut, playerId);
+	}
+
 	public changeRole(operate: ChangeRoleOperate) {
 		this.sendMsg(SocketMsgType.ChangeRole, operate);
 	}
@@ -457,8 +480,8 @@ export class MonopolyClient {
 		this.sendMsg(SocketMsgType.UseChanceCard, cardId, undefined, target);
 	}
 
-	public AnimationComplete() {
-		this.sendMsg(SocketMsgType.Animation, OperateType.Animation);
+	public AnimationComplete(animationId?: string) {
+		this.sendMsg(SocketMsgType.Animation, OperateType.Animation + animationId);
 	}
 
 	public destory() {
@@ -503,11 +526,11 @@ function useMonopolyClient(options?: MonopolyClientOptions) {
 }
 
 function destoryMonopolyClient() {
-	// try {
-	// 	MonopolyClient.getInstance() && MonopolyClient.destoryInstance();
-	// } catch (e) {
-	// 	console.log(e);
-	// }
+	try {
+		MonopolyClient.getInstance() && MonopolyClient.destoryInstance();
+	} catch (e) {
+		console.log(e);
+	}
 }
 
 export { useMonopolyClient, destoryMonopolyClient };

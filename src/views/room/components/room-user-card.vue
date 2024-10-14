@@ -16,25 +16,56 @@ const lightColor = computed(() => (user.value ? lightenColor(user.value.color, 1
 const avatarSrc = computed(() => {
 	return user.value && (user.value.avatar ? `${__PROTOCOL__}://${user.value.avatar}` : "");
 });
-const isMe = computed(() => (user.value ? user.value.userId === useUserInfo().userId : false));
 
+const isMe = computed(() => (user.value ? user.value.userId === useUserInfo().userId : false));
+const isRoomOwner = computed(() => (user.value ? user.value.userId === useRoomInfo().ownerId : false));
+const amIRoomOwner = computed(() => {
+	const me = useUserInfo();
+	return me.userId === useRoomInfo().ownerId;
+});
 function handleChangeRole(operate: ChangeRoleOperate) {
-	const serverClient = useMonopolyClient();
-	serverClient.changeRole(operate);
+	const monopolyClient = useMonopolyClient();
+	monopolyClient.changeRole(operate);
 }
 
 const canvasId = randomString(16);
+const colorPickerEl = ref<HTMLInputElement | null>(null);
 let rolePreviewer: RolePreviewer | null = null;
+
+function handleColorPickerClick() {
+	colorPickerEl.value && colorPickerEl.value.click();
+}
+
+function handleKickOut() {
+	if (!props.user) return;
+	const monopolyClient = useMonopolyClient();
+	monopolyClient.kickOut(props.user.userId);
+}
+
+function handleColorChange(e: Event) {
+	const target = e.target as HTMLInputElement;
+	const newColor = target.value;
+	const monopolyClient = useMonopolyClient();
+	monopolyClient.changeColor(newColor);
+}
 
 onMounted(() => {
 	nextTick(() => {
 		const canvasEl = document.getElementById(canvasId) as HTMLCanvasElement;
-		rolePreviewer = new RolePreviewer(canvasEl);
 		watch(
 			() => props.user,
 			(newUser, oldUser) => {
-				if (rolePreviewer && newUser && newUser.role.id !== (oldUser?.role.id || "")) {
-					rolePreviewer.loadRole(`${__PROTOCOL__}://${newUser.role.baseUrl}/`, newUser.role.fileName);
+				if (newUser) {
+					if (!oldUser) {
+						rolePreviewer = new RolePreviewer(canvasEl);
+					}
+					if (newUser.role.id !== (oldUser?.role.id || "")) {
+						rolePreviewer &&
+							rolePreviewer.loadRole(`${__PROTOCOL__}://${newUser.role.baseUrl}/`, newUser.role.fileName);
+					}
+				} else {
+					rolePreviewer && rolePreviewer.destroy();
+					rolePreviewer = null;
 				}
 			},
 			{ immediate: true, deep: true }
@@ -61,11 +92,23 @@ onBeforeUnmount(() => {
 			<span>选择角色</span>
 		</div>
 
+		<div class="is-room-owner" v-if="isRoomOwner"><FontAwesomeIcon icon="crown" /> <span>房主</span></div>
+
+		<div v-if="isMe" class="color-picker">
+			<div @click="handleColorPickerClick" class="color-display"></div>
+			<input ref="colorPickerEl" type="color" @change="handleColorChange" />
+		</div>
+
+		<div v-if="amIRoomOwner && user && !isMe" class="kick">
+			<FontAwesomeIcon @click="handleKickOut" icon="person-running" />
+		</div>
+
 		<div v-if="user && user.username" class="user-info">
 			<div class="avatar" :style="{ 'background-color': user.color }">
 				<img v-if="avatarSrc" :src="avatarSrc" />
 				<FontAwesomeIcon v-else :style="{ color: '#ffffff' }" icon="gamepad" />
 			</div>
+
 			<div class="info" :style="{ 'background-color': lightColor }">
 				<span class="username">{{ user.username }}</span>
 			</div>
@@ -82,6 +125,8 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
+$avatar-size: 2.4rem;
+$top-bar-height: $avatar-size;
 .room-user-card {
 	width: auto;
 	display: flex;
@@ -94,6 +139,63 @@ onBeforeUnmount(() => {
 	backdrop-filter: blur(3px);
 	box-sizing: border-box;
 	box-shadow: var(--box-shadow);
+
+	& > .color-picker {
+		position: absolute;
+		top: calc($top-bar-height + 0.4rem);
+		right: 0.4rem;
+		z-index: 101;
+
+		& > .color-display {
+			width: 2.4rem;
+			height: 2.4rem;
+			background: conic-gradient(
+				rgb(255, 0, 0),
+				rgb(255, 187, 0),
+				rgb(255, 255, 0),
+				rgb(0, 255, 0),
+				rgb(0, 0, 255),
+				rgb(225, 0, 255),
+				rgb(255, 0, 0)
+			);
+			border-radius: 50%;
+			border: 0.3rem solid #ffffff;
+			cursor: pointer;
+			box-sizing: border-box;
+		}
+
+		& > input {
+			width: 0;
+			height: 0;
+			opacity: 0;
+			position: absolute;
+			left: 0;
+			top: 0;
+		}
+	}
+
+	& > .kick {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		width: 2.4rem;
+		height: 2.4rem;
+		border-radius: 50%;
+		border: 0.3rem solid #ffffff;
+		cursor: pointer;
+		position: absolute;
+		top: calc($top-bar-height + 0.4rem);
+		right: 0.4rem;
+		z-index: 101;
+		font-size: 1.2rem;
+		color: #ffffff;
+		background-color: rgb(223, 79, 79);
+		box-sizing: border-box;
+
+		&:hover {
+			background-color: rgb(197, 47, 47);
+		}
+	}
 
 	& > .ready-tag,
 	.choose-role {
@@ -109,6 +211,23 @@ onBeforeUnmount(() => {
 		box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.1);
 		text-shadow: 3px 3px 2px rgba(0, 0, 0, 0.1);
 		z-index: 100;
+	}
+
+	& > .is-room-owner {
+		position: absolute;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		left: 0.4rem;
+		padding: 0.3rem 0.6rem;
+		top: calc($top-bar-height + 0.4rem);
+		font-size: 1.3rem;
+		color: #ffffff;
+		z-index: 101;
+		background-color: var(--color-third);
+		border-radius: 0.6rem;
+		gap: 0.3rem;
+		user-select: none;
 	}
 
 	& > .choose-role {
@@ -144,13 +263,12 @@ onBeforeUnmount(() => {
 		top: 0;
 
 		& > .avatar {
-			$icon-size: 2.4rem;
-			min-width: $icon-size;
-			min-height: $icon-size;
-			width: $icon-size;
-			height: $icon-size;
+			min-width: $avatar-size;
+			min-height: $avatar-size;
+			width: $avatar-size;
+			height: $avatar-size;
 			text-align: center;
-			line-height: $icon-size;
+			line-height: $avatar-size;
 			// border: 4px solid #ffffff;
 			font-size: 1.2rem;
 			color: #ffffff;
@@ -159,8 +277,8 @@ onBeforeUnmount(() => {
 			overflow: hidden;
 
 			& > img {
-				width: $icon-size;
-				height: $icon-size;
+				width: $avatar-size;
+				height: $avatar-size;
 			}
 		}
 

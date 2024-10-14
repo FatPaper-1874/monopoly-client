@@ -1,5 +1,6 @@
 import { User, UserInRoomInfo } from "@/interfaces/bace";
 import { ChanceCardType, GameOverRule } from "@/enums/game";
+import { PlayerEvents } from "@/classes/worker/enums/game";
 
 export interface Property {
 	id: string;
@@ -92,10 +93,20 @@ export interface PlayerInfo {
 	money: number;
 	properties: PropertyInfo[];
 	chanceCards: ChanceCardInfo[];
+	buff: Buff[];
 	positionIndex: number;
 	stop: number;
 	isBankrupted: boolean;
 	isOffline: boolean;
+}
+
+export interface Buff {
+	id: string;
+	name: string;
+	describe: string;
+	source: string;
+	type: PlayerEvents;
+	triggerTimes: number;
 }
 
 export interface ChanceCardInfo {

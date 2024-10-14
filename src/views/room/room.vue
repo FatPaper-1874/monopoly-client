@@ -109,10 +109,6 @@ function handleReadyToggle() {
 
 function handleGameStart() {
 	if (socketClient) {
-		useLoading().$patch({
-			loading: true,
-			text: "正在进入游戏...",
-		});
 		socketClient.startGame();
 	}
 }
@@ -147,7 +143,12 @@ function handleUpdateGameSetting() {
 
 			<div class="map-preview-inroom">
 				<canvas id="map-preview__canvas_inroom"></canvas>
-				<button class="select-map-button" :disabled="!isOwner" @click="mapSelectorVisible = true">
+				<button
+					class="select-map-button"
+					:class="{ nomap: !Boolean(_tempGameSettingFrom.mapId) }"
+					:disabled="!isOwner"
+					@click="mapSelectorVisible = true"
+				>
 					{{ _selectMapButtonText }}
 				</button>
 			</div>
@@ -348,6 +349,21 @@ function handleUpdateGameSetting() {
 		padding: 0.6rem 1.2rem;
 		border-radius: 0.6rem;
 		z-index: 1;
+
+		&.nomap:not([disabled]) {
+			background-color: var(--color-second);
+			animation: identifier 1s infinite ease-in-out;
+
+			&:hover {
+				background-color: var(--color-third);
+			}
+
+			@keyframes identifier {
+				50% {
+					background-color: var(--color-third);
+				}
+			}
+		}
 	}
 
 	& > #map-preview__canvas_inroom {
@@ -384,6 +400,7 @@ function handleUpdateGameSetting() {
 				width: 6rem;
 				flex: 1;
 				color: var(--color-text-primary);
+				padding: 0.5rem 0.7rem;
 				margin-right: 0.5rem;
 			}
 		}

@@ -1,6 +1,8 @@
 import { App, createApp, VNode, watch } from "vue";
 import FPMessageBoxVue from "./fp-message-box.vue";
 import { useUtil } from "@/store";
+import useEventBus from "@/utils/event-bus";
+import { GameEvents } from "@/enums/game";
 
 interface Options extends Record<string, any> {
 	title?: string;
@@ -9,13 +11,13 @@ interface Options extends Record<string, any> {
 	cancelText?: string;
 }
 
-export function FPMessageBox(options: Options){
+export function FPMessageBox(options: Options) {
 	return new Promise((resolve, reject) => {
 		showMessageBox(options, resolve, reject);
 	});
-};
+}
 
-function showMessageBox(options: Options, resolve: (value: unknown) => void, reject: (reason?: any) => void){
+function showMessageBox(options: Options, resolve: (value: unknown) => void, reject: (reason?: any) => void) {
 	const fragment = document.createDocumentFragment();
 	const messageBoxApp = createApp(FPMessageBoxVue, options) as App<any>;
 
@@ -25,30 +27,26 @@ function showMessageBox(options: Options, resolve: (value: unknown) => void, rej
 	//@ts-ignore
 	vm.visible = true;
 
-	const utilStore = useUtil();
-
 	watch(
 		//@ts-ignore
 		() => vm.visible,
 		(newVal) => {
 			if (!newVal) {
-				messageBoxApp.unmount();
-				//@ts-ignore
-				if (vm.isConfirm) {
-					resolve("");
-				} else {
-					reject();
-				}
+				unmount();
 			}
 		}
 	);
 
-	watch(
-		() => utilStore.timeOut,
-		(newVal) => {
-			if (newVal) {
-				messageBoxApp.unmount();
-			}
+	function unmount() {
+		messageBoxApp.unmount();
+		useEventBus().remove(GameEvents.TimeOut, unmount);
+		//@ts-ignore
+		if (vm.isConfirm) {
+			resolve("");
+		} else {
+			reject();
 		}
-	);
-};
+	}
+
+	useEventBus().once(GameEvents.TimeOut, unmount);
+}

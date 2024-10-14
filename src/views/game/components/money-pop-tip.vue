@@ -9,7 +9,7 @@ const tipStyle = computed(() => props.money < 0 ? 'color: var(--color-text-error
 
 <template>
   <popoverTransition>
-    <span class="money-pop-tip-content" :style="tipStyle">{{ tipContent }}</span>
+    <span class="money-pop-tip-content" :style="tipStyle">{{ tipContent }}￥</span>
   </popoverTransition>
 </template>
 

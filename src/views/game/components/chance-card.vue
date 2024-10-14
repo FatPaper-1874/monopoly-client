@@ -12,7 +12,6 @@ const iconUrl = computed(() => {
 
 <template>
 	<div
-		v-chanceCardSource="chanceCard"
 		class="chance-card"
 		:class="{ disable }"
 		:style="{ border: `0.4em solid ${chanceCard.color}` }"
@@ -25,15 +24,15 @@ const iconUrl = computed(() => {
 
 <style lang="scss" scoped>
 .chance-card {
-	min-width: 9rem;
-	min-height: 12rem;
-	width: 9rem;
-	height: 12rem;
+	min-width: 11rem;
+	min-height: 14rem;
+	width: 11rem;
+	height: 14rem;
 	font-size: 0.8rem;
 	background-color: #ffffff;
 	box-sizing: border-box;
-	border-radius: 20px;
-	box-shadow: 0 0 12px rgba(0, 0, 0, 0.12);
+	border-radius: 2.2rem;
+	box-shadow: 0 0 .2rem rgba(0, 0, 0, 0.32);
 	user-select: none;
 	display: flex;
 	justify-content: center;
@@ -52,7 +51,7 @@ const iconUrl = computed(() => {
 		margin-bottom: 0.6em;
 
 		& > img {
-			$img-size: 4.4em;
+			$img-size: 5.2em;
 			width: $img-size;
 			height: $img-size;
 			pointer-events: none;
@@ -61,7 +60,7 @@ const iconUrl = computed(() => {
 	}
 
 	& > .name {
-		font-size: 1.3em;
+		font-size: 1.5em;
 		font-weight: 700;
 		margin-bottom: 0.8em;
 	}
@@ -69,7 +68,7 @@ const iconUrl = computed(() => {
 	& > .describe {
 		width: 80%;
 		font-weight: 700;
-		font-size: 0.75em;
+		font-size: 0.9em;
 		margin-bottom: 1em;
 		word-wrap: break-word;
 		overflow-y: scroll;

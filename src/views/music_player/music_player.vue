@@ -6,8 +6,10 @@ import { throttle } from "@/utils";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import MusicListItem from "@/views/music_player/components/music_list_item.vue";
 import { __PROTOCOL__ } from "@G/global.config";
+import { useSettig } from "@/store";
 
 const musicList = ref<Music[]>([]);
+const settingStore = useSettig();
 
 //播放器状态
 const currentMusic = ref<Music | undefined>();
@@ -112,12 +114,17 @@ async function loadMusicList() {
 	return musicList;
 }
 
+function handleMusicVolume(num: number) {
+	if ((num < 0 && settingStore.musicVolume >= 0.1) || (num > 0 && settingStore.musicVolume <= 0.9))
+		settingStore.musicVolume = parseFloat((settingStore.musicVolume + num).toFixed(2));
+}
+
 const isMusicListVisible = ref(false);
 
 onMounted(async () => {
 	initMusicPlayer();
 	musicList.value = await loadMusicList();
-	if (musicList.value?.length > 0) {
+	if (musicList.value?.length > 0 && settingStore.autoMusic) {
 		playMusic();
 	}
 });
@@ -136,6 +143,7 @@ onBeforeUnmount(() => {
 			@ended="handleMusicEnded"
 			ref="musicPlayerEl"
 			:src="currentMusic ? `${__PROTOCOL__}://${currentMusic.url}` : ''"
+			:volume="settingStore.musicVolume"
 			autoplay
 			loop
 		></audio>
@@ -161,6 +169,15 @@ onBeforeUnmount(() => {
 				:icon="isMusicListVisible ? 'angle-up' : 'bars'"
 			/>
 		</div>
+		<div class="volume-controls">
+			<div @click="handleMusicVolume(-0.1)" class="icon">
+				<FontAwesomeIcon icon="volume-low" />
+			</div>
+			<div class="volume-value">音量:{{ settingStore.musicVolume * 100 }}</div>
+			<div @click="handleMusicVolume(0.1)" class="icon">
+				<FontAwesomeIcon icon="volume-high" />
+			</div>
+		</div>
 		<div v-show="isMusicListVisible" class="music_list">
 			<div class="container">
 				<MusicListItem
@@ -182,7 +199,7 @@ onBeforeUnmount(() => {
 	top: 0;
 	min-width: 2.2rem;
 	height: 2.2rem;
-	border-radius: 0 0 0.5rem 0.5rem;
+	// border-radius: 0 0 0.5rem 0.5rem;
 	background-color: var(--color-second);
 	box-shadow: var(--box-shadow);
 	padding: 0.4rem;
@@ -226,6 +243,7 @@ onBeforeUnmount(() => {
 	position: relative;
 	overflow: hidden;
 	z-index: 1;
+	user-select: none;
 
 	& > * {
 		pointer-events: none;
@@ -300,6 +318,52 @@ onBeforeUnmount(() => {
 
 	& > .icon {
 		font-size: 1.2rem;
+	}
+}
+
+.volume-controls {
+	position: absolute;
+	width: 100%;
+	height: 2rem;
+	bottom: -2rem;
+	border-radius: 0 0 0.5rem 0.5rem;
+	background-color: var(--color-second);
+	box-shadow: var(--box-shadow);
+	z-index: -1;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0 0.8rem;
+	box-sizing: border-box;
+	gap: 0.4rem;
+
+	& > div {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.icon {
+		width: 1.5rem;
+		font-size: 1rem;
+		cursor: pointer;
+		padding: 0.3rem;
+		border-radius: 0.5rem;
+		&:hover {
+			background-color: var(--color-primary-110);
+		}
+	}
+
+	.volume-value {
+		flex: 1;
+		height: 1rem;
+		font-size: 0.9rem;
+		border-radius: 0.3rem;
+		text-align: center;
+		color: var(--color-second);
+		user-select: none;
+		padding: .1rem;
+		background-color: rgba(255, 255, 255, 0.75);
 	}
 }
 

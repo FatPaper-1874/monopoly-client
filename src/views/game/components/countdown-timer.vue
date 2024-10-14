@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useRoomInfo, useUtil } from "../../../store/index";
+import { useRoomInfo, useUtil } from "@/store/index";
 import { computed } from "vue";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 
@@ -39,7 +39,7 @@ const _blockWidth = computed(() => `${(_waitingFor.value.remainingTime / _roundT
 	box-sizing: border-box;
 	box-shadow: var(--box-shadow);
 	overflow: hidden;
-	transition: width 0.5s ease-in-out;
+	transition: width 0.3s ease-in-out;
 
 	position: relative;
 
@@ -48,7 +48,7 @@ const _blockWidth = computed(() => `${(_waitingFor.value.remainingTime / _roundT
 		left: 0;
 		top: 0;
 		height: 100%;
-		z-index: -1;
+		z-index: 1;
 		background-color: var(--color-second);
 		transition: width 0.3s ease-in-out;
 	}
@@ -56,6 +56,7 @@ const _blockWidth = computed(() => `${(_waitingFor.value.remainingTime / _roundT
 	& > .text {
 		color: var(--color-text-white);
 		white-space: nowrap;
+		z-index: 2;
 
 		& > * {
 			margin: 0 0.4rem;

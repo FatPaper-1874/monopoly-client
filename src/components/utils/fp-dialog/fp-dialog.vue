@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 const { visible, submitDisable } = defineProps({
 	visible: { type: Boolean, default: false },
 	submitDisable: { type: Boolean, default: false },
+	style: { type: String, default: "" },
 });
 
 const emits = defineEmits(["update:visible", "submit", "cancel"]);
@@ -21,11 +22,11 @@ function closeDialog() {
 </script>
 
 <template>
-	<div class="fp-dialog" :style="visible ? '' : 'display:none'">
+	<div class="fp-dialog" v-show="visible">
 		<div class="fp-dialog-modal" @click.self="closeDialog"></div>
 
 		<!-- 主体 -->
-		<div class="fp-dialog-main" v-if="visible">
+		<div class="fp-dialog-main" :style="style" v-if="visible">
 			<div class="fp-dialog-header">
 				<div class="title">
 					<slot name="title"></slot>
@@ -53,13 +54,14 @@ function closeDialog() {
 	top: 0;
 	left: 0;
 	width: 100%;
-	height: 100vh;
-	z-index: 99999;
+	height: 100%;
+	z-index: 9999999;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	transition: 0.3s;
 	pointer-events: initial;
+	box-sizing: border-box;
 
 	.fp-dialog-modal {
 		position: absolute;

@@ -7,15 +7,20 @@ type OperateListenerItem = {
 
 export class OperateListener {
 	private static instance: OperateListener;
-	private evetnMap: Map<string, Map<OperateType, OperateListenerItem[]>> = new Map();
+	private evetnMap: Map<string, Map<OperateType | string, OperateListenerItem[]>> = new Map();
 
 	constructor() {}
 
-	private setOperateListener(playerId: string, eventType: OperateType, fn: (args: any[]) => void, isOnce: boolean) {
+	private setOperateListener(
+		playerId: string,
+		eventType: OperateType | string,
+		fn: (args: any[]) => void,
+		isOnce: boolean
+	) {
 		if (!this.evetnMap.has(playerId)) {
 			this.evetnMap.set(playerId, new Map());
 		}
-		const eventTypeMap = this.evetnMap.get(playerId) as Map<OperateType, OperateListenerItem[]>;
+		const eventTypeMap = this.evetnMap.get(playerId) as Map<OperateType | string, OperateListenerItem[]>;
 		if (!eventTypeMap!.has(eventType)) {
 			eventTypeMap.set(eventType, []);
 		}
@@ -23,7 +28,7 @@ export class OperateListener {
 		eventList.push({ isOnce, fn });
 	}
 
-	public onAsync(playerId: string, eventType: OperateType, listener: (...args: any[]) => void): Promise<any> {
+	public onAsync(playerId: string, eventType: OperateType | string, listener: (...args: any[]) => void): Promise<any> {
 		return new Promise((resolve) => {
 			const newFn = (args: any) => {
 				resolve(listener(args));
@@ -32,7 +37,11 @@ export class OperateListener {
 		});
 	}
 
-	public onceAsync(playerId: string, eventType: OperateType, listener: (...args: any[]) => void): Promise<any> {
+	public onceAsync(
+		playerId: string,
+		eventType: OperateType | string,
+		listener: (...args: any[]) => void
+	): Promise<any> {
 		return new Promise((resolve) => {
 			const newFn = (args: any) => {
 				resolve(listener(args));
@@ -41,15 +50,15 @@ export class OperateListener {
 		});
 	}
 
-	public on(playerId: string, eventType: OperateType, listener: (...args: any[]) => void) {
+	public on(playerId: string, eventType: OperateType | string, listener: (...args: any[]) => void) {
 		this.setOperateListener(playerId, eventType, listener, false);
 	}
 
-	public once(playerId: string, eventType: OperateType, listener: (...args: any[]) => void) {
+	public once(playerId: string, eventType: OperateType | string, listener: (...args: any[]) => void) {
 		this.setOperateListener(playerId, eventType, listener, true);
 	}
 
-	public remove(playerId: string, eventType: OperateType, callback: (...args: any[]) => void) {
+	public remove(playerId: string, eventType: OperateType | string, callback: (...args: any[]) => void) {
 		const playerEvents = this.evetnMap.get(playerId);
 		if (!playerEvents) return;
 		const eventTypeMap = playerEvents.get(eventType);
@@ -58,7 +67,7 @@ export class OperateListener {
 		eventTypeMap.splice(removeIndex, 1);
 	}
 
-	public removeAll(playerId: string, eventType?: OperateType) {
+	public removeAll(playerId: string, eventType?: OperateType | string) {
 		const playerEvents = this.evetnMap.get(playerId);
 		if (!playerEvents) return;
 		if (eventType) {
@@ -68,7 +77,7 @@ export class OperateListener {
 		}
 	}
 
-	public emit(playerId: string, eventType: OperateType, ...args: any[]): boolean {
+	public emit(playerId: string, eventType: OperateType | string, ...args: any[]): boolean {
 		const playerEvents = this.evetnMap.get(playerId);
 		if (!playerEvents) return false;
 		const eventTypeMap = playerEvents.get(eventType);

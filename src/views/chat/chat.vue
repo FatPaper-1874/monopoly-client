@@ -122,7 +122,7 @@ function handleChatShow(e: Event) {
 	}
 
 	.chat_input-container {
-		width: 100%;
+		width: max-content;
 		display: flex;
 		justify-content: space-between;
 		background-color: var(--color-second);
@@ -134,12 +134,14 @@ function handleChatShow(e: Event) {
 
 		& > input {
 			flex: 1;
+			width: 20rem;
 			height: 1.8rem;
 			line-height: 1.8rem;
 			border-radius: 0.3rem;
 			margin-right: 0.6rem;
 			caret-color: var(--color-primary);
 			font-size: unset;
+			box-sizing: border-box;
 		}
 
 		& > input[type="submit"] {

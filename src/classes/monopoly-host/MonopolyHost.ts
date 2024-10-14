@@ -39,7 +39,6 @@ export class MonopolyHost {
 		this.startHeartCheck();
 		peer.on("connection", (conn) => {
 			let clientUserId = "";
-			this.clientList.set(conn.connectionId, conn);
 			conn.once("data", (data: any) => {
 				const _data: SocketMessage = JSON.parse(data);
 				const user = _data.data as User;
@@ -79,6 +78,7 @@ export class MonopolyHost {
 					if (_data.type === SocketMsgType.JoinRoom) {
 						if (!this.room) throw Error("在房间没创建时加入了房间");
 						clientUserId = user.userId;
+						this.clientList.set(user.userId, conn);
 						this.room.join(user, conn);
 					}
 				}
@@ -107,6 +107,12 @@ export class MonopolyHost {
 						break;
 					case SocketMsgType.ReadyToggle:
 						_this.handleReadyToggle(conn, socketMessage, clientUserId);
+						break;
+					case SocketMsgType.KickOut:
+						_this.handleKickOut(conn, socketMessage, clientUserId);
+						break;
+					case SocketMsgType.ChangeColor:
+						_this.handleChangeColor(conn, socketMessage, clientUserId);
 						break;
 					case SocketMsgType.ChangeRole:
 						_this.handleChangeRole(conn, socketMessage, clientUserId);
@@ -227,6 +233,29 @@ export class MonopolyHost {
 		this.room.readyToggle(clientUserId);
 	}
 
+	private handleKickOut(socketClient: DataConnection, data: SocketMessage, clientUserId: string) {
+		const playerId = data.data;
+		console.log("🚀 ~ MonopolyHost ~ handleKickOut ~ playerId:", playerId);
+		const player = this.clientList.get(playerId);
+		console.log("🚀 ~ MonopolyHost ~ handleKickOut ~ this.clientList:", this.clientList);
+		console.log("🚀 ~ MonopolyHost ~ handleKickOut ~ player:", player);
+		if (player) {
+			player.send(
+				JSON.stringify(<SocketMessage>{
+					type: SocketMsgType.KickOut,
+					source: "server",
+					data: "",
+				})
+			);
+			this.room.leave(playerId);
+			this.clientList.delete(playerId);
+		}
+	}
+
+	private handleChangeColor(socketClient: DataConnection, data: SocketMessage, clientUserId: string) {
+		this.room.changeColor(clientUserId, data.data);
+	}
+
 	private handleChangeRole(socketClient: DataConnection, data: SocketMessage, clientUserId: string) {
 		this.room.changeRole(clientUserId, data.data);
 	}
@@ -262,7 +291,7 @@ export class MonopolyHost {
 	}
 
 	private handleAnimationComplete(socketClient: DataConnection, data: SocketMessage, clientUserId: string) {
-		const operateType: OperateType = data.data;
+		const operateType: OperateType | string = data.data;
 		this.room.emitOperationToWorker(clientUserId, operateType);
 	}
 
@@ -568,6 +597,16 @@ class Room {
 		}
 	}
 
+	public changeColor(_userId: string, color: string): void {
+		const user = this.userList.get(_userId);
+		if (user) {
+			user.color = color;
+			this.roomInfoBroadcast();
+		} else {
+			return;
+		}
+	}
+
 	public changeRole(_userId: string, operate: ChangeRoleOperate): void {
 		const user = this.userList.get(_userId);
 		if (user) {
@@ -602,7 +641,7 @@ class Room {
 	public async startGame() {
 		if (!Array.from(this.userList.values()).every((item) => item.userId == this.ownerId || item.isReady)) {
 			this.roomBroadcast({
-				type: SocketMsgType.GameStart,
+				type: SocketMsgType.MsgNotify,
 				source: "server",
 				data: "error",
 				msg: { type: "warning", content: "有玩家未准备" },
@@ -610,6 +649,11 @@ class Room {
 			return;
 		}
 		if (this.isStarted || this.gameProcess) return;
+		this.roomBroadcast({
+			type: SocketMsgType.GameStart,
+			source: "server",
+			data: "start",
+		});
 		this.isStarted = true;
 		this.gameProcess = new GameProcessWorker();
 		this.gameProcess.addEventListener("message", (ev) => {
@@ -685,7 +729,7 @@ class Room {
 		return user.isOffLine;
 	}
 
-	public emitOperationToWorker(userId: string, operateType: OperateType, ...data: any) {
+	public emitOperationToWorker(userId: string, operateType: OperateType | string, ...data: any) {
 		if (!this.gameProcess) throw Error("在worker还没创建时给worker发信息");
 		this.gameProcess.postMessage(<WorkerCommMsg>{
 			type: WorkerCommType.EmitOperation,

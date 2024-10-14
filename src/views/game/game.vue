@@ -9,8 +9,9 @@ import Dices from "./components/dices.vue";
 import ChanceCardContainer from "./components/chance-card-container.vue";
 import CountdownTimer from "./components/countdown-timer.vue";
 import scoreboard from "./components/scoreboard.vue";
-import GameInfo from "@/views/game/components/game-info.vue";
+import RoundInfo from "@/views/game/components/round-info.vue";
 import ProgressBar from "@/views/game/components/progress-bar.vue";
+import PlayerContainer from "./components/player-container.vue";
 
 //pinia仓库
 const gameInfoStore = useGameInfo();
@@ -70,27 +71,31 @@ onBeforeUnmount(() => {
 				<ProgressBar />
 			</div>
 
-			<div class="game-info ui-item">
-				<GameInfo />
+			<div class="round-info ui-item">
+				<RoundInfo />
 			</div>
 
-			<div class="tool-bar">
+			<div class="player-contianer ui-item">
+				<PlayerContainer />
+			</div>
+
+			<div class="tool-bar ui-item">
 				<button class="border-button lock-camera" @click="handleToggleLockCamera">
 					<FontAwesomeIcon :icon="lockCameraIcon" />
 				</button>
 			</div>
 
-			<div class="chance-card-container">
+			<div class="chance-card-container ui-item">
 				<ChanceCardContainer />
 			</div>
 
-			<div class="dice">
+			<div class="dice ui-item">
 				<Dices @click="handleRollDice"></Dices>
 			</div>
-		</div>
 
-		<div class="countdown-timer">
-			<CountdownTimer />
+			<div class="countdown-timer ui-item">
+				<CountdownTimer />
+			</div>
 		</div>
 
 		<scoreboard />
@@ -125,48 +130,6 @@ onBeforeUnmount(() => {
 	}
 }
 
-.progress-bar {
-	position: absolute;
-	left: 0;
-	top: 50%;
-	transform: translateY(-50%);
-}
-
-.game-info {
-	top: 0;
-	right: 0;
-}
-
-.countdown-timer {
-	position: absolute;
-	top: 15%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-	z-index: 5000;
-}
-
-.tool-bar {
-	position: absolute;
-	right: 0;
-	top: 0;
-	display: none;
-	justify-content: space-between;
-	pointer-events: none;
-}
-
-.chance-card-container {
-	position: absolute;
-	left: 50%;
-	bottom: 0;
-	transform: translateX(-50%);
-}
-
-.dice {
-	position: absolute;
-	right: 0.4rem;
-	bottom: 0.4rem;
-}
-
 .ui-container,
 #game-canvas {
 	position: absolute;
@@ -191,6 +154,54 @@ onBeforeUnmount(() => {
 
 	.ui-item {
 		position: absolute;
+
+		&.progress-bar {
+			position: absolute;
+			left: 0;
+			top: 50%;
+			transform: translateY(-50%);
+		}
+
+		&.round-info {
+			top: 0;
+			left: 50%;
+			transform: translateX(-50%);
+		}
+
+		&.player-contianer {
+			top: 4.2rem;
+			right: 0;
+		}
+
+		&.countdown-timer {
+			position: absolute;
+			top: 15%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			z-index: 5000;
+		}
+
+		&.tool-bar {
+			position: absolute;
+			right: 0;
+			top: 0;
+			display: none;
+			justify-content: space-between;
+			pointer-events: none;
+		}
+
+		&.chance-card-container {
+			position: absolute;
+			left: 50%;
+			bottom: 0;
+			transform: translateX(-50%);
+		}
+
+		&.dice {
+			position: absolute;
+			right: 0.4rem;
+			bottom: 0.4rem;
+		}
 	}
 
 	& * {

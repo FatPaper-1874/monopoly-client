@@ -111,7 +111,7 @@ export const useGameInfo = defineStore("gameInfo", {
 		};
 	},
 	getters: {
-		isMyTurn: (state) => useUserInfo().userId === state.currentPlayerInRound,
+		isMyTurn: (state) => useUserInfo().userId === state.currentPlayerIdInRound,
 		getMyInfo: (state) => state.playersList.find((p) => p.id === useUserInfo().userId),
 	},
 });

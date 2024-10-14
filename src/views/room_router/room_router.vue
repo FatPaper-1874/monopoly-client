@@ -58,7 +58,8 @@ function handleLogout() {
 	router.replace({ name: "login" });
 }
 
-async function joinRoom() {
+async function joinRoom(e: Event) {
+	e.preventDefault();
 	const _roomId = roomId.value;
 	if (!_roomId) {
 		FPMessage({ type: "error", message: "请输入房间号" });
@@ -97,10 +98,10 @@ async function joinRoom() {
 				·输入房间号可加入房间，第一个使用房间号的将成为主机(房主)<br />
 				·建议使用稍微复杂的房间号(防止误入别人的房间)<br />
 			</div>
-			<div>
+			<form @submit="joinRoom">
 				<input v-model="roomId" type="text" placeholder="房间号(1-12个字符)" />
-				<button @click="joinRoom">加入/创建房间</button>
-			</div>
+				<button type="submit">加入/创建房间</button>
+			</form>
 		</div>
 	</div>
 </template>

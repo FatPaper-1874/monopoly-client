@@ -2,6 +2,7 @@ import { ChanceCardType } from "@/enums/game";
 import { ChanceCard as ChanceCardFromDB, ChanceCardInfo } from "@/interfaces/game";
 import { ChanceCardInterface, PlayerInterface, PropertyInterface } from "../interface";
 import { GameProcess } from "../GameProcessWorker";
+import { randomString } from "@/utils";
 
 export class ChanceCard implements ChanceCardInterface {
 	private id: string;
@@ -14,7 +15,7 @@ export class ChanceCard implements ChanceCardInterface {
 	private effectFunction: Function;
 
 	constructor(chanceCard: ChanceCardFromDB) {
-		this.id = crypto.randomUUID();
+		this.id = randomString(16);
 		this.name = chanceCard.name;
 		this.describe = chanceCard.describe;
 		this.type = chanceCard.type;

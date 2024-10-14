@@ -21,7 +21,7 @@ const routes = [
 	{
 		path: "/room-router",
 		name: "room-router",
-		component: componentLoadedInterceptor(import("@/views/room-router/room-router.vue")),
+		component: componentLoadedInterceptor(import("@/views/room_router/room_router.vue")),
 	},
 	{ path: "/room", name: "room", component: componentLoadedInterceptor(import("@/views/room/room.vue")) },
 	{ path: "/game", name: "game", component: componentLoadedInterceptor(import("@/views/game/game.vue")) },

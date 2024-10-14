@@ -38,7 +38,7 @@ import PropertyInfoCard from "@/views/game/utils/components/property-info-card.v
 import ArrivedEventCard from "@/views/game/utils/components/arrived-event-card.vue";
 import moneyPopTip from "@/views/game/components/money-pop-tip.vue";
 import { loadHouseModels } from "@/views/game/utils/house-loader";
-import { debounce, getScreenPosition, throttle } from "@/utils";
+import { debounce, getScreenPosition, isMobileDevice, throttle } from "@/utils";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
 import { OutlinePass } from "three/examples/jsm/postprocessing/OutlinePass";
@@ -99,6 +99,7 @@ export class GameRenderer {
 		this.canvas = canvas;
 		this.renderer = new WebGLRenderer({ canvas, antialias: true });
 		this.renderer.outputColorSpace = SRGBColorSpace;
+		this.renderer.setPixelRatio(window.devicePixelRatio);
 
 		this.scene = new Scene();
 		this.camera = new PerspectiveCamera(45, canvas.width / canvas.height, 0.1, 1000);
@@ -155,7 +156,6 @@ export class GameRenderer {
 		controls.minDistance = 1;
 		controls.maxPolarAngle = Math.PI / 2;
 		controls.minPolarAngle = Math.PI / 3;
-		controls.enableDamping = true;
 		controls.update();
 		this.controls = controls;
 
@@ -205,12 +205,21 @@ export class GameRenderer {
 
 		// 创建轨道控制器
 
-		const onPointerMove = (event: MouseEvent) => {
-			// 将鼠标位置归一化为设备坐标。x 和 y 方向的取值范围是 (-1 to +1)
-			pointer.x = (event.clientX / this.canvas.clientWidth) * 2 - 1;
-			pointer.y = -(event.clientY / this.canvas.clientHeight) * 2 + 1;
-		};
-		window.addEventListener("pointermove", onPointerMove);
+		if (isMobileDevice()) {
+			const onPointerMove = (event: TouchEvent) => {
+				const touch = event.touches[0];
+				pointer.x = (touch.clientX / this.canvas.clientWidth) * 2 - 1;
+				pointer.y = -(touch.clientY / this.canvas.clientHeight) * 2 + 1;
+			};
+			window.addEventListener("touchmove", onPointerMove);
+		} else {
+			const onPointerMove = (event: MouseEvent) => {
+				// 将鼠标位置归一化为设备坐标。x 和 y 方向的取值范围是 (-1 to +1)
+				pointer.x = (event.clientX / this.canvas.clientWidth) * 2 - 1;
+				pointer.y = -(event.clientY / this.canvas.clientHeight) * 2 + 1;
+			};
+			window.addEventListener("pointermove", onPointerMove);
+		}
 
 		const loop = () => {
 			this.requestAnimationFrameId = requestAnimationFrame(loop);
@@ -489,7 +498,7 @@ export class GameRenderer {
 	private addPlayerMoveWatcher() {
 		const mapDataStore = useMapData();
 
-		useEventBus().on("player-walk", async (walkPlayerId: string, step: number) => {
+		useEventBus().on("player-walk", async (walkPlayerId: string, step: number, walkId: string) => {
 			//拆散重叠的玩家模型;
 			// this.breakUpPlayersInSameMapItem();
 
@@ -510,7 +519,7 @@ export class GameRenderer {
 
 				//拆散重叠的玩家模型;
 				this.breakUpPlayersInSameMapItem();
-				useMonopolyClient().AnimationComplete();
+				useMonopolyClient().AnimationComplete(walkId);
 			}
 		});
 
@@ -1009,10 +1018,18 @@ export class GameRenderer {
 
 		const { css2DObject, appInstance, unmount } = createCSS2DObjectFromVue(component, props);
 
-		position.y += playerEntity.size + 0.1;
-		position.z += playerEntity.size / 2;
+		position.x += playerEntity.size * (Math.random() - 0.5) * 0.1;
+		position.y += playerEntity.size / 2;
+		position.z += playerEntity.size * (Math.random() - 0.5) * 0.1;
 		css2DObject.position.copy(position);
 		this.scene.add(css2DObject);
+		if (delay)
+			gsap.to(css2DObject.position, {
+				x: position.x + (Math.random() - 0.5),
+				y: position.y + (Math.random() - 0.5),
+				z: position.z + (Math.random() - 0.5),
+				duration: delay / 1000,
+			});
 		delay && setTimeout(unmount, delay);
 	}
 

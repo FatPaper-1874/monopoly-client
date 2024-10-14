@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { PlayerInfo } from "@/interfaces/game";
-import { PropType, computed } from "vue";
+import { PropType, computed, ref } from "vue";
 import { useGameInfo } from "@/store/index";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { __PROTOCOL__ } from "@G/global.config";
@@ -12,10 +12,7 @@ import { __PROTOCOL__ } from "@G/global.config";
 
 const props = defineProps<{ player: PlayerInfo; roundMark: boolean }>();
 
-const gameInfoStroe = useGameInfo();
-
 const _userInfo = computed(() => props.player.user);
-const _isMyTrun = computed(() => gameInfoStroe.currentPlayerInRound === props.player.id);
 const _isBankrupted = computed(() => props.player.isBankrupted);
 const avatarSrc = computed(() => {
 	return _userInfo.value.avatar ? `${__PROTOCOL__}://${_userInfo.value.avatar}` : "";
@@ -26,8 +23,13 @@ const avatarSrc = computed(() => {
 	<div
 		class="player-card"
 		:class="{ is_bankrupted: _isBankrupted }"
-		:style="{ 'border-color': _isMyTrun ? 'var(--color-third)' : '' }"
+		:style="{ 'border-color': roundMark ? 'var(--color-third)' : '' }"
 	>
+
+		<div :style="{ color: _userInfo.color }" class="card-num">
+			<FontAwesomeIcon icon="wand-sparkles" style="margin-right: 0.3rem" />{{ player.chanceCards.length }}
+		</div>
+
 		<div class="avatar">
 			<div v-if="player.isOffline" class="disconnect-marker">
 				<FontAwesomeIcon icon="link-slash" />
@@ -35,6 +37,7 @@ const avatarSrc = computed(() => {
 			<img v-if="avatarSrc" :src="avatarSrc" />
 			<FontAwesomeIcon v-else :style="{ color: _userInfo.color }" icon="gamepad" />
 		</div>
+
 		<div class="info" :style="{ color: _userInfo.color }">
 			<span class="username">{{ _userInfo.username }}</span>
 			<span class="money">￥{{ player.money }}</span>
@@ -48,14 +51,28 @@ const avatarSrc = computed(() => {
 	min-width: 11rem;
 	display: flex;
 	justify-content: space-around;
+	align-items: center;
 	border-radius: 0.8rem;
-	padding: 0.3rem 0.6rem;
+	padding: 0.4rem 0.6rem;
 	background-color: rgba($color: #ffffff, $alpha: 0.85);
 	backdrop-filter: blur(3px);
 	border: 0.25rem solid rgba($color: #ffffff, $alpha: 0.85);
 	box-sizing: border-box;
 	user-select: none;
 	margin: 0.2rem 0;
+	cursor: pointer;
+
+	& > .card-num {
+		position: absolute;
+		left: 0;
+		bottom: 0;
+		z-index: 1;
+		padding: 0.2rem 0.4rem;
+		border-radius: 0 0.8rem 0 0.8rem;
+		background-color: rgba($color: #ffffff, $alpha: 0.75);
+		text-shadow: var(--text-shadow-surround-white);
+		font-size: 1.1rem;
+	}
 
 	&.is_bankrupted {
 		position: relative;
@@ -115,7 +132,7 @@ const avatarSrc = computed(() => {
 	}
 
 	& > .info {
-		margin: 0 0.4rem;
+		margin: 0 0.6rem;
 		display: flex;
 		flex-direction: column;
 		justify-content: space-around;
@@ -128,4 +145,3 @@ const avatarSrc = computed(() => {
 	}
 }
 </style>
-@/global.config

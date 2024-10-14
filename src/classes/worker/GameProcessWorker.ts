@@ -2,7 +2,7 @@ import { ChanceCard as ChanceCardFromDB, GameInfo, GameInitInfo, GameMap, MapIte
 import { Player } from "./class/Player";
 import { Property } from "./class/Property";
 import { User, UserInRoomInfo, GameSetting, SocketMessage } from "@/interfaces/bace";
-import { getRandomInteger } from "@/utils";
+import { getRandomInteger, randomString } from "@/utils";
 import { ChanceCardType, GameOverRule, OperateType } from "@/enums/game";
 import { ChanceCard } from "./class/ChanceCard";
 import { PlayerEvents } from "./enums/game";
@@ -130,19 +130,20 @@ export class GameProcess {
 
 			player.setCardsList(this.getRandomChanceCard(4));
 
-			player.addEventListener(PlayerEvents.SetMoney, () => {
+			player.addEventListener(PlayerEvents.AfterSetMoney, () => {
 				this.gameOverCheck();
 			});
 
-			player.addEventListener(PlayerEvents.Cost, () => {
+			player.addEventListener(PlayerEvents.AfterCost, () => {
 				this.gameOverCheck();
 			});
 
 			player.addEventListener(PlayerEvents.Walk, async (step: number) => {
+				const walkId = randomString(16);
 				const msg: SocketMessage = {
 					type: SocketMsgType.PlayerWalk,
 					source: "server",
-					data: { playerId: player.getId(), step },
+					data: { playerId: player.getId(), step, walkId },
 				};
 				player.setPositionIndex((player.getPositionIndex() + step) % this.mapInfo.indexList.length);
 				this.gameInfoBroadcast();
@@ -151,13 +152,13 @@ export class GameProcess {
 				//在计划的动画完成事件后取消监听, 防止客户端因特殊情况没有发送动画完成的指令造成永久等待
 				const animationDuration = this.animationStepDuration_ms * (this.dice.getResultNumber() + 5);
 				let animationTimer = setTimeout(() => {
-					operateListener.emit(player.getId(), OperateType.Animation);
+					operateListener.emit(player.getId(), OperateType.Animation + walkId);
 				}, animationDuration);
-				await operateListener.onceAsync(player.getId(), OperateType.Animation, () => {
-					console.log("收到动画回调", Date.now());
+				await operateListener.onceAsync(player.getId(), OperateType.Animation + walkId, () => {
 					clearTimeout(animationTimer);
 				});
 				player.emit(PlayerEvents.AnimationFinished);
+				return step;
 			});
 
 			player.addEventListener(PlayerEvents.Tp, async (positionIndex: number) => {
@@ -179,15 +180,16 @@ export class GameProcess {
 					clearTimeout(animationTimer);
 				});
 				player.emit(PlayerEvents.AnimationFinished);
+				return positionIndex;
 			});
 
-			player.addEventListener(PlayerEvents.GainCard, (num: number) => {
-				const cardsList = player.getCardsList();
-				const addCardsList = this.getRandomChanceCard(num);
-				player.setCardsList(cardsList.concat(addCardsList));
-			});
+			// player.addEventListener(PlayerEvents.AfterGainCard, (num: number) => {
+			// 	const cardsList = player.getCardsList();
+			// 	const addCardsList = this.getRandomChanceCard(num);
+			// 	player.setCardsList(cardsList.concat(addCardsList));
+			// });
 
-			player.addEventListener(PlayerEvents.SetBankrupted, (isBankrupted: boolean) => {
+			player.addEventListener(PlayerEvents.AfterSetBankrupted, (isBankrupted: boolean) => {
 				if (isBankrupted) {
 					//破产剥夺财产
 					Array.from(this.propertyList.values()).map((property) => {
@@ -291,7 +293,6 @@ export class GameProcess {
 	private async gameLoop() {
 		this.roundTimeTimer.setIntervalFunction(this.roundRemainingTimeBroadcast);
 		while (!this.isGameOver) {
-			console.log("🚀 ~ GameProcess ~ gameLoop ~ this.isGameOver):", this.isGameOver);
 			let currentPlayerIndex = 0;
 			while (currentPlayerIndex < this.playerList.length) {
 				this.gameInfoBroadcast();
@@ -325,10 +326,13 @@ export class GameProcess {
 	}
 
 	private async gameRound(currentPlayer: Player) {
+		await currentPlayer.emit(PlayerEvents.BeforeRound, currentPlayer);
+		this.gameInfoBroadcast();
 		this.roundTimeTimer.setTimeOutFunction(null); //开始倒计时
 		this.useChanceCardListener(currentPlayer);
 		await this.waitRollDice(currentPlayer); //监听投骰子
 		await this.handleArriveEvent(currentPlayer); //处理玩家到达某个格子的事件
+		await currentPlayer.emit(PlayerEvents.AfterRound, currentPlayer);
 	}
 
 	private async useChanceCardListener(sourcePlayer: Player) {
@@ -735,7 +739,7 @@ export class GameProcess {
 	}
 
 	public handlePlayerReconnect(userId: string) {
-		console.log("🚀 ~ GameProcess ~ handlePlayerReconnect ~ userId:", userId)
+		console.log("🚀 ~ GameProcess ~ handlePlayerReconnect ~ userId:", userId);
 		const player = this.playerList.find((player) => player.getUser().userId === userId);
 		if (player) {
 			player.setIsOffline(false);

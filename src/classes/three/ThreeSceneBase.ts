@@ -14,6 +14,7 @@ export class ThreeSceneBase {
 		this.canvasEl = canvas;
 		this.renderer = new THREE.WebGLRenderer({ canvas });
 		this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+		this.renderer.setPixelRatio(window.devicePixelRatio);
 		this.scene = new THREE.Scene();
 		this.camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
 		// this.renderLoop();
@@ -80,6 +81,7 @@ export class ThreeSceneBase {
 		if (gl) {
 			const e = gl.getExtension("WEBGL_lose_context");
 			e && e.loseContext();
+			gl = null;
 		}
 	}
 }
