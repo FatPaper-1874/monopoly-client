@@ -57,6 +57,7 @@ import {
 	faSquareCheck,
 	faVolumeLow,
 	faVolumeHigh,
+	faQuestion,
 } from "@fortawesome/free-solid-svg-icons";
 import { chanceCardSource } from "./directives/chanceCardDrag";
 import { useDeviceStatus, useSettig } from "@/store";
@@ -105,6 +106,7 @@ library.add(
 	faSquareCheck,
 	faVolumeLow,
 	faVolumeHigh,
+	faQuestion,
 );
 const pinia = createPinia();
 
@@ -136,11 +138,11 @@ function initDeviceStatusListener() {
 	deviceStatus.isLandscape = _isLandscape();
 	deviceStatus.isMobile = isMobileDevice();
 	deviceStatus.isFocus = document.visibilityState === "visible";
-	if (isMobileDevice()) {
-		document.addEventListener("touchstart", function (e) {
-			e.preventDefault();
-		});
-	}
+	// if (isMobileDevice()) {
+	// 	document.addEventListener("touchstart", function (e) {
+	// 		e.preventDefault();
+	// 	});
+	// }
 
 	window.addEventListener("fullscreenchange", (e) => {
 		deviceStatus.isFullScreen = _isFullScreen();

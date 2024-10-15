@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import Ping from "./components/ping.vue";
-import FullScreenButton from "./components/full-screen-button.vue";
 import { computed } from "vue";
 import { useRoute } from "vue-router";
+import Ping from "./components/ping.vue";
+import FullScreenButton from "./components/full-screen-button.vue";
 import SettingButton from "./components/setting-button.vue";
+import Help from "./components/help.vue";
 
 const router = useRoute();
 const canChat = computed(() => router.name === "room" || router.name === "game");
@@ -13,6 +14,7 @@ const canChat = computed(() => router.name === "room" || router.name === "game")
 	<div class="status-bar">
 		<Ping v-if="canChat" />
 		<FullScreenButton />
+		<Help />
 		<SettingButton />
 	</div>
 </template>

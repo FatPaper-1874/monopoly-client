@@ -30,7 +30,9 @@ const _canUseChanceCard = computed(() => utilStore.canUseCard);
 
 <template>
 	<div class="chance-card-container-vue" :style="{ '--num': _chanceCardsList.length }">
-		<div class="tips">{{ cardUseModeMap[settingStore.cardUseMode] }}卡片使用机会卡</div>
+		<div v-show="utilStore.canUseCard" class="tips">
+			{{ cardUseModeMap[settingStore.cardUseMode] }}卡片使用机会卡，一回合使用一张
+		</div>
 		<TransitionGroup name="card">
 			<ChanceCard
 				v-chanceCardSource="card"
@@ -83,7 +85,7 @@ const _canUseChanceCard = computed(() => utilStore.canUseCard);
 
 	& > .tips {
 		background-color: rgba(0, 0, 0, 0.25);
-		opacity: 0.6;
+		opacity: 0.5;
 		padding: 0.3rem;
 		border-radius: 0.5rem;
 		color: var(--color-primary);
@@ -93,7 +95,7 @@ const _canUseChanceCard = computed(() => utilStore.canUseCard);
 		margin-bottom: 0.3rem;
 		position: absolute;
 		bottom: 0;
-		z-index: 1;
+		z-index: 1;text-wrap: nowrap;
 	}
 
 	//& > .bg {
