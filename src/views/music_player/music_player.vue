@@ -173,7 +173,7 @@ onBeforeUnmount(() => {
 			<div @click="handleMusicVolume(-0.1)" class="icon">
 				<FontAwesomeIcon icon="volume-low" />
 			</div>
-			<div class="volume-value">音量:{{ settingStore.musicVolume * 100 }}</div>
+			<div class="volume-value">音量: {{ settingStore.musicVolume * 100 }}</div>
 			<div @click="handleMusicVolume(0.1)" class="icon">
 				<FontAwesomeIcon icon="volume-high" />
 			</div>
@@ -201,7 +201,7 @@ onBeforeUnmount(() => {
 	height: 2.2rem;
 	// border-radius: 0 0 0.5rem 0.5rem;
 	background-color: var(--color-second);
-	box-shadow: var(--box-shadow);
+	box-shadow: 0px 0px 2px rgba(0, 0, 0, .12);
 	padding: 0.4rem;
 	box-sizing: border-box;
 	display: flex;
@@ -328,12 +328,12 @@ onBeforeUnmount(() => {
 	bottom: -2rem;
 	border-radius: 0 0 0.5rem 0.5rem;
 	background-color: var(--color-second);
-	box-shadow: var(--box-shadow);
+	box-shadow: 0px 1px 2px rgba(0, 0, 0, .12);
 	z-index: -1;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	padding: 0 0.8rem;
+	padding: 0 0.2rem;
 	box-sizing: border-box;
 	gap: 0.4rem;
 
