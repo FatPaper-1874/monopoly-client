@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { PlayerInfo } from "@/interfaces/game";
-import { PropType, computed, ref } from "vue";
+import { PropType, computed, ref, watch } from "vue";
 import { useGameInfo } from "@/store/index";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { __PROTOCOL__ } from "@G/global.config";
@@ -12,11 +12,28 @@ import { __PROTOCOL__ } from "@G/global.config";
 
 const props = defineProps<{ player: PlayerInfo; roundMark: boolean }>();
 
+const displayNumber = ref(0);
+
 const _userInfo = computed(() => props.player.user);
 const _isBankrupted = computed(() => props.player.isBankrupted);
 const avatarSrc = computed(() => {
 	return _userInfo.value.avatar ? `${__PROTOCOL__}://${_userInfo.value.avatar}` : "";
 });
+
+watch(
+	() => props.player.money,
+	(newValue) => {
+		gsap.to(displayNumber, {
+			duration: 0.5,
+			value: newValue,
+			roundProps: "value",
+			onUpdate: () => {
+				displayNumber.value = Math.round(Number(gsap.getProperty(displayNumber, "value")));
+			},
+		});
+	},
+	{ immediate: true }
+);
 </script>
 
 <template>
@@ -25,7 +42,6 @@ const avatarSrc = computed(() => {
 		:class="{ is_bankrupted: _isBankrupted }"
 		:style="{ 'border-color': roundMark ? 'var(--color-third)' : '' }"
 	>
-
 		<div :style="{ color: _userInfo.color }" class="card-num">
 			<FontAwesomeIcon icon="wand-sparkles" style="margin-right: 0.3rem" />{{ player.chanceCards.length }}
 		</div>
@@ -40,7 +56,7 @@ const avatarSrc = computed(() => {
 
 		<div class="info" :style="{ color: _userInfo.color }">
 			<span class="username">{{ _userInfo.username }}</span>
-			<span class="money">￥{{ player.money }}</span>
+			<span class="money">￥{{ displayNumber }}</span>
 		</div>
 	</div>
 </template>
