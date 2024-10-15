@@ -1,6 +1,7 @@
 import {
 	AmbientLight,
 	Box3,
+	BoxHelper,
 	Color,
 	DirectionalLight,
 	DoubleSide,
@@ -49,6 +50,7 @@ import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectio
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
 import { storeToRefs } from "pinia";
 import { __PROTOCOL__ } from "@G/global.config";
+import { TextSprite } from "../three/TextSprite";
 
 const BLOCK_HEIGHT = 0.09;
 const PLAY_MODEL_SIZE = 0.7;
@@ -70,7 +72,10 @@ export class GameRenderer {
 	private mapItems: Map<string, Group> = new Map<string, Group>();
 	private playerEntities: Map<string, PlayerEntity> = new Map<string, PlayerEntity>();
 	private housesModules: Map<string, Group> = new Map<string, Group>();
-	private housesItems: Map<string, Group> = new Map<string, Group>();
+	private housesItems: Map<string, { group: Group; textSprite: TextSprite }> = new Map<
+		string,
+		{ group: Group; textSprite: TextSprite }
+	>();
 	private arrivedEventIcons: Map<string, Mesh> = new Map<string, Mesh>();
 	private playerPosition: Map<string, number> = new Map<string, number>();
 	private requestAnimationFrameId: number = -1;
@@ -273,11 +278,20 @@ export class GameRenderer {
 		//加载地皮
 		const gameInfo = useGameInfo();
 		gameInfo.propertiesList.forEach((property) => {
+			const textSprite = new TextSprite(`${property.name}\n可购买: ${property.sellCost}￥`, 64, "#000000", 10, 82);
+			textSprite.getSprite().scale.set(2.5, 2.5, 2.5);
+			this.housesItems.set(property.id, {
+				group: new Group(),
+				textSprite: textSprite,
+			});
 			this.updateBuilding(property);
 		});
 
 		//监听地皮等级，进行升级的时候改变模型
 		this.addPropertyLevelWatcher();
+
+		//监听倍数变化，实时更新房屋的显示
+		this.addMultiplierWatcher();
 	}
 
 	private async initPlayer() {
@@ -360,7 +374,7 @@ export class GameRenderer {
 		// 通过摄像机和鼠标位置更新射线
 		raycaster.setFromCamera(pointer, this.camera);
 
-		const intersects = raycaster.intersectObjects(Array.from(this.housesItems.values()));
+		const intersects = raycaster.intersectObjects(Array.from(this.housesItems.values()).map((h) => h.group));
 		if (intersects.length > 0) {
 			const intersect = intersects[0];
 			const target = intersect.object.parent as Group;
@@ -572,6 +586,32 @@ export class GameRenderer {
 		);
 	}
 
+	private addMultiplierWatcher() {
+		const gameInfoStore = useGameInfo();
+		this.commonWatchers.push(
+			watch(
+				() => gameInfoStore.currentMultiplier,
+				(newMultiplier) => {
+					Array.from(this.housesItems.entries()).forEach((houseItem) => {
+						const propertyId = houseItem[0];
+						const houseItemValue = houseItem[1];
+						const property = gameInfoStore.propertiesList.find((property) => property.id === propertyId);
+						if (!property) return;
+						if (property.owner) {
+							const costList = [property.cost_lv0, property.cost_lv1, property.cost_lv2];
+							houseItemValue.textSprite.updateText(
+								`${property.name}\n过路费: ${costList[property.buildingLevel] * newMultiplier}￥`,
+								property.owner.color
+							);
+						} else {
+							houseItemValue.textSprite.updateText(`${property.name}\n可购买: ${property.sellCost}￥`, "#000000");
+						}
+					});
+				}
+			)
+		);
+	}
+
 	private addChanceCardUseWatcher() {
 		const eventEmitter = useEventBus();
 		eventEmitter.on(ChanceCardOperateType.HOVER, handleChanceCardHover.bind(this));
@@ -630,8 +670,8 @@ export class GameRenderer {
 	private async updateBuilding(newProperty: PropertyInfo) {
 		const oldModel = this.housesItems.get(newProperty.id);
 		if (oldModel) {
-			await gsap.to(oldModel.scale, { x: 0, y: 0, z: 0, duration: 0.2 });
-			this.mapContainer.remove(oldModel);
+			await gsap.to(oldModel.group.scale, { x: 0, y: 0, z: 0, duration: 0.2 });
+			this.mapContainer.remove(oldModel.group);
 		}
 
 		const mapInfo = useMapData();
@@ -695,9 +735,35 @@ export class GameRenderer {
 		}
 		buildModel.scale.set(0, 0, 0);
 
-		this.housesItems.set(newProperty.id, buildModel);
 		this.mapContainer.add(buildModel);
-		gsap.to(buildModel.scale, { x: 0.5, y: 0.5, z: 0.5, duration: 0.4 });
+		gsap.to(buildModel.scale, {
+			x: 0.5,
+			y: 0.5,
+			z: 0.5,
+			duration: 0.4,
+			onComplete: () => {
+				const houseItem = this.housesItems.get(newProperty.id);
+				if (houseItem) {
+					const costList = [newProperty.cost_lv0, newProperty.cost_lv1, newProperty.cost_lv2];
+					if (newProperty.owner) {
+						houseItem.textSprite.updateText(
+							`${newProperty.name}\n过路费: ${costList[newProperty.buildingLevel] * useGameInfo().currentMultiplier}￥`,
+							newProperty.owner.color
+						);
+					} else {
+						houseItem.textSprite.updateText(`${newProperty.name}\n可购买: ${newProperty.sellCost}￥`, "#000000");
+					}
+					const textSpriteModel = houseItem.textSprite.getSprite();
+
+					const box = new Box3().setFromObject(buildModel);
+					// 计算边界框的高度
+					const size = box.getSize(new Vector3());
+					textSpriteModel.position.y = Math.max(size.y * 2 + 0.5, 1.5);
+					buildModel.add(textSpriteModel);
+					houseItem.group = buildModel;
+				}
+			},
+		});
 	}
 
 	private async updatePlayerPositionByStep(playerId: string, sourceIndex: number, stepNum: number, total: number) {
@@ -812,7 +878,7 @@ export class GameRenderer {
 						return !playerEntity.playerInfo.isBankrupted && playerEntity.playerInfo.id != useUserInfo().userId;
 					})
 					.map((p) => p.model))(),
-			[ChanceCardType.ToProperty]: (() => Array.from(this.housesItems.values()))(),
+			[ChanceCardType.ToProperty]: (() => Array.from(this.housesItems.values()).map((h) => h.group))(),
 			[ChanceCardType.ToMapItem]: (() => [])(),
 		};
 		return chanceCardTargetEachType[type];
@@ -830,12 +896,14 @@ export class GameRenderer {
 				);
 				await playerEntity.load();
 				this.playerEntities.set(playerInfo.id, playerEntity);
-				const nameSprite = createTextSprite(
+				const textSprite = new TextSprite(
 					`${playerInfo.user.username}${playerInfo.user.userId === useUserInfo().userId ? " (你)" : ""}`,
 					32,
 					playerInfo.user.color,
-					5
+					5,
+					0
 				);
+				const nameSprite = textSprite.getSprite();
 				nameSprite.position.set(0, PLAY_MODEL_SIZE + 0.05, 0);
 				playerEntity.model.add(nameSprite);
 				this.scene.add(playerEntity.model);
@@ -1062,33 +1130,33 @@ function createCSS2DObjectFromVue(rootComponent: Component, rootProps?: Record<s
 	return { css2DObject, appInstance, containerEl, unmount };
 }
 
-function createTextSprite(text: string, fontSize: number, color: string, strokeWidth: number) {
-	const canvas = document.createElement("canvas");
-	const resolution = 10;
-	const h = fontSize * resolution;
-	const w = fontSize * resolution;
-	canvas.width = w;
-	canvas.height = h;
-	const c = canvas.getContext("2d") as CanvasRenderingContext2D;
-	// 文字
-	c.beginPath();
-	c.translate(w / 2, h / 2);
-	c.fillStyle = color;
-	c.font = `bold ${fontSize}px ContentFont`;
-	c.textBaseline = "middle";
-	c.textAlign = "center";
-	c.lineWidth = strokeWidth;
-	c.strokeStyle = "#fff";
-	c.strokeText(text, 0, 0);
-	c.fillText(text, 0, 0);
-	const texture = new Texture(canvas);
-	texture.needsUpdate = true;
-	texture.colorSpace = SRGBColorSpace;
-	const material = new SpriteMaterial({
-		map: texture,
-		depthWrite: false,
-		transparent: true,
-		side: DoubleSide,
-	});
-	return new Sprite(material);
-}
+// function createTextSprite(text: string, fontSize: number, color: string, strokeWidth: number) {
+// 	const canvas = document.createElement("canvas");
+// 	const resolution = 10;
+// 	const h = fontSize * resolution;
+// 	const w = fontSize * resolution;
+// 	canvas.width = w;
+// 	canvas.height = h;
+// 	const c = canvas.getContext("2d") as CanvasRenderingContext2D;
+// 	// 文字
+// 	c.beginPath();
+// 	c.translate(w / 2, h / 2);
+// 	c.fillStyle = color;
+// 	c.font = `bold ${fontSize}px ContentFont`;
+// 	c.textBaseline = "middle";
+// 	c.textAlign = "center";
+// 	c.lineWidth = strokeWidth;
+// 	c.strokeStyle = "#fff";
+// 	c.strokeText(text, 0, 0);
+// 	c.fillText(text, 0, 0);
+// 	const texture = new Texture(canvas);
+// 	texture.needsUpdate = true;
+// 	texture.colorSpace = SRGBColorSpace;
+// 	const material = new SpriteMaterial({
+// 		map: texture,
+// 		depthWrite: false,
+// 		transparent: true,
+// 		side: DoubleSide,
+// 	});
+// 	return new Sprite(material);
+// }
