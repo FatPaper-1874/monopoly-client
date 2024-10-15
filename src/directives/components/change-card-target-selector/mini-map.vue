@@ -9,6 +9,7 @@ const props = defineProps<{ highLightList: string[]; selectedId: string }>();
 const emits = defineEmits(["update:selectedId"]);
 
 const properties = useGameInfo().propertiesList;
+const myInfo = useGameInfo().getMyInfo;
 
 const mapItemsList = computed(() => {
 	const mapItemsList = mapDataStore.mapItemsList;
@@ -27,6 +28,16 @@ const mapItemsList = computed(() => {
 		}
 		return item;
 	});
+});
+
+const myCurrentMapItemId = computed(() => {
+	if (myInfo) {
+		return (
+			mapDataStore.mapItemsList.find((item) => item.id === mapDataStore.mapIndexList[myInfo.positionIndex])?.id || null
+		);
+	} else {
+		return null;
+	}
 });
 
 function handleMapItemClick(mapItem: MapItem) {
@@ -67,6 +78,13 @@ function initMiniMap() {
 			:key="mapItem.id"
 		>
 			{{ mapItem.property?.owner?.name[0] }}
+			<div
+				v-if="myCurrentMapItemId === mapItem.id"
+				:style="{ backgroundColor: myInfo ? myInfo.user.color : 'initial' }"
+				class="player-block"
+			>
+				你
+			</div>
 		</div>
 	</div>
 </template>
@@ -93,9 +111,34 @@ function initMiniMap() {
 		justify-content: center;
 		align-items: center;
 
+		& .player-block {
+			$block-size: calc($map-item-size - 0.6rem);
+			width: $block-size;
+			height: $block-size;
+			border-radius: 50%;
+			line-height: $block-size;
+			text-align: center;
+			vertical-align: middle;
+		}
+
 		&.highlight {
 			background-color: #fff;
 			border: 0.3rem solid #fff;
+			line-height: $map-item-size;
+			text-align: center;
+			vertical-align: middle;
+			animation: pulse-highlight 0.6s infinite alternate;
+
+			@keyframes pulse-highlight {
+					0% {
+						transform: scale(1);
+						opacity: 0.8;
+					}
+					100% {
+						transform: scale(1.03);
+						opacity: 1;
+					}
+				}
 		}
 
 		&.selected {
@@ -107,9 +150,9 @@ function initMiniMap() {
 				height: $map-item-size;
 				border: 0.3rem solid var(--color-primary);
 				border-radius: 0.6rem;
-				animation: pulse 0.6s infinite alternate;
+				animation: pulse-selected 0.6s infinite alternate;
 				z-index: 999;
-				@keyframes pulse {
+				@keyframes pulse-selected {
 					0% {
 						transform: scale(1);
 						opacity: 0.8;
