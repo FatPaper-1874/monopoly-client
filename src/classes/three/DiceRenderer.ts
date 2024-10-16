@@ -127,10 +127,10 @@ export class DiceRenderer {
 
 	public async startRotate() {
 		this.dices.forEach((dice) => {
-			gsap.to(dice.rotation, { x: Math.PI / 4, y: Math.PI / 4, direction: 1, ease: "power2.out" });
+			gsap.to(dice.rotation, { x: Math.PI / 4, y: Math.PI / 4, duration: 1, ease: "power2.out" });
 		});
 		this.isRotate = true;
-		if (this.isEnlarge) gsap.to(this.camera.position, { x: 3 * this.enlargenum, direction: 1, ease: "power2.out" });
+		if (this.isEnlarge) gsap.to(this.camera.position, { x: 3 * this.enlargenum, duration: 1, ease: "power2.out" });
 	}
 
 	public async stopRotate(faces: number[]) {
@@ -142,7 +142,7 @@ export class DiceRenderer {
 			if (!this.dices || face < 1 || face > 6) return;
 			this.isRotate = false;
 			promiseArr.push(this.rotateModelToFaceCamera(this.dices[index], DICEFACE[face] || new THREE.Vector3(0, 1, 0)));
-			if (this.isEnlarge) gsap.to(this.camera.position, { x: 2.2 * this.enlargenum, direction: 1, ease: "power2.out" });
+			if (this.isEnlarge) gsap.to(this.camera.position, { x: 2.2 * this.enlargenum, duration: 1, ease: "power2.out" });
 		});
 		await Promise.all(promiseArr);
 	}
