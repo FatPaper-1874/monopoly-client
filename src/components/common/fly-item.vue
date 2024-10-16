@@ -13,7 +13,7 @@ const flyItemBox = computed(() => {
 	}
 });
 
-const maxRotation = 15;
+const maxRotation = 35;
 const getRandomRotation = () => {
   return Math.floor(Math.random() * (maxRotation * 2 + 1)) - maxRotation;
 };
