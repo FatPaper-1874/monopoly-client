@@ -176,12 +176,15 @@ export class GameProcess {
 					source: "server",
 					data: { playerId: player.getId(), step, walkId },
 				};
-				player.setPositionIndex((player.getPositionIndex() + step) % this.mapInfo.indexList.length);
+				const sourceIndex = player.getPositionIndex();
+				const total = this.mapInfo.indexList.length;
+				const newIndex = (((sourceIndex + step) % total) + total) % total;
+				player.setPositionIndex(newIndex);
 				this.gameInfoBroadcast();
 				this.gameBroadcast(msg);
 
 				//在计划的动画完成事件后取消监听, 防止客户端因特殊情况没有发送动画完成的指令造成永久等待
-				const animationDuration = this.animationStepDuration_ms * (this.dice.getResultNumber() + 5);
+				const animationDuration = this.animationStepDuration_ms * (Math.abs(step) + 3);
 				let animationTimer = setTimeout(() => {
 					operateListener.emit(player.getId(), OperateType.Animation + walkId);
 				}, animationDuration);
@@ -393,131 +396,131 @@ export class GameProcess {
 			operateListener.once(userId, OperateType.RollDice, handleRollDice);
 
 			// while (!isRoundEnd) {
-				//监听使用机会卡事件并且处理事件
-				this.eventMsg = `等待 ${sourcePlayer.getName()} 执行回合`;
-				this.roundTimeTimer.setTimeOutFunction(handleUseChanceCardTimeOut);
-				await operateListener.onceAsync(userId, OperateType.UseChanceCard, async (resultArr: any) => {
-					this.roundTimeTimer.stop();
-					const [chanceCardId, targetIdList = new Array<string>()] = resultArr;
-					const chanceCard = sourcePlayer.getCardById(chanceCardId);
-					if (chanceCard) {
-						let error = ""; //收集错误信息
-						try {
-							switch (
-								chanceCard.getType() //根据机会卡的类型执行不同操作
-							) {
-								case ChanceCardType.ToSelf:
-									await chanceCard.use(sourcePlayer, sourcePlayer, this); //直接使用
-									this.gameBroadcast(<SocketMessage>{
-										type: SocketMsgType.MsgNotify,
-										msg: {
-											type: "info",
-											content: `${sourcePlayer.getName()} 对自己使用了机会卡: "${chanceCard.getName()}"`,
-										},
-									});
+			//监听使用机会卡事件并且处理事件
+			this.eventMsg = `等待 ${sourcePlayer.getName()} 执行回合`;
+			this.roundTimeTimer.setTimeOutFunction(handleUseChanceCardTimeOut);
+			await operateListener.onceAsync(userId, OperateType.UseChanceCard, async (resultArr: any) => {
+				this.roundTimeTimer.stop();
+				const [chanceCardId, targetIdList = new Array<string>()] = resultArr;
+				const chanceCard = sourcePlayer.getCardById(chanceCardId);
+				if (chanceCard) {
+					let error = ""; //收集错误信息
+					try {
+						switch (
+							chanceCard.getType() //根据机会卡的类型执行不同操作
+						) {
+							case ChanceCardType.ToSelf:
+								await chanceCard.use(sourcePlayer, sourcePlayer, this); //直接使用
+								this.gameBroadcast(<SocketMessage>{
+									type: SocketMsgType.MsgNotify,
+									msg: {
+										type: "info",
+										content: `${sourcePlayer.getName()} 对自己使用了机会卡: "${chanceCard.getName()}"`,
+									},
+								});
+								break;
+							case ChanceCardType.ToOtherPlayer:
+							case ChanceCardType.ToPlayer:
+								const _targetPlayer = this.playerList.find((player) => player.getId() === targetIdList[0]); //获取目标玩家对象
+								if (!_targetPlayer) {
+									error = "目标玩家不存在";
 									break;
-								case ChanceCardType.ToOtherPlayer:
-								case ChanceCardType.ToPlayer:
-									const _targetPlayer = this.playerList.find((player) => player.getId() === targetIdList[0]); //获取目标玩家对象
-									if (!_targetPlayer) {
-										error = "目标玩家不存在";
-										break;
+								}
+								await chanceCard.use(sourcePlayer, _targetPlayer, this);
+								this.gameBroadcast(<SocketMessage>{
+									type: SocketMsgType.MsgNotify,
+									msg: {
+										type: "info",
+										content: `${sourcePlayer.getName()} 对玩家 ${_targetPlayer.getName()} 使用了机会卡: "${chanceCard.getName()}"`,
+									},
+								});
+								break;
+							case ChanceCardType.ToProperty:
+								const _targetProperty = this.propertyList.get(targetIdList[0]);
+								if (!_targetProperty) {
+									error = "目标建筑/地皮不存在";
+									break;
+								}
+								await chanceCard.use(sourcePlayer, _targetProperty, this);
+								this.gameBroadcast(<SocketMessage>{
+									type: SocketMsgType.MsgNotify,
+									msg: {
+										type: "info",
+										content: `${sourcePlayer.getName()} 对地皮 ${_targetProperty.getName()} 使用了机会卡: "${chanceCard.getName()}"`,
+									},
+								});
+								break;
+							case ChanceCardType.ToMapItem:
+								const _targetIdList = targetIdList as string[];
+								const _targetPlayerList: Player[] = [];
+								_targetIdList.forEach((id) => {
+									//获取目标玩家列表
+									const _tempPlayer = this.playerList.find((player) => player.getId() === id);
+									if (_tempPlayer) {
+										_targetPlayerList.push(_tempPlayer);
 									}
-									await chanceCard.use(sourcePlayer, _targetPlayer, this);
-									this.gameBroadcast(<SocketMessage>{
-										type: SocketMsgType.MsgNotify,
-										msg: {
-											type: "info",
-											content: `${sourcePlayer.getName()} 对玩家 ${_targetPlayer.getName()} 使用了机会卡: "${chanceCard.getName()}"`,
-										},
-									});
+								});
+								if (_targetPlayerList.length === 0) {
+									error = "选中的玩家不存在";
 									break;
-								case ChanceCardType.ToProperty:
-									const _targetProperty = this.propertyList.get(targetIdList[0]);
-									if (!_targetProperty) {
-										error = "目标建筑/地皮不存在";
-										break;
-									}
-									await chanceCard.use(sourcePlayer, _targetProperty, this);
-									this.gameBroadcast(<SocketMessage>{
-										type: SocketMsgType.MsgNotify,
-										msg: {
-											type: "info",
-											content: `${sourcePlayer.getName()} 对地皮 ${_targetProperty.getName()} 使用了机会卡: "${chanceCard.getName()}"`,
-										},
-									});
-									break;
-								case ChanceCardType.ToMapItem:
-									const _targetIdList = targetIdList as string[];
-									const _targetPlayerList: Player[] = [];
-									_targetIdList.forEach((id) => {
-										//获取目标玩家列表
-										const _tempPlayer = this.playerList.find((player) => player.getId() === id);
-										if (_tempPlayer) {
-											_targetPlayerList.push(_tempPlayer);
-										}
-									});
-									if (_targetPlayerList.length === 0) {
-										error = "选中的玩家不存在";
-										break;
-									}
-									await chanceCard.use(sourcePlayer, _targetPlayerList, this);
-									break;
-							}
-						} catch (e: any) {
-							error = e.message;
+								}
+								await chanceCard.use(sourcePlayer, _targetPlayerList, this);
+								break;
 						}
-						if (error) {
-							const errorMsg: SocketMessage = {
-								type: SocketMsgType.MsgNotify,
-								data: "",
-								source: "server",
-								msg: {
-									type: "error",
-									content: error,
-								},
-							};
-							sendToUsers([sourcePlayer.getId()], errorMsg);
-							const callBackMsg: SocketMessage = {
-								type: SocketMsgType.UseChanceCard,
-								data: "",
-								source: "server",
-							};
-							sendToUsers([sourcePlayer.getId()], callBackMsg);
-						} else {
-							sourcePlayer.loseCard(chanceCardId);
-							const successMsg: SocketMessage = {
-								type: SocketMsgType.MsgNotify,
-								data: "",
-								source: "server",
-								msg: {
-									type: "success",
-									content: `机会卡 ${chanceCard.getName()} 使用成功！`,
-								},
-							};
-							sendToUsers([sourcePlayer.getId()], successMsg);
-							const callBackMsg: SocketMessage = {
-								type: SocketMsgType.UseChanceCard,
-								data: "",
-								source: "server",
-							};
-							sendToUsers([sourcePlayer.getId()], callBackMsg);
-						}
-
-						this.gameInfoBroadcast();
-					} else {
+					} catch (e: any) {
+						error = e.message;
+					}
+					if (error) {
 						const errorMsg: SocketMessage = {
 							type: SocketMsgType.MsgNotify,
 							data: "",
 							source: "server",
 							msg: {
 								type: "error",
-								content: "机会卡使用失败: 未知的机会卡ID",
+								content: error,
 							},
 						};
 						sendToUsers([sourcePlayer.getId()], errorMsg);
+						const callBackMsg: SocketMessage = {
+							type: SocketMsgType.UseChanceCard,
+							data: "",
+							source: "server",
+						};
+						sendToUsers([sourcePlayer.getId()], callBackMsg);
+					} else {
+						sourcePlayer.loseCard(chanceCardId);
+						const successMsg: SocketMessage = {
+							type: SocketMsgType.MsgNotify,
+							data: "",
+							source: "server",
+							msg: {
+								type: "success",
+								content: `机会卡 ${chanceCard.getName()} 使用成功！`,
+							},
+						};
+						sendToUsers([sourcePlayer.getId()], successMsg);
+						const callBackMsg: SocketMessage = {
+							type: SocketMsgType.UseChanceCard,
+							data: "",
+							source: "server",
+						};
+						sendToUsers([sourcePlayer.getId()], callBackMsg);
 					}
-				});
+
+					this.gameInfoBroadcast();
+				} else {
+					const errorMsg: SocketMessage = {
+						type: SocketMsgType.MsgNotify,
+						data: "",
+						source: "server",
+						msg: {
+							type: "error",
+							content: "机会卡使用失败: 未知的机会卡ID",
+						},
+					};
+					sendToUsers([sourcePlayer.getId()], errorMsg);
+				}
+			});
 			// }
 		});
 	}

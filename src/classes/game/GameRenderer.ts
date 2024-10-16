@@ -483,10 +483,10 @@ export class GameRenderer {
 			// 	},
 			// 	{ immediate: true }
 			// );
-			useEventBus().on(GameEvents.GainMoney + player.id, (player:PlayerInfo, money: number, source?: PlayerInfo) => {
+			useEventBus().on(GameEvents.GainMoney + player.id, (player: PlayerInfo, money: number, source?: PlayerInfo) => {
 				this.createPopoverOnPlayerTop(player.user.userId, moneyPopTip, { money: money }, 2000);
 			});
-			useEventBus().on(GameEvents.CostMoney + player.id, (player:PlayerInfo, money: number, target?: PlayerInfo) => {
+			useEventBus().on(GameEvents.CostMoney + player.id, (player: PlayerInfo, money: number, target?: PlayerInfo) => {
 				this.createPopoverOnPlayerTop(player.user.userId, moneyPopTip, { money: -money }, 2000);
 			});
 			const bankruptWatcher = watch(
@@ -774,7 +774,8 @@ export class GameRenderer {
 
 	private async updatePlayerPositionByStep(playerId: string, sourceIndex: number, stepNum: number, total: number) {
 		if (!this.playerEntities.has(playerId)) return;
-		this.playerPosition.set(playerId, (sourceIndex + stepNum) % total);
+		const endIndex = (((sourceIndex + stepNum) % total) + total) % total;
+		this.playerPosition.set(playerId, endIndex);
 		const playerEntity = this.playerEntities.get(playerId);
 		if (playerEntity) {
 			// playerEntity.doAnimation(RoleAnimations.Idle, true);
@@ -788,11 +789,11 @@ export class GameRenderer {
 			deviceStatusStore.$subscribe((mutation, state) => {
 				animationShouldStop = state.isFocus;
 			});
-			for (let i = 1; i <= stepNum; i++) {
+			for (let i = 1; i <= Math.abs(stepNum); i++) {
 				//页面进入后台后取消动画
 				if (animationShouldStop) {
 					currentAnimation && currentAnimation.kill();
-					const endMapItem = this.getMapItem((sourceIndex + stepNum) % total);
+					const endMapItem = this.getMapItem(endIndex);
 					if (endMapItem) {
 						const { x, y, z } = endMapItem.position;
 						playerModule.position.set(x, y + BLOCK_HEIGHT, z);
@@ -801,7 +802,7 @@ export class GameRenderer {
 					}
 					break;
 				}
-				const nextMapItem = this.getMapItem((sourceIndex + i) % total); //下一步
+				const nextMapItem = this.getMapItem((((sourceIndex + Math.sign(stepNum) * i) % total) + total) % total); //下一步
 				if (nextMapItem) {
 					const { x: nextMapItemScreenX, y: nextMapItemScreenY } = getScreenPosition(nextMapItem, this.camera);
 					const { x: playerScreenX, y: playerScreenY } = getScreenPosition(playerEntity.model, this.camera);
@@ -827,7 +828,7 @@ export class GameRenderer {
 			}
 			playerEntity.doAnimation(RoleAnimations.Idle, true);
 		}
-		useMonopolyClient().AnimationComplete();
+		// useMonopolyClient().AnimationComplete();
 	}
 
 	private updatePlayerPosition(player: PlayerInfo) {

@@ -394,7 +394,7 @@ export class MonopolyClient {
 	private handleUsedChanceCard(data: SocketMessage) {
 		const utilStore = useUtil();
 		utilStore.canRoll = true;
-		utilStore.canUseCard = true;
+		// utilStore.canUseCard = true;
 	}
 
 	private handlePlayerWalk(data: SocketMessage) {
