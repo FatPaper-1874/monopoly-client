@@ -11,8 +11,8 @@ export enum PlayerEvents {
 	BeforeSetPropertiesList = "BeforeSetPropertiesList",
 	AfterSetPropertiesList = "AfterSetPropertiesList",
 
-	// BeforeGainProperty = "BeforeGainProperty",
-	// AfterGainProperty = "AfterGainProperty",
+	BeforeGainProperty = "BeforeGainProperty",
+	AfterGainProperty = "AfterGainProperty",
 
 	BeforeRound = "BeforeRound",
 	AfterRound = "AfterRound",
@@ -67,8 +67,8 @@ export const playerBuffTriggerTimingMap: Record<PlayerEvents, string> = {
 	[PlayerEvents.BeforeRound]: "回合开始前",
 	[PlayerEvents.AfterRound]: "回合结束后",
 
-	// [PlayerEvents.BeforeGainProperty]: "获得地产前",
-	// [PlayerEvents.AfterGainProperty]: "获得地产后",
+	[PlayerEvents.BeforeGainProperty]: "获得地产前",
+	[PlayerEvents.AfterGainProperty]: "获得地产后",
 
 	[PlayerEvents.BeforeLoseProperty]: "失去地产前",
 	[PlayerEvents.AfterLoseProperty]: "失去地产后",

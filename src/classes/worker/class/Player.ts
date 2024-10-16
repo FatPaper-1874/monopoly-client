@@ -53,24 +53,21 @@ export class Player implements PlayerInterface {
 		this.emit(PlayerEvents.AfterSetPropertiesList, newPropertiesList);
 	};
 
-	// public gainProperty = (property: PropertyInterface) => {
-	// 	property.setOwner(this);
-	// 	property = this.emit(PlayerEvents.BeforeGainProperty, property) || property;
-	// 	const owner = property.getOwner();
-	// 	console.log("🚀 ~ Player ~ owner:", owner);
-	// 	if (owner && owner.id === this.getId()) this.properties.push(property);
-	// 	this.emit(PlayerEvents.AfterGainProperty, property);
-	// };
+	public gainProperty = (property: PropertyInterface) => {
+		property = this.emit(PlayerEvents.BeforeGainProperty, property) || property;
+		const owner = property.getOwner();
+		if (owner && owner.getId() === this.getId()) this.properties.push(property);
+		this.emit(PlayerEvents.AfterGainProperty, property);
+	};
 
-	// public loseProperty = (lostProperty: PropertyInterface) => {
-	// 	// this.emit(PlayerEvents.LoseProperty, propertyId);
-	// 	lostProperty = this.emit(PlayerEvents.BeforeGainProperty, lostProperty) || lostProperty;
-	// 	const index = this.properties.findIndex((property) => property.getId() === lostProperty.getId());
-	// 	if (index != -1) {
-	// 		this.properties.splice(index, 1);
-	// 	}
-	// 	this.emit(PlayerEvents.AfterLoseProperty, lostProperty);
-	// };
+	public loseProperty = (lostProperty: PropertyInterface) => {
+		lostProperty = this.emit(PlayerEvents.BeforeGainProperty, lostProperty) || lostProperty;
+		const index = this.properties.findIndex((property) => property.getId() === lostProperty.getId());
+		if (index != -1) {
+			this.properties.splice(index, 1);
+		}
+		this.emit(PlayerEvents.AfterLoseProperty, lostProperty);
+	};
 
 	//机会卡相关
 	public getCardsList = () => {
@@ -115,18 +112,18 @@ export class Player implements PlayerInterface {
 		this.emit(PlayerEvents.AfterSetMoney, money);
 	};
 
-	public cost(money: number) {
-		money = this.emit(PlayerEvents.BeforeCost, money) || money;
+	public cost(money: number, target?: PlayerInterface) {
+		money = this.emit(PlayerEvents.BeforeCost, money, target) || money;
 		this.money -= money > 0 ? money : 0;
 		if (this.money <= 0) this.setBankrupted(true);
-		this.emit(PlayerEvents.AfterCost, money);
+		this.emit(PlayerEvents.AfterCost, money, target);
 		return this.money > 0;
 	}
 
-	public gain(money: number) {
-		money = this.emit(PlayerEvents.BeforeGain, money) || money;
+	public gain(money: number, source?: PlayerInterface) {
+		money = this.emit(PlayerEvents.BeforeGain, money, source) || money;
 		this.money += money;
-		this.emit(PlayerEvents.AfterGain, money);
+		this.emit(PlayerEvents.AfterGain, money, source);
 		return this.money;
 	}
 
@@ -234,7 +231,7 @@ export class Player implements PlayerInterface {
 		}
 		const fnArr = this.callBackMap.get(eventName);
 		fnArr &&
-			fnArr.push({
+			fnArr.unshift({
 				fn,
 				triggerTimes,
 				buff: buff ? { id: randomString(16), ...buff, type: eventName, triggerTimes } : undefined,

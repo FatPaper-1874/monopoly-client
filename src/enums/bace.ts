@@ -17,6 +17,8 @@ export enum SocketMsgType {
 	GameInit, //游戏初始化
 	GameInitFinished, //游戏初始化完成
 	GameInfo, //游戏信息广播
+	GainMoney, //玩家获得金钱
+	CostMoney, //玩家花费金钱
 	RoundTurn, //更新当前回合轮到的玩家,
 	RollDiceStart, //开始摇骰子
 	RollDiceResult, //掷骰子

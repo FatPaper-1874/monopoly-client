@@ -225,7 +225,7 @@ export class GameProcess {
 					//破产剥夺财产
 					Array.from(this.propertyList.values()).map((property) => {
 						const owner = property.getOwner();
-						if (owner && owner.id === player.getId()) {
+						if (owner && owner.getId() === player.getId()) {
 							property.setOwner(undefined);
 						}
 					});
@@ -582,7 +582,7 @@ export class GameProcess {
 			const owner = property.getOwner();
 			if (owner) {
 				//地皮有主人
-				if (owner.id === arrivedPlayer.getId()) {
+				if (owner.getId() === arrivedPlayer.getId()) {
 					//地产是自己的
 					if (property.getBuildingLevel() < 2) {
 						//添加定时器计算操作剩余时间
@@ -621,14 +621,14 @@ export class GameProcess {
 					}
 				} else {
 					//地产是别人的
-					const ownerPlayer = this.getPlayerById(owner.id);
+					const ownerPlayer = this.getPlayerById(owner.getId());
 					if (!ownerPlayer) return;
 					const passCost = property.getPassCost() * this.currentMultiplier;
 					this.handlePayToSomeOne(arrivedPlayer, ownerPlayer, passCost);
 					arrivePropertyMsg.type = SocketMsgType.MsgNotify;
 					arrivePropertyMsg.msg = {
 						type: "error",
-						content: `你到达了${owner.name}的${property.getName()}，支付了${passCost}￥过路费`,
+						content: `你到达了${owner.getName()}的${property.getName()}，支付了${passCost}￥过路费`,
 					};
 					sendToUsers([arrivedPlayer.getId()], arrivePropertyMsg);
 					arrivePropertyMsg.msg = {
@@ -678,8 +678,8 @@ export class GameProcess {
 	}
 
 	private handlePayToSomeOne(source: Player, target: Player, money: number) {
-		target.gain(money);
-		return source.cost(money);
+		target.gain(money, source);
+		return source.cost(money, target);
 	}
 
 	private nextRound() {

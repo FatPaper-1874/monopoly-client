@@ -11,7 +11,7 @@ export class Property implements PropertyInterface {
 	private cost_lv0: number;
 	private cost_lv1: number;
 	private cost_lv2: number;
-	private owner: { id: string; name: string; color: string; avatar: string } | undefined = undefined;
+	private owner: PlayerInterface | undefined = undefined;
 
 	constructor(property: PropertyFromDB) {
 		this.id = property.id;
@@ -45,14 +45,14 @@ export class Property implements PropertyInterface {
 	}
 
 	public setOwner = (player: PlayerInterface | undefined) => {
-		this.owner = player
-			? {
-					id: player.getId(),
-					name: player.getUser().username,
-					color: player.getUser().color,
-					avatar: player.getUser().avatar,
-			  }
-			: undefined;
+		//如果原本有主人
+		if (this.owner) {
+			this.owner.loseProperty(this);
+		}
+		this.owner = player;
+		if (this.owner) {
+			this.owner.gainProperty(this);
+		}
 	};
 
 	public getPassCost(): number {
@@ -69,6 +69,7 @@ export class Property implements PropertyInterface {
 	}
 
 	public getPropertyInfo(): PropertyInfo {
+		const owner = this.owner;
 		const propertyInfo: PropertyInfo = {
 			id: this.id,
 			name: this.name,
@@ -78,7 +79,9 @@ export class Property implements PropertyInterface {
 			cost_lv0: this.cost_lv0,
 			cost_lv1: this.cost_lv1,
 			cost_lv2: this.cost_lv2,
-			owner: this.owner,
+			owner: owner
+				? { id: owner.getId(), name: owner.getName(), color: owner.getUser().color, avatar: owner.getUser().avatar }
+				: undefined,
 		};
 		return propertyInfo;
 	}
