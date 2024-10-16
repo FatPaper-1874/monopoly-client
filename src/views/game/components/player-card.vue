@@ -4,6 +4,8 @@ import { PropType, computed, ref, watch } from "vue";
 import { useGameInfo } from "@/store/index";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { __PROTOCOL__ } from "@G/global.config";
+import gsap from "gsap";
+
 
 // const props = defineProps({
 // 	player: { type: Object as PropType<PlayerInfo>, default: {} },

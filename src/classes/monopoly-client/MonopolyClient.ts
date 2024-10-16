@@ -18,7 +18,7 @@ import {
 	useUtil,
 } from "@/store";
 import router from "@/router";
-import { GameInfo, GameInitInfo, PropertyInfo } from "@/interfaces/game";
+import { GameInfo, GameInitInfo, PropertyInfo, PlayerInfo } from "@/interfaces/game";
 import useEventBus from "@/utils/event-bus";
 import { createVNode } from "vue";
 import PropertyInfoVue from "@/components/common/property-info.vue";
@@ -176,6 +176,13 @@ export class MonopolyClient {
 					case SocketMsgType.GameInfo:
 						this.handleGameInfo(data);
 						break;
+
+					case SocketMsgType.GainMoney:
+						this.handleGainMoney(data);
+						break;
+					case SocketMsgType.CostMoney:
+						this.handleCostMoney(data);
+						break;
 					case SocketMsgType.RemainingTime:
 						this.handleRemainingTime(data);
 						break;
@@ -317,6 +324,24 @@ export class MonopolyClient {
 
 	private handleGameInitFinished() {
 		useLoading().hideLoading();
+	}
+
+	private handleGainMoney(data: SocketMessage) {
+		const { player, money, source } = data.data as {
+			player: PlayerInfo;
+			money: number;
+			source: PlayerInfo | undefined;
+		};
+		useEventBus().emit(GameEvents.GainMoney + player.id, player, money, source);
+	}
+
+	private handleCostMoney(data: SocketMessage) {
+		const { player, money, target } = data.data as {
+			player: PlayerInfo;
+			money: number;
+			target: PlayerInfo | undefined;
+		};
+		useEventBus().emit(GameEvents.CostMoney + player.id, player, money, target);
 	}
 
 	private handleGameInfo(data: SocketMessage) {

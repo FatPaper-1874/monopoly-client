@@ -27,7 +27,7 @@ import {
 	WebGLRenderer,
 } from "three";
 
-import { gsap } from "gsap";
+import gsap from "gsap";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { ChanceCardInfo, ItemType, MapItem, PlayerInfo, PropertyInfo } from "@/interfaces/game";
 import { useDeviceStatus, useGameInfo, useLoading, useMapData, useUserInfo } from "@/store";
@@ -43,7 +43,7 @@ import { debounce, getScreenPosition, isMobileDevice, throttle } from "@/utils";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
 import { OutlinePass } from "three/examples/jsm/postprocessing/OutlinePass";
-import { ChanceCardOperateType, ChanceCardType, RoleAnimations } from "@/enums/game";
+import { ChanceCardOperateType, ChanceCardType, GameEvents, RoleAnimations } from "@/enums/game";
 import { PlayerEntity } from "@/classes/game/PlayerEntity";
 import useEventBus from "@/utils/event-bus";
 import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader";
@@ -84,7 +84,7 @@ export class GameRenderer {
 		string,
 		{
 			InfoWatcher: WatchStopHandle | undefined;
-			moneyWatcher: WatchStopHandle | undefined;
+			// moneyWatcher: WatchStopHandle | undefined;
 			bankruptWatcher: WatchStopHandle | undefined;
 		}
 	> = new Map();
@@ -427,7 +427,7 @@ export class GameRenderer {
 		cancelAnimationFrame(this.requestAnimationFrameId);
 		Array.from(this.playerWatchers.values()).forEach((watchers) => {
 			watchers.InfoWatcher && watchers.InfoWatcher();
-			watchers.moneyWatcher && watchers.moneyWatcher();
+			// watchers.moneyWatcher && watchers.moneyWatcher();
 			watchers.bankruptWatcher && watchers.bankruptWatcher();
 		});
 		useEventBus().removeAll();
@@ -476,13 +476,19 @@ export class GameRenderer {
 				},
 				{ immediate: true, deep: true }
 			);
-			const moneyWatcher = watch(
-				() => gameInfoStore.playersList[index].money,
-				(newMoney, oldMoney = 0) => {
-					this.createPopoverOnPlayerTop(player.user.userId, moneyPopTip, { money: newMoney - oldMoney }, 2000);
-				},
-				{ immediate: true }
-			);
+			// const moneyWatcher = watch(
+			// 	() => gameInfoStore.playersList[index].money,
+			// 	(newMoney, oldMoney = 0) => {
+			// 		this.createPopoverOnPlayerTop(player.user.userId, moneyPopTip, { money: newMoney - oldMoney }, 2000);
+			// 	},
+			// 	{ immediate: true }
+			// );
+			useEventBus().on(GameEvents.GainMoney + player.id, (player:PlayerInfo, money: number, source?: PlayerInfo) => {
+				this.createPopoverOnPlayerTop(player.user.userId, moneyPopTip, { money: money }, 2000);
+			});
+			useEventBus().on(GameEvents.CostMoney + player.id, (player:PlayerInfo, money: number, target?: PlayerInfo) => {
+				this.createPopoverOnPlayerTop(player.user.userId, moneyPopTip, { money: -money }, 2000);
+			});
 			const bankruptWatcher = watch(
 				() => gameInfoStore.playersList[index].isBankrupted,
 				(isBankrupted) => {
@@ -495,7 +501,7 @@ export class GameRenderer {
 					const watchers = this.playerWatchers.get(player.id);
 					if (watchers) {
 						watchers.InfoWatcher && watchers.InfoWatcher();
-						watchers.moneyWatcher && watchers.moneyWatcher();
+						// watchers.moneyWatcher && watchers.moneyWatcher();
 						watchers.bankruptWatcher && watchers.bankruptWatcher();
 					}
 				},
@@ -503,7 +509,7 @@ export class GameRenderer {
 			);
 			this.playerWatchers.set(player.id, {
 				InfoWatcher,
-				moneyWatcher,
+				// moneyWatcher,
 				bankruptWatcher,
 			});
 		});

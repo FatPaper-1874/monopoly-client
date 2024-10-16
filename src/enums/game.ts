@@ -36,4 +36,6 @@ export enum RoleAnimations {
 
 export enum GameEvents {
 	TimeOut = "TimeOut",
+	GainMoney = "GainMoney",
+	CostMoney = "CostMoney",
 }

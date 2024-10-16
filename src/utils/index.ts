@@ -345,3 +345,7 @@ export function generateSvgArrows(color: string) {
 
 	return { svg, setPath };
 }
+
+export function remToPx(rem: number) {
+	return rem * parseFloat(getComputedStyle(document.documentElement).fontSize || "16");
+}

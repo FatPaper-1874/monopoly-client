@@ -106,7 +106,7 @@ library.add(
 	faSquareCheck,
 	faVolumeLow,
 	faVolumeHigh,
-	faQuestion,
+	faQuestion
 );
 const pinia = createPinia();
 
@@ -119,6 +119,11 @@ createApp(App)
 
 initDeviceStatusListener();
 initSettingStore();
+
+import { gsap } from "gsap";
+import MotionPathPlugin from "gsap/MotionPathPlugin";
+
+gsap.registerPlugin(MotionPathPlugin);
 
 function initSettingStore() {
 	const settingStore = useSettig();

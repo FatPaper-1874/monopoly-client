@@ -130,6 +130,37 @@ export class GameProcess {
 
 			player.setCardsList(this.getRandomChanceCard(4));
 
+			//如果使用player.cost()函数附带target参数, 会触发客户端的金钱转移动画
+			player.addEventListener(PlayerEvents.AfterCost, (money, target) => {
+				const msg: SocketMessage = {
+					type: SocketMsgType.CostMoney,
+					source: "server",
+					data: {
+						player: player.getPlayerInfo(),
+						money: parseInt(money + ""),
+						target: target ? target.getPlayerInfo() : undefined,
+					},
+				};
+				this.gameBroadcast(msg);
+				return;
+			});
+
+			//如果使用player.gain()函数附带source参数, 会触发客户端的金钱转移动画
+			player.addEventListener(PlayerEvents.AfterGain, (money, source) => {
+				console.log("🚀 ~ GameProcess ~ player.addEventListener ~ source:", source);
+				const msg: SocketMessage = {
+					type: SocketMsgType.GainMoney,
+					source: "server",
+					data: {
+						player: player.getPlayerInfo(),
+						money: parseInt(money + ""),
+						source: source ? source.getPlayerInfo() : undefined,
+					},
+				};
+				this.gameBroadcast(msg);
+				return;
+			});
+
 			player.addEventListener(PlayerEvents.AfterSetMoney, () => {
 				this.gameOverCheck();
 			});
