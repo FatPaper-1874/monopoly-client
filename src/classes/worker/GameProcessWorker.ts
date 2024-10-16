@@ -392,7 +392,7 @@ export class GameProcess {
 			//摇骰子就取消监听机会卡的使用
 			operateListener.once(userId, OperateType.RollDice, handleRollDice);
 
-			while (!isRoundEnd) {
+			// while (!isRoundEnd) {
 				//监听使用机会卡事件并且处理事件
 				this.eventMsg = `等待 ${sourcePlayer.getName()} 执行回合`;
 				this.roundTimeTimer.setTimeOutFunction(handleUseChanceCardTimeOut);
@@ -518,7 +518,7 @@ export class GameProcess {
 						sendToUsers([sourcePlayer.getId()], errorMsg);
 					}
 				});
-			}
+			// }
 		});
 	}
 
