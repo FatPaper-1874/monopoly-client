@@ -527,8 +527,19 @@ export class GameProcess {
 
 	private async waitRollDice(player: Player) {
 		const userId = player.getId();
-		//等待客户端点击回馈
-		await operateListener.onceAsync(userId, OperateType.RollDice, () => {});
+		//等待客户端点击回馈或者破产
+		await new Promise((resolve, reject) => {
+			//正常情况: 等待客户端点击回馈
+			operateListener.onceAsync(userId, OperateType.RollDice, resolve);
+
+			//中道崩殂就跳过回合
+			player.addEventListener(PlayerEvents.AfterSetBankrupted, (isBankrupted) => {
+				if (isBankrupted) {
+					reject("bankrupted");
+				}
+			});
+		})
+			.then(async () => {
 		this.gameBroadcast({
 			type: SocketMsgType.RollDiceStart,
 			source: "server",
@@ -556,11 +567,16 @@ export class GameProcess {
 		this.gameBroadcast(msgToRollDice);
 		//设置玩家的位置
 		await player.walk(this.dice.getResultNumber());
+			})
+			.catch(() => {})
+			.finally(() => {
 		//更新游戏信息
 		this.gameInfoBroadcast();
+			});
 	}
 
 	private async handleArriveEvent(arrivedPlayer: Player) {
+		if (arrivedPlayer.getIsBankrupted()) return;
 		const playerPositionIndex = arrivedPlayer.getPositionIndex();
 		const arriveItemId = this.mapInfo.indexList[playerPositionIndex];
 		const arriveItem = this.mapItemList.get(arriveItemId);

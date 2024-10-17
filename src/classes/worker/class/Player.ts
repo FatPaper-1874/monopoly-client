@@ -176,7 +176,8 @@ export class Player implements PlayerInterface {
 
 	public setBankrupted = (isBankrupted: boolean) => {
 		// this.emit(PlayerEvents.SetBankrupted, isBankrupted);
-		isBankrupted = this.emit(PlayerEvents.BeforeSetBankrupted, isBankrupted) || isBankrupted;
+		const callback = this.emit(PlayerEvents.BeforeSetBankrupted, isBankrupted);
+		isBankrupted = callback === undefined ? isBankrupted : callback;
 		this.isBankrupted = isBankrupted;
 		this.emit(PlayerEvents.AfterSetBankrupted, isBankrupted);
 	};

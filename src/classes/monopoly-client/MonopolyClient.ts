@@ -348,7 +348,7 @@ export class MonopolyClient {
 		if (data.data == "error") return;
 		const gameInfoStore = useGameInfo();
 		const gameInfo: GameInfo = data.data;
-		gameInfo &&
+		if (gameInfo) {
 			gameInfoStore.$patch({
 				currentPlayerIdInRound: gameInfo.currentPlayerInRound,
 				currentRound: gameInfo.currentRound,
@@ -356,6 +356,13 @@ export class MonopolyClient {
 				playersList: gameInfo.playerList,
 				propertiesList: gameInfo.properties,
 			});
+			const me = gameInfo.playerList.find((p) => p.id === useUserInfo().userId);
+			if (me && me.isBankrupted) {
+				const utilStore = useUtil();
+				utilStore.canRoll = false;
+				utilStore.canUseCard = false;
+			}
+		}
 	}
 
 	private handleRemainingTime(data: SocketMessage) {

@@ -113,18 +113,23 @@ export const useGameInfo = defineStore("gameInfo", {
 	getters: {
 		isMyTurn: (state) => useUserInfo().userId === state.currentPlayerIdInRound,
 		getMyInfo: (state) => state.playersList.find((p) => p.id === useUserInfo().userId),
+		canIOperate: (state) => {
+			const _this = useGameInfo();
+			const amIBankrupted = _this.getMyInfo && _this.getMyInfo.isBankrupted;
+			return !amIBankrupted && _this.isMyTurn;
+		},
 	},
 });
 
 export const useUtil = defineStore("util", {
 	state: () => {
 		return {
-			canUseCard: false,
 			isRollDiceAnimationPlay: false,
 			rollDiceResult: new Array<number>(),
 			waitingFor: { eventMsg: "", remainingTime: 0 },
 			timeOut: false,
-			canRoll: false,
+			canUseCard: useGameInfo().canIOperate,
+			canRoll: useGameInfo().canIOperate,
 		};
 	},
 });
