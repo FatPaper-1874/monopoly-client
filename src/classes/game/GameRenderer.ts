@@ -29,7 +29,7 @@ import {
 
 import gsap from "gsap";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { ChanceCardInfo, ItemType, MapItem, PlayerInfo, PropertyInfo } from "@/interfaces/game";
+import { ChanceCardInfo, ItemType, MapItem, Model, PlayerInfo, PropertyInfo } from "@/interfaces/game";
 import { useDeviceStatus, useGameInfo, useLoading, useMapData, useUserInfo } from "@/store";
 import { Component, ComponentPublicInstance, createApp, toRaw, watch, WatchStopHandle } from "vue";
 import { loadItemTypeModules } from "@/utils/three/itemtype-loader";
@@ -268,8 +268,9 @@ export class GameRenderer {
 		await this.loadMapModels(mapItemTypeList);
 
 		//加载屋子的模型
-		const houseArr = ["house_lv0", "house_lv1", "house_lv2"];
-		await this.loadHousesModels(houseArr);
+		const { lv0, lv1, lv2 } = mapDataStore.houseModels;
+		console.log("🚀 ~ GameRenderer ~ initMap ~ lv0 && lv1 && lv2:", lv0 , lv1 , lv2)
+		if (lv0 && lv1 && lv2) await this.loadHousesModels({ lv0, lv1, lv2 });
 
 		//加载地图
 		const mapItemsList = mapDataStore.mapItemsList;
@@ -918,11 +919,12 @@ export class GameRenderer {
 		}
 	}
 
-	private async loadHousesModels(houseNameList: string[]) {
+	private async loadHousesModels(houseNameList: { lv0: Model; lv1: Model; lv2: Model }) {
 		const modelList = await loadHouseModels(houseNameList);
 		modelList.forEach((model) => {
 			this.housesModules.set(model.name, model.glft.scene);
 		});
+		console.log("🚀 ~ GameRenderer ~ modelList.forEach ~ this.housesModules:", this.housesModules);
 	}
 
 	private async loadMapModels(itemTypeList: ItemType[]) {

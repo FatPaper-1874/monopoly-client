@@ -8,7 +8,5 @@ export const getMapsList = async (page: number, size: number) => {
 
 export const getMapById = async (mapId: string) => {
 	const data = (await axios.get("/map/info", { params: { id: mapId } })).data as any;
-	console.log(data);
-
 	return data as GameMap;
 };

@@ -1,19 +1,29 @@
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-import {getDracoLoader} from "@/utils/three/draco";
+import { getDracoLoader } from "@/utils/three/draco";
+import { Model } from "@/interfaces/game";
+import { __PROTOCOL__ } from "@G/global.config";
 
-export const loadHouseModels = async (houseNamearr: string[]): Promise<{ name: string; glft: GLTF }[]> => {
+export const loadHouseModels = async (houseModels: {
+	lv0: Model;
+	lv1: Model;
+	lv2: Model;
+}): Promise<{ name: string; glft: GLTF }[]> => {
 	// const houseArr = ["house_lv0", "house_lv1", "house_lv2"];
 	const promiseArr: Promise<{ name: string; glft: GLTF }>[] = new Array<Promise<{ name: string; glft: GLTF }>>();
 	const gltfLoader = new GLTFLoader();
 	gltfLoader.setDRACOLoader(getDracoLoader());
-	houseNamearr.forEach((itemName) => {
+
+	for (const _model of Object.entries(houseModels)) {
+		const name = _model[0];
+		const model = _model[1];
+
 		const promise = new Promise<{ name: string; glft: GLTF }>((resolve, reject) => {
 			gltfLoader.load(
-				`https://fatpaper-1304992673.cos.ap-guangzhou.myqcloud.com/monopoly/static/${itemName}.glb`,
+				`${__PROTOCOL__}://${model.fileUrl}`,
 				(glft: GLTF) => {
-					glft.userData = { name: itemName };
-					resolve({ name: itemName, glft: glft });
+					glft.userData = { name: `house_${name}` };
+					resolve({ name: `house_${name}`, glft: glft });
 				},
 				undefined,
 				(error) => {
@@ -22,6 +32,6 @@ export const loadHouseModels = async (houseNamearr: string[]): Promise<{ name: s
 			);
 		});
 		promiseArr.push(promise);
-	});
+	}
 	return await Promise.all(promiseArr);
 };

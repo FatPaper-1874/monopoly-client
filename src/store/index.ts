@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { User, Room, Role, ChatMessage, UserInRoomInfo } from "@/interfaces/bace";
-import { MapItem, PlayerInfo, PropertyInfo, ItemType, ChanceCardInfo, Street } from "@/interfaces/game";
+import { MapItem, PlayerInfo, PropertyInfo, ItemType, ChanceCardInfo, Street, Model } from "@/interfaces/game";
 import { GameOverRule } from "@/enums/game";
 import { isFullScreen, isLandscape, setTimeOutAsync } from "@/utils";
 import { getUserByToken } from "@/utils/api/user";
@@ -94,6 +94,11 @@ export const useMapData = defineStore("map", {
 			properties: new Array<PropertyInfo>(),
 			chanceCards: new Array<ChanceCardInfo>(),
 			streetsList: new Array<Street>(),
+			houseModels: {
+				lv0: undefined as Model | undefined,
+				lv1: undefined as Model | undefined,
+				lv2: undefined as Model | undefined,
+			},
 		};
 	},
 });

@@ -40,6 +40,10 @@ export interface GameMap {
 	itemTypes: ItemType[];
 	indexList: string[];
 	streets: Street[];
+	inUse: boolean;
+	houseModel_lv0: Model;
+	houseModel_lv1: Model;
+	houseModel_lv2: Model;
 }
 
 export interface MapItem {
@@ -132,6 +136,7 @@ export interface GameInitInfo {
 	currentPlayerInRound: string;
 	currentRound: number;
 	currentMultiplier: number;
+	houseModels: { lv0: Model; lv1: Model; lv2: Model };
 }
 
 export interface GameInfo {

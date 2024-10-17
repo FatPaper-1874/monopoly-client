@@ -299,13 +299,12 @@ export class MonopolyClient {
 	}
 
 	private handleGameInit(data: SocketMessage) {
-		console.log("INIT!!!");
-
 		if (data.data) {
 			const loadingStore = useLoading();
 			loadingStore.text = "获取数据成功，加载中...";
 
 			const gameInitInfo = data.data as GameInitInfo;
+			console.log("🚀 ~ MonopolyClient ~ handleGameInit ~ gameInitInfo:", gameInitInfo)
 
 			const mapDataStore = useMapData();
 			mapDataStore.$patch(gameInitInfo);

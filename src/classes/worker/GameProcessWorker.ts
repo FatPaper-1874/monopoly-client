@@ -287,6 +287,9 @@ export class GameProcess {
 			indexList: mapIndexList,
 			itemTypes: itemTypesList,
 			streets: streetsList,
+			houseModel_lv0: lv0,
+			houseModel_lv1: lv1,
+			houseModel_lv2: lv2,
 		} = this.mapInfo;
 		const gameInitInfo: GameInitInfo = {
 			mapId: mapId,
@@ -302,6 +305,7 @@ export class GameProcess {
 			currentPlayerInRound: this.currentPlayerInRound ? this.currentPlayerInRound.getId() : "",
 			currentRound: this.currentRound,
 			currentMultiplier: this.currentMultiplier,
+			houseModels: { lv0, lv1, lv2 },
 		};
 
 		this.gameBroadcast({
@@ -814,6 +818,9 @@ export class GameProcess {
 				indexList: mapIndexList,
 				itemTypes: itemTypesList,
 				streets: streetsList,
+				houseModel_lv0: lv0,
+				houseModel_lv1: lv1,
+				houseModel_lv2: lv2,
 			} = this.mapInfo;
 			const gameInitInfo: GameInitInfo = {
 				mapId: mapId,
@@ -829,6 +836,7 @@ export class GameProcess {
 				currentPlayerInRound: this.currentPlayerInRound ? this.currentPlayerInRound.getId() : "",
 				currentRound: this.currentRound,
 				currentMultiplier: this.currentMultiplier,
+				houseModels: { lv0, lv1, lv2 },
 			};
 			sendToUsers([userId], <SocketMessage>{
 				type: SocketMsgType.GameInit,
