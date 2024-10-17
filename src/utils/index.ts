@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import * as ts from "typescript";
 
 export const lightenColor = (hexColor: string, amount: number): string => {
 	// Remove the '#' character from the beginning of the string
@@ -348,4 +349,26 @@ export function generateSvgArrows(color: string) {
 
 export function remToPx(rem: number) {
 	return rem * parseFloat(getComputedStyle(document.documentElement).fontSize || "16");
+}
+
+export function compileTsToJs(code: string, types: string): string {
+	const fullCode = `${types}\n${code}`;
+
+	// 编译选项，可以根据需求进行调整
+	const compilerOptions: ts.TranspileOptions = {
+		compilerOptions: {
+			module: ts.ModuleKind.None,
+			target: ts.ScriptTarget.ES2020,
+			strict: true,
+			esModuleInterop: true,
+			removeComments: true,
+			noEmitHelpers: true,
+		},
+	};
+
+	// 使用 TypeScript 的 transpileModule 函数来编译代码
+	const result = ts.transpileModule(fullCode, compilerOptions);
+
+	// 返回编译后的 JavaScript 代码
+	return result.outputText;
 }

@@ -1,6 +1,6 @@
 import { Property as PropertyFromDB, PropertyInfo } from "@/interfaces/game";
 import { Player } from "./Player";
-import { PlayerInterface, PropertyInterface } from "../interface";
+import { PlayerInterface, PropertyInterface } from "../interfaces/game";
 
 export class Property implements PropertyInterface {
 	private id: string;

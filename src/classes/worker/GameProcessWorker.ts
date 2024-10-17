@@ -2,7 +2,7 @@ import { ChanceCard as ChanceCardFromDB, GameInfo, GameInitInfo, GameMap, MapIte
 import { Player } from "./class/Player";
 import { Property } from "./class/Property";
 import { User, UserInRoomInfo, GameSetting, SocketMessage } from "@/interfaces/bace";
-import { getRandomInteger, randomString } from "@/utils";
+import { compileTsToJs, getRandomInteger, randomString } from "@/utils";
 import { ChanceCardType, GameOverRule, OperateType } from "@/enums/game";
 import { ChanceCard } from "./class/ChanceCard";
 import { PlayerEvents } from "./enums/game";
@@ -13,6 +13,10 @@ import { WorkerCommMsg } from "@/interfaces/worker";
 import { WorkerCommType } from "@/enums/worker";
 import { RoundTimeTimer } from "./class/RoundTimeTimer";
 
+import ChanceCardNeedTypes from "./base-interface.d.ts?raw";
+import Utils from "./class/Utils?raw";
+
+const chanceCardTyps = [ChanceCardNeedTypes, Utils].join("\n");
 const operateListener = new OperateListener();
 let gameProcess: GameProcess | null = null;
 
@@ -115,6 +119,11 @@ export class GameProcess {
 
 		properties.forEach((property) => {
 			this.propertyList.set(property.id, new Property(property));
+		});
+
+		chanceCards.map((chanceCard) => {
+			chanceCard.effectCode = compileTsToJs(chanceCard.effectCode, chanceCardTyps);
+			return chanceCard;
 		});
 
 		this.chanceCardInfoList = chanceCards;
@@ -234,6 +243,10 @@ export class GameProcess {
 					});
 					player.setCardsList([]);
 					this.gameOverCheck();
+					if (this.currentPlayerInRound === player) {
+						operateListener.removeAll(player.getId());
+						player.removeAllListeners();
+					}
 				}
 			});
 			return player;
@@ -540,38 +553,38 @@ export class GameProcess {
 			});
 		})
 			.then(async () => {
-		this.gameBroadcast({
-			type: SocketMsgType.RollDiceStart,
-			source: "server",
-			data: "",
-		});
-		//摇骰子
-		this.dice.roll();
-		//让骰子摇一会 :P
-		await this.sleep(1500);
-		//发送信息
-		const msgToRollDice: SocketMessage = {
-			type: SocketMsgType.RollDiceResult,
-			source: "server",
-			data: {
-				rollDiceResult: this.dice.getResultArray(),
-				rollDiceCount: this.dice.getResultNumber(),
-				rollDicePlayerId: player.getId(),
-			},
-			msg: {
-				type: "info",
-				content: `${player.getUser().username}摇到的点数是: ${this.dice.getResultArray().join("-")}`,
-			},
-		};
-		//通知全部客户端
-		this.gameBroadcast(msgToRollDice);
-		//设置玩家的位置
-		await player.walk(this.dice.getResultNumber());
+				this.gameBroadcast({
+					type: SocketMsgType.RollDiceStart,
+					source: "server",
+					data: "",
+				});
+				//摇骰子
+				this.dice.roll();
+				//让骰子摇一会 :P
+				await this.sleep(1500);
+				//发送信息
+				const msgToRollDice: SocketMessage = {
+					type: SocketMsgType.RollDiceResult,
+					source: "server",
+					data: {
+						rollDiceResult: this.dice.getResultArray(),
+						rollDiceCount: this.dice.getResultNumber(),
+						rollDicePlayerId: player.getId(),
+					},
+					msg: {
+						type: "info",
+						content: `${player.getUser().username}摇到的点数是: ${this.dice.getResultArray().join("-")}`,
+					},
+				};
+				//通知全部客户端
+				this.gameBroadcast(msgToRollDice);
+				//设置玩家的位置
+				await player.walk(this.dice.getResultNumber());
 			})
 			.catch(() => {})
 			.finally(() => {
-		//更新游戏信息
-		this.gameInfoBroadcast();
+				//更新游戏信息
+				this.gameInfoBroadcast();
 			});
 	}
 
@@ -789,8 +802,9 @@ export class GameProcess {
 	}
 
 	public handlePlayerReconnect(userId: string) {
-		console.log("🚀 ~ GameProcess ~ handlePlayerReconnect ~ userId:", userId);
-		const player = this.playerList.find((player) => player.getUser().userId === userId);
+		const player = this.playerList.find((player) => {
+			return player.getUser().userId === userId;
+		});
 		if (player) {
 			player.setIsOffline(false);
 			const {
@@ -821,7 +835,7 @@ export class GameProcess {
 				source: "server",
 				data: gameInitInfo,
 			});
-			operateListener.once(player.getId(), OperateType.GameInitFinished, () => {
+			operateListener.once(userId, OperateType.GameInitFinished, () => {
 				sendToUsers([userId], <SocketMessage>{
 					type: SocketMsgType.GameInitFinished,
 					data: "",

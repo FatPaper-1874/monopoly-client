@@ -1,10 +1,11 @@
 import { UserInRoomInfo } from "@/interfaces/bace";
 import { Buff, PlayerInfo } from "@/interfaces/game";
 import { PlayerEvents } from "../enums/game";
-import { ChanceCardInterface, PlayerEventsCallback, PlayerInterface, PropertyInterface } from "../interface";
+import { ChanceCardInterface, PlayerEventsCallback, PlayerInterface, PropertyInterface } from "../interfaces/game";
 import { randomString } from "@/utils";
 
 type CallbackMapValue<E extends PlayerEvents> = {
+	id: string;
 	fn: PlayerEventsCallback[E]; // 根据 PlayerEvents 类型映射到具体的回调函数类型
 	triggerTimes: number;
 	buff?: Buff;
@@ -54,14 +55,14 @@ export class Player implements PlayerInterface {
 	};
 
 	public gainProperty = (property: PropertyInterface) => {
-		property = this.emit(PlayerEvents.BeforeGainProperty, property) || property;
+		this.emit(PlayerEvents.BeforeGainProperty, property);
 		const owner = property.getOwner();
 		if (owner && owner.getId() === this.getId()) this.properties.push(property);
 		this.emit(PlayerEvents.AfterGainProperty, property);
 	};
 
 	public loseProperty = (lostProperty: PropertyInterface) => {
-		lostProperty = this.emit(PlayerEvents.BeforeGainProperty, lostProperty) || lostProperty;
+		this.emit(PlayerEvents.BeforeLoseProperty, lostProperty);
 		const index = this.properties.findIndex((property) => property.getId() === lostProperty.getId());
 		if (index != -1) {
 			this.properties.splice(index, 1);
@@ -222,6 +223,7 @@ export class Player implements PlayerInterface {
 		fn: PlayerEventsCallback[K],
 		triggerTimes: number = Infinity,
 		buff?: {
+			id?: string;
 			name: string;
 			describe: string;
 			source: string;
@@ -233,10 +235,35 @@ export class Player implements PlayerInterface {
 		const fnArr = this.callBackMap.get(eventName);
 		fnArr &&
 			fnArr.unshift({
+				id: randomString(16),
 				fn,
 				triggerTimes,
-				buff: buff ? { id: randomString(16), ...buff, type: eventName, triggerTimes } : undefined,
+				buff: buff ? { id: buff.id || randomString(16), ...buff, type: eventName, triggerTimes } : undefined,
 			});
+	}
+
+	public removeListener(eventName: PlayerEvents, id: string) {
+		const fnArr = this.callBackMap.get(eventName);
+		if (fnArr) {
+			const removeIndex = fnArr.findIndex((fobj) => fobj.id === id);
+			fnArr.splice(removeIndex, 1);
+		}
+	}
+
+	public removeAllListeners(eventName?: PlayerEvents) {
+		if (eventName) {
+			if (this.callBackMap.has(eventName)) this.callBackMap.delete(eventName);
+		} else {
+			this.callBackMap.clear();
+		}
+	}
+
+	public updateBuff(buffId: string, newBuff: Buff) {
+		this.callBackMap.values().map((item) => {
+			item.map((obj) => {
+				if (obj.buff && obj.buff.id === buffId) obj.buff = newBuff;
+			});
+		});
 	}
 
 	public emit<K extends keyof PlayerEventsCallback>(
@@ -248,32 +275,25 @@ export class Player implements PlayerInterface {
 		if (fnArr) {
 			for (let index = 0; index < fnArr.length; index++) {
 				const item = fnArr[index];
-				res = (item.fn as (...args: Parameters<PlayerEventsCallback[K]>) => ReturnType<PlayerEventsCallback[K]>)(
-					...args
-				);
-				item.triggerTimes--;
-				if (item.buff) {
-					item.buff.triggerTimes = item.triggerTimes;
-				}
 
-				if (item.triggerTimes === 0) {
+				item.triggerTimes--;
+				if (item.triggerTimes >= 0) {
+					res = (item.fn as (...args: Parameters<PlayerEventsCallback[K]>) => ReturnType<PlayerEventsCallback[K]>)(
+						...args
+					);
+					if (item.triggerTimes === 0) {
+						fnArr.splice(index, 1);
+						index--; // 防止跳过下一个元素
+					}
+				} else {
 					fnArr.splice(index, 1);
 					index--; // 防止跳过下一个元素
+				}
+				if (item.buff) {
+					item.buff.triggerTimes = item.triggerTimes;
 				}
 			}
 		}
 		return res;
-	}
-
-	public remove(eventName: PlayerEvents, fn: Function) {
-		const fnArr = this.callBackMap.get(eventName);
-		if (fnArr) {
-			const removeIndex = fnArr.findIndex((fobj) => fobj.fn === fn);
-			fnArr.splice(removeIndex, 1);
-		}
-	}
-
-	public removeAll(eventName: PlayerEvents) {
-		if (this.callBackMap.has(eventName)) this.callBackMap.delete(eventName);
 	}
 }

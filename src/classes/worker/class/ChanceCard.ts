@@ -1,6 +1,6 @@
 import { ChanceCardType } from "@/enums/game";
 import { ChanceCard as ChanceCardFromDB, ChanceCardInfo } from "@/interfaces/game";
-import { ChanceCardInterface, PlayerInterface, PropertyInterface } from "../interface";
+import { ChanceCardInterface, PlayerInterface, PropertyInterface } from "../interfaces/game";
 import { GameProcess } from "../GameProcessWorker";
 import { randomString } from "@/utils";
 

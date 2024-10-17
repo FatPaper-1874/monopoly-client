@@ -99,8 +99,10 @@ export class MonopolyClient {
 			useLoading().showLoading("主机创建成功，正在和服务器报喜...");
 			await emitHostPeerId(roomId, hostPeerId, userStore.username, userStore.userId);
 		}
-		useLoading().showLoading("连接主机中...");
-		await this.linkToGameHost(hostPeerId);
+		if (hostPeerId) {
+			useLoading().showLoading("连接主机中...");
+			await this.linkToGameHost(hostPeerId);
+		}
 	}
 
 	private async linkToGameHost(hostPeerId: string) {
