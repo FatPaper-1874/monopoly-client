@@ -47,6 +47,12 @@ export class MonopolyHost {
 				if (this.room.isStarted) {
 					if (this.room.isUserInRoomAndOffline(user.userId)) {
 						this.room.handleUserReconnect(user.userId, conn);
+						if (_data.type === SocketMsgType.JoinRoom) {
+							if (!this.room) throw Error("在房间没创建时加入了房间");
+							clientUserId = user.userId;
+							this.clientList.set(user.userId, conn);
+							this.room.join(user, conn);
+						}
 					} else {
 						conn.send(
 							JSON.stringify(<SocketMessage>{
@@ -62,26 +68,27 @@ export class MonopolyHost {
 						conn.close();
 						return;
 					}
-				}
-				if (this.room.getUserList().length >= 6) {
-					conn.send(
-						JSON.stringify(<SocketMessage>{
-							type: SocketMsgType.MsgNotify,
-							data: "",
-							msg: {
-								type: "error",
-								content: "该房间已经满人了!",
-							},
-							source: "server",
-						})
-					);
-					conn.close();
 				} else {
-					if (_data.type === SocketMsgType.JoinRoom) {
-						if (!this.room) throw Error("在房间没创建时加入了房间");
-						clientUserId = user.userId;
-						this.clientList.set(user.userId, conn);
-						this.room.join(user, conn);
+					if (this.room.getUserList().length >= 6) {
+						conn.send(
+							JSON.stringify(<SocketMessage>{
+								type: SocketMsgType.MsgNotify,
+								data: "",
+								msg: {
+									type: "error",
+									content: "该房间已经满人了!",
+								},
+								source: "server",
+							})
+						);
+						conn.close();
+					} else {
+						if (_data.type === SocketMsgType.JoinRoom) {
+							if (!this.room) throw Error("在房间没创建时加入了房间");
+							clientUserId = user.userId;
+							this.clientList.set(user.userId, conn);
+							this.room.join(user, conn);
+						}
 					}
 				}
 			});
@@ -237,10 +244,7 @@ export class MonopolyHost {
 
 	private handleKickOut(socketClient: DataConnection, data: SocketMessage, clientUserId: string) {
 		const playerId = data.data;
-		console.log("🚀 ~ MonopolyHost ~ handleKickOut ~ playerId:", playerId);
 		const player = this.clientList.get(playerId);
-		console.log("🚀 ~ MonopolyHost ~ handleKickOut ~ this.clientList:", this.clientList);
-		console.log("🚀 ~ MonopolyHost ~ handleKickOut ~ player:", player);
 		if (player) {
 			player.send(
 				JSON.stringify(<SocketMessage>{
@@ -316,7 +320,6 @@ export class MonopolyHost {
 		);
 		if (this.room.leave(clientUserId)) {
 			//没人了
-			console.log("🚀 ~ MonopolyHost ~ handleLeaveRoom ~ 没人了:");
 			this.destory();
 		}
 		socketClient.close();
