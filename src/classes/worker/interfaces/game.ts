@@ -1,6 +1,6 @@
 import { ChanceCardType } from "@/enums/game";
 import { User } from "@/interfaces/bace";
-import { ChanceCardInfo, PlayerInfo, PropertyInfo } from "@/interfaces/game";
+import { Buff, ChanceCardInfo, PlayerInfo, PropertyInfo } from "@/interfaces/game";
 import { GameProcess } from "../GameProcessWorker";
 import { PlayerEvents } from "../enums/game";
 
@@ -125,6 +125,7 @@ export interface PlayerInterface {
 
 export interface ChanceCardInterface {
 	getId: () => string;
+	getSourceId: () => string;
 	getName: () => string;
 	getDescribe: () => string;
 	getIcon: () => string;

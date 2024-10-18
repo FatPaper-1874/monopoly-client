@@ -1,11 +1,12 @@
 import { ChanceCardType } from "@/enums/game";
-import { ChanceCard as ChanceCardFromDB, ChanceCardInfo } from "@/interfaces/game";
+import { ChanceCard as ChanceCardFromDB, ChanceCardInfo, ChanceCardInstanceInfo } from "@/interfaces/game";
 import { ChanceCardInterface, PlayerInterface, PropertyInterface } from "../interfaces/game";
 import { GameProcess } from "../GameProcessWorker";
 import { randomString } from "@/utils";
 
 export class ChanceCard implements ChanceCardInterface {
 	private id: string;
+	private sourceId: string;
 	private name: string;
 	private describe: string;
 	private type: ChanceCardType;
@@ -16,6 +17,7 @@ export class ChanceCard implements ChanceCardInterface {
 
 	constructor(chanceCard: ChanceCardFromDB) {
 		this.id = randomString(16);
+		this.sourceId = chanceCard.id;
 		this.name = chanceCard.name;
 		this.describe = chanceCard.describe;
 		this.type = chanceCard.type;
@@ -27,6 +29,7 @@ export class ChanceCard implements ChanceCardInterface {
 	}
 
 	public getId = () => this.id;
+	public getSourceId = () => this.sourceId;
 	public getName = () => this.name;
 	public getDescribe = () => this.describe;
 	public getColor = () => this.color;
@@ -46,9 +49,10 @@ export class ChanceCard implements ChanceCardInterface {
 		}
 	}
 
-	public getChanceCardInfo(): ChanceCardInfo {
-		const chanceCardInfo: ChanceCardInfo = {
+	public getChanceCardInfo(): ChanceCardInstanceInfo {
+		const chanceCardInfo: ChanceCardInstanceInfo = {
 			id: this.id,
+			sourceId: this.sourceId,
 			name: this.name,
 			describe: this.describe,
 			color: this.color,

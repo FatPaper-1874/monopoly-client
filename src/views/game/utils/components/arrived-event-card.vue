@@ -3,9 +3,9 @@ import { ArrivedEvent, PropertyInfo } from "@/interfaces/game";
 import { ref } from "vue";
 import { __PROTOCOL__ } from "@G/global.config";
 
-// const {arrivedEvent} = defineProps<{ arrivedEvent: ArrivedEvent | null }>();
+const props = defineProps<{ arrivedEvent: ArrivedEvent | null }>();
 
-const arrivedEvent = ref<ArrivedEvent | null>(null);
+const arrivedEvent = ref<ArrivedEvent | null>(props.arrivedEvent);
 
 function updateArrivedEvent(newArrivedEvent: ArrivedEvent) {
 	arrivedEvent.value = newArrivedEvent;

@@ -231,6 +231,7 @@ interface PlayerInterface {
 
 interface ChanceCardInterface {
 	getId: () => string;
+	getSourceId: () => string;
 	getName: () => string;
 	getDescribe: () => string;
 	getIcon: () => string;
@@ -243,7 +244,7 @@ interface ChanceCardInterface {
 		gameProcess: GameProcess
 	) => Promise<void>;
 
-	getChanceCardInfo: () => ChanceCardInfo;
+	getChanceCardInfo: () => ChanceCardInstanceInfo;
 }
 
 interface ChanceCardFromDB {
@@ -254,6 +255,16 @@ interface ChanceCardFromDB {
 	color: string;
 	type: ChanceCardType;
 	effectCode: string;
+}
+
+interface ChanceCardInstanceInfo {
+	id: string;
+	sourceId: string;
+	name: string;
+	describe: string;
+	color: string;
+	type: ChanceCardType;
+	icon: string;
 }
 
 interface Street {

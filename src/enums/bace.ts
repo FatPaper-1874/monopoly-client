@@ -2,6 +2,7 @@ export enum SocketMsgType {
 	ConfirmIdentity = 1000, //确认身份(websocket从客户端获取id)
 	Heart, //心跳信息
 	MsgNotify, //纯信息广播
+	GameLog, //游戏过程信息广播
 	UserList, //大厅玩家信息广播
 	RoomList, //房间列表广播
 	JoinRoom, //加入房间

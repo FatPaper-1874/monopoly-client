@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { User, Room, Role, ChatMessage, UserInRoomInfo } from "@/interfaces/bace";
+import { User, Room, Role, ChatMessage, UserInRoomInfo, GameLog } from "@/interfaces/bace";
 import { MapItem, PlayerInfo, PropertyInfo, ItemType, ChanceCardInfo, Street, Model } from "@/interfaces/game";
 import { GameOverRule } from "@/enums/game";
 import { isFullScreen, isLandscape, setTimeOutAsync } from "@/utils";
@@ -101,6 +101,15 @@ export const useMapData = defineStore("map", {
 			},
 		};
 	},
+	actions: {
+		getChanceCardInfoById(id: string) {
+			return this.$state.chanceCards.find((p) => p.id === id);
+		},
+		getArrivedItemInfoById(id: string) {
+			return this.$state.mapItemsList.filter((i) => Boolean(i.arrivedEvent)).find((p) => p.arrivedEvent!.id === id)
+				?.arrivedEvent;
+		},
+	},
 });
 
 export const useGameInfo = defineStore("gameInfo", {
@@ -124,6 +133,14 @@ export const useGameInfo = defineStore("gameInfo", {
 			return !amIBankrupted && _this.isMyTurn;
 		},
 	},
+	actions: {
+		getPlayerInfoById(id: string) {
+			return this.$state.playersList.find((p) => p.id === id);
+		},
+		getPropertyById(id: string) {
+			return this.$state.propertiesList.find((p) => p.id === id);
+		},
+	},
 });
 
 export const useUtil = defineStore("util", {
@@ -141,15 +158,15 @@ export const useUtil = defineStore("util", {
 
 export const useChat = defineStore("chat", {
 	state: (): {
-		chatShow: boolean;
+		visible: boolean;
 		messageLimit: number;
 		chatMessageQueue: Array<ChatMessage>;
 		newMessage: ChatMessage | undefined;
 		newMessageNum: number;
 	} => {
 		return {
-			chatShow: false,
-			messageLimit: 60,
+			visible: false,
+			messageLimit: 30,
 			chatMessageQueue: new Array<ChatMessage>(),
 			newMessage: undefined,
 			newMessageNum: 0,
@@ -159,13 +176,35 @@ export const useChat = defineStore("chat", {
 		addNewMessage(_newMessage: ChatMessage) {
 			this.chatMessageQueue.push(_newMessage);
 			this.newMessage = _newMessage;
-			if (!this.chatShow) this.newMessageNum += 1;
+			if (!this.visible) this.newMessageNum += 1;
 			if (this.chatMessageQueue.length > this.messageLimit) {
 				this.chatMessageQueue.shift();
 			}
 		},
 		resetNewMessageNum() {
 			this.newMessageNum = 0;
+		},
+	},
+});
+
+export const useGameLog = defineStore("gameLog", {
+	state: (): {
+		visible: boolean;
+		logLimit: number;
+		gameLogQueue: Array<GameLog>;
+	} => {
+		return {
+			visible: false,
+			logLimit: 30,
+			gameLogQueue: new Array<GameLog>(),
+		};
+	},
+	actions: {
+		addNewLog(_newLog: GameLog) {
+			this.gameLogQueue.push(_newLog);
+			if (this.gameLogQueue.length > this.logLimit) {
+				this.gameLogQueue.shift();
+			}
 		},
 	},
 });

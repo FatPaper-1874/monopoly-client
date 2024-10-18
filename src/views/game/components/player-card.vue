@@ -66,6 +66,7 @@ watch(
 <style lang="scss" scoped>
 .player-card {
 	width: 100%;
+	max-width: max-content;
 	min-width: 11rem;
 	display: flex;
 	justify-content: space-around;

@@ -122,6 +122,16 @@ export interface ChanceCardInfo {
 	icon: string;
 }
 
+export interface ChanceCardInstanceInfo {
+	id: string;
+	sourceId: string;
+	name: string;
+	describe: string;
+	color: string;
+	type: ChanceCardType;
+	icon: string;
+}
+
 export interface GameInitInfo {
 	mapId: string;
 	mapName: string;

@@ -3,9 +3,10 @@ import { ref, computed } from "vue";
 import { PropertyInfo } from "@/interfaces/game";
 import { PropertyLevel } from "@/utils/var";
 
-// const { property } = defineProps<{ property: PropertyInfo | null }>();
+const props = defineProps<{ property: PropertyInfo | null }>();
 
-const _property = ref<PropertyInfo | null>(null);
+const _property = ref<PropertyInfo | null>(props.property);
+console.log("🚀 ~ _property:", _property.value)
 
 const _propertyBuildLevelColor = computed(() => PropertyLevel[_property.value?.buildingLevel || 0].color);
 const _propertyBuildLevelName = computed(() => PropertyLevel[_property.value?.buildingLevel || 0].name);
@@ -67,7 +68,7 @@ defineExpose({ updateProperty });
 	justify-content: space-around;
 	align-items: center;
 	padding: 0.6rem 0.4rem;
-	background-color: rgba(255, 255, 255, 0.65);
+	background-color: rgba(255, 255, 255, 0.75);
 	border-radius: 0.8rem;
 
 	&>.name>.data {

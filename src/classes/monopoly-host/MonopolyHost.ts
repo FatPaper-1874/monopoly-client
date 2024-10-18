@@ -688,7 +688,6 @@ class Room {
 		const handleWorkerReady = async () => {
 			if (!this.gameSetting.mapId || !this.gameProcess) return;
 			const mapInfo = await getMapById(this.gameSetting.mapId);
-			console.log("🚀 ~ Room ~ handleWorkerReady ~ mapInfo:", mapInfo)
 			this.gameProcess.postMessage(<WorkerCommMsg>{
 				type: WorkerCommType.LoadGameInfo,
 				data: {

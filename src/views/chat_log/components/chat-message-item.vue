@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ChatMessage } from "@/interfaces/bace";
-import { computed } from "vue";
+import { computed, onMounted, onUpdated } from "vue";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { __PROTOCOL__ } from "@G/global.config";
 
@@ -11,6 +11,13 @@ const avatarSrc = computed(() => {
 });
 
 const color = user.color;
+onMounted(()=>{
+	console.log("🚀 ~ onMounted ~ onMounted:")
+})
+
+onUpdated(()=>{
+	console.log("🚀 ~ onUpdated ~ onUpdated:")
+})
 </script>
 
 <template>

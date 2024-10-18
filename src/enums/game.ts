@@ -39,3 +39,10 @@ export enum GameEvents {
 	GainMoney = "GainMoney",
 	CostMoney = "CostMoney",
 }
+
+export enum GameLinkItem {
+	Player = "Player",
+	ChanceCard = "ChanceCard",
+	Property = "Property",
+	ArrivedEvent = "ArrivedEvent",
+}

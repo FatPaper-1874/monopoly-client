@@ -269,7 +269,6 @@ export class GameRenderer {
 
 		//加载屋子的模型
 		const { lv0, lv1, lv2 } = mapDataStore.houseModels;
-		console.log("🚀 ~ GameRenderer ~ initMap ~ lv0 && lv1 && lv2:", lv0 , lv1 , lv2)
 		if (lv0 && lv1 && lv2) await this.loadHousesModels({ lv0, lv1, lv2 });
 
 		//加载地图
@@ -924,7 +923,6 @@ export class GameRenderer {
 		modelList.forEach((model) => {
 			this.housesModules.set(model.name, model.glft.scene);
 		});
-		console.log("🚀 ~ GameRenderer ~ modelList.forEach ~ this.housesModules:", this.housesModules);
 	}
 
 	private async loadMapModels(itemTypeList: ItemType[]) {

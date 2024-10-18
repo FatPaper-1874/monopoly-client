@@ -1,6 +1,15 @@
 import Peer, { DataConnection } from "peerjs";
 import { ChangeRoleOperate, MonopolyWebSocketMsgType, SocketMsgType } from "@/enums/bace";
-import { ChatMessage, GameSetting, MonopolyWebSocketMsg, Room, RoomInfo, SocketMessage, User } from "@/interfaces/bace";
+import {
+	ChatMessage,
+	GameLog,
+	GameSetting,
+	MonopolyWebSocketMsg,
+	Room,
+	RoomInfo,
+	SocketMessage,
+	User,
+} from "@/interfaces/bace";
 import { base64ToFileUrl, debounce, throttle } from "@/utils";
 import { asyncMissionQueue } from "@/utils/async-mission-queue";
 import { MonopolyHost } from "@/classes/monopoly-host/MonopolyHost";
@@ -9,6 +18,7 @@ import FPMessage from "@/components/utils/fp-message";
 import {
 	useChat,
 	useGameInfo,
+	useGameLog,
 	useLoading,
 	useMapData,
 	useRoomInfo,
@@ -21,7 +31,7 @@ import router from "@/router";
 import { GameInfo, GameInitInfo, PropertyInfo, PlayerInfo } from "@/interfaces/game";
 import useEventBus from "@/utils/event-bus";
 import { createVNode } from "vue";
-import PropertyInfoVue from "@/components/common/property-info.vue";
+import PropertyInfoVue from "@/components/common/property-card.vue";
 import { FPMessageBox } from "@/components/utils/fp-message-box";
 import { OperateType } from "@/enums/game";
 import { emitHostPeerId, emitRoomHeart, joinRoomApi } from "@/utils/api/room-router";
@@ -178,7 +188,9 @@ export class MonopolyClient {
 					case SocketMsgType.GameInfo:
 						this.handleGameInfo(data);
 						break;
-
+					case SocketMsgType.GameLog:
+						this.handleGameLog(data);
+						break;
 					case SocketMsgType.GainMoney:
 						this.handleGainMoney(data);
 						break;
@@ -304,7 +316,6 @@ export class MonopolyClient {
 			loadingStore.text = "获取数据成功，加载中...";
 
 			const gameInitInfo = data.data as GameInitInfo;
-			console.log("🚀 ~ MonopolyClient ~ handleGameInit ~ gameInitInfo:", gameInitInfo)
 
 			const mapDataStore = useMapData();
 			mapDataStore.$patch(gameInitInfo);
@@ -366,6 +377,11 @@ export class MonopolyClient {
 		}
 	}
 
+	private handleGameLog(data: SocketMessage) {
+		const log = data.data as GameLog;
+		useGameLog().addNewLog(log);
+	}
+
 	private handleRemainingTime(data: SocketMessage) {
 		const waitingFor = data.data;
 		const utilStore = useUtil();
@@ -401,8 +417,10 @@ export class MonopolyClient {
 
 	private handleUsedChanceCard(data: SocketMessage) {
 		const utilStore = useUtil();
+		if (data.data === "error") {
+			utilStore.canUseCard = true;
+		}
 		utilStore.canRoll = true;
-		// utilStore.canUseCard = true;
 	}
 
 	private handlePlayerWalk(data: SocketMessage) {
@@ -468,6 +486,7 @@ export class MonopolyClient {
 		const roomInfoStore = useRoomInfo();
 		roomInfoStore.$reset();
 		useChat().$reset();
+		useGameLog().$reset();
 		this.destory();
 		router.replace({ name: "room-router" });
 	}
