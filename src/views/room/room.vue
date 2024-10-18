@@ -155,6 +155,12 @@ function handleUpdateGameSetting() {
 
 			<div class="map-option">
 				<div class="options">
+					<span class="label">骰子数量</span>
+					<div>
+						<input :disabled="!isOwner" type="number" min="1" max="4" v-model="_tempGameSettingFrom.diceNum" />个
+					</div>
+				</div>
+				<div class="options">
 					<span class="label">回合时间</span>
 					<div>
 						<input :disabled="!isOwner" type="number" min="5" max="30" v-model="_tempGameSettingFrom.roundTime" />秒
