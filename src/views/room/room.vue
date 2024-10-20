@@ -15,6 +15,7 @@ import { MonopolyClient, useMonopolyClient } from "@/classes/monopoly-client/Mon
 import { computed, onBeforeMount, onBeforeUnmount, onMounted, reactive, ref, toRaw, watch } from "vue";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { copyToClipboard } from "@/utils";
+import { setRoomPrivate } from "@/utils/api/room-router";
 
 const roomInfoStore = useRoomInfo();
 const userInfoStore = useUserInfo();
@@ -26,6 +27,7 @@ const ownerName = computed(() => roomInfoStore.ownerName);
 const ownerId = computed(() => roomInfoStore.ownerId);
 const roomId = computed(() => roomInfoStore.roomId);
 const roleList = computed(() => roomInfoStore.roleList);
+const isPrivate = ref(true);
 
 const isOwner = computed(() => userInfoStore.userId === roomInfoStore.ownerId);
 const isReady = computed(() => roomInfoStore.userList.find((user) => user.userId === userInfoStore.userId)?.isReady);
@@ -93,6 +95,11 @@ function handleLeaveRoom() {
 	}
 }
 
+async function handleSetPrivate() {
+	isPrivate.value = !isPrivate.value;
+	const res = await setRoomPrivate(roomId.value, isPrivate.value);
+}
+
 async function handleCopyRoomId() {
 	await copyToClipboard(roomId.value);
 	FPMessage({
@@ -136,6 +143,7 @@ function handleUpdateGameSetting() {
 			</div>
 
 			<div class="room-Id">
+				<button v-if="isOwner" class="set-private-button" @click="handleSetPrivate">{{ isPrivate ? "点击公开" : "点击隐藏" }}</button>
 				<span @click="handleCopyRoomId" style="flex: 1; text-align: center">
 					房间ID:<span>{{ roomId }}</span>
 				</span>
@@ -234,7 +242,7 @@ function handleUpdateGameSetting() {
 <style lang="scss" scoped>
 .room-page {
 	width: 75vw;
-	height: 90%;
+	height: 85%;
 	padding: 1.2rem;
 	margin: auto;
 	box-sizing: border-box;
@@ -307,6 +315,13 @@ function handleUpdateGameSetting() {
 	background-color: rgba(255, 255, 255, 0.45);
 	margin-bottom: 0.8rem;
 	padding: 0.3rem;
+
+	&>.set-private-button{
+		height: 90%;
+		min-height: 2.5rem;
+		margin-left: .3rem;
+		border-radius: 0.4rem;
+	}
 
 	& > span {
 		color: var(--color-third);

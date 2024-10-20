@@ -8,6 +8,10 @@ import { getUserByToken } from "@/utils/api/user";
 import FPMessage from "@/components/utils/fp-message";
 import { __FATPAPER_HOST__, __ICE_SERVER_PORT__ } from "@G/global.config";
 import LoginExtra from "@/views/login/components/login-extra.vue";
+import FpPopover from "@/components/utils/fp-popover/fp-popover.vue";
+import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import { getRandomPublicRoom } from "@/utils/api/room-router";
+import { throttle } from "@/utils";
 
 const userInfoStore = useUserInfo();
 const userListStore = useUserList();
@@ -80,6 +84,28 @@ async function joinRoom(e: Event) {
 		useLoading().hideLoading();
 	}
 }
+
+const randomRoomButtonDisable = ref(false);
+let interval: any;
+async function handleGetRandomPublicRoom(e: Event) {
+	e.preventDefault();
+	if (interval) clearInterval(interval);
+	randomRoomButtonDisable.value = true;
+	interval = setInterval(() => {
+		randomRoomButtonDisable.value = false;
+	}, 1000);
+	try {
+		const res = await getRandomPublicRoom();
+		if (res.roomId) {
+			FPMessage({ type: "success", message: "遇到等待的小伙伴了呢!" });
+			roomId.value = res.roomId;
+		} else {
+			FPMessage({ type: "error", message: "现在没有公开的房间喔" });
+		}
+	} catch (e: any) {
+		FPMessage({ type: "error", message: e.message || e });
+	}
+}
 </script>
 
 <template>
@@ -99,8 +125,18 @@ async function joinRoom(e: Event) {
 				·建议使用稍微复杂的房间号(防止误入别人的房间)<br />
 			</div>
 			<form @submit="joinRoom">
-				<input v-model="roomId" type="text" placeholder="房间号(1-12个字符)" />
+				<input maxlength="12" v-model="roomId" type="text" placeholder="房间号(1-12个字符)" />
 				<button type="submit">加入/创建房间</button>
+				<FpPopover placement="bottom">
+					<template #default>
+						<button class="random-room-button" :disabled="randomRoomButtonDisable" @click="handleGetRandomPublicRoom">
+							<FontAwesomeIcon :icon="randomRoomButtonDisable ? 'hourglass-half' : 'shuffle'" />
+						</button>
+					</template>
+					<template #content>
+						<div class="tips">寻找随机的公开房间</div>
+					</template>
+				</FpPopover>
 			</form>
 		</div>
 	</div>
@@ -170,12 +206,32 @@ async function joinRoom(e: Event) {
 			padding-left: 0.8rem;
 		}
 
+		& form {
+			display: flex;
+			justify-content: space-around;
+
+			& .random-room-button {
+				padding: 0 .6rem;
+			}
+
+			& .tips {
+				width: max-content;
+				margin-top: 4rem;
+				font-size: 1.2rem;
+				background-color: rgba(255, 255, 255, 0.7);
+				border-radius: 0.7rem;
+				padding: 0.6rem;
+				color: var(--color-primary);
+				text-shadow: var(--text-shadow);
+			}
+		}
+
 		& input {
 			height: 3rem;
 		}
 
 		& button {
-			margin-left: 1rem;
+			margin-left: 0.5rem;
 			border-radius: 0.7rem;
 			height: 3rem;
 		}

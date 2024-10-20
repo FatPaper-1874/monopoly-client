@@ -21,3 +21,14 @@ export async function emitRoomHeart(roomId: string) {
 export function deleteRoom(roomId: string) {
 	navigator.sendBeacon(`${__MONOPOLYSERVER__}/room-router/delete?roomId=${roomId}`);
 }
+
+export async function getRandomPublicRoom() {
+	return (await axios.get(`${__MONOPOLYSERVER__}/room-router/random-public-room`)) as { roomId: string };
+}
+
+export async function setRoomPrivate(roomId: string, isPrivate: boolean) {
+	return (await axios.post(`${__MONOPOLYSERVER__}/room-router/set-private`, { roomId, isPrivate })) as {
+		roomId: string;
+		isPrivate: boolean;
+	};
+}
