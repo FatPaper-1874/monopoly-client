@@ -42,7 +42,7 @@ function toBilibili() {
 				<FontAwesomeIcon icon="bug" />
 			</div>
 			<template #content>
-				<div class="extra-content">有Bug？点击提交</div>
+				<div class="extra-content">有Bug? 点击提交</div>
 			</template>
 		</fp-popover>
 		<fp-popover placement="right" trigger="hover">
@@ -51,10 +51,15 @@ function toBilibili() {
 				<div class="extra-content">点击看介绍视频</div>
 			</template>
 		</fp-popover>
+
+		<span class="version">v0.1.0</span>
 	</div>
 </template>
 
 <style scoped lang="scss">
+.version{
+	color: rgba(255, 255, 255, 0.85);
+}
 .login-extra {
 	position: absolute;
 	left: 2rem;

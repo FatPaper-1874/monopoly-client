@@ -56,8 +56,8 @@ function initMiniMap() {
 	const maxY = Math.max(...mapItemsList.map((item) => item.y));
 
 	// 动态设置 CSS Grid 行列数
-	miniMapContainer.style.gridTemplateColumns = `repeat(${maxX + 1}, 3rem)`; // 列数为最大 x + 1
-	miniMapContainer.style.gridTemplateRows = `repeat(${maxY + 1}, 3rem)`; // 行数为最大 y + 1
+	miniMapContainer.style.gridTemplateColumns = `repeat(${maxX + 1}, ${maxX > 12 || maxY > 12 ? "2rem" : "3rem"})`; // 列数为最大 x + 1
+	miniMapContainer.style.gridTemplateRows = `repeat(${maxY + 1}, ${maxX > 12 || maxY > 12 ? "2rem" : "3rem"})`; // 行数为最大 y + 1
 }
 </script>
 
@@ -92,30 +92,35 @@ function initMiniMap() {
 <style lang="scss" scoped>
 .mini-map-container {
 	display: grid;
-	padding: 3rem;
+	padding: 1rem;
 	background-color: #3b3b3b;
 	border-radius: 0.8rem;
 	margin-bottom: 2rem;
 	justify-items: center;
 	align-items: center;
 
-	$map-item-size: 2.6rem;
+	$map-item-size: 80%;
 	& > .map-item {
 		width: $map-item-size;
 		height: $map-item-size;
-		border-radius: 0.3rem;
+		border-radius: 10%;
 		background-color: #707070;
 		cursor: pointer;
 		box-sizing: border-box;
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		font-size: 80%;
 
 		& .player-block {
-			$block-size: calc($map-item-size - 0.6rem);
+			// $block-size: calc($map-item-size - 0.6rem);
+			$block-size: 80%;
 			width: $block-size;
 			height: $block-size;
 			border-radius: 50%;
+			display: flex;
+			justify-content: center;
+			align-items: center;
 			line-height: $block-size;
 			text-align: center;
 			vertical-align: middle;
@@ -123,22 +128,22 @@ function initMiniMap() {
 
 		&.highlight {
 			background-color: #fff;
-			border: 0.3rem solid #fff;
+			border: 10% solid #fff;
 			line-height: $map-item-size;
 			text-align: center;
 			vertical-align: middle;
 			animation: pulse-highlight 0.6s infinite alternate;
 
 			@keyframes pulse-highlight {
-					0% {
-						transform: scale(1);
-						opacity: 0.8;
-					}
-					100% {
-						transform: scale(1.03);
-						opacity: 1;
-					}
+				0% {
+					transform: scale(1);
+					opacity: 0.8;
 				}
+				100% {
+					transform: scale(1.03);
+					opacity: 1;
+				}
+			}
 		}
 
 		&.selected {

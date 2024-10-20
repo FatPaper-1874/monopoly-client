@@ -11,6 +11,7 @@ import { getMapById, getMapsList } from "@/utils/api/map";
 import { deleteRoom, emitRoomHeart } from "@/utils/api/room-router";
 import { asyncMission } from "@/utils/async-mission-queue";
 import { __ICE_SERVER_PATH__, __PROTOCOL__ } from "@G/global.config";
+import { useLoading } from "@/store";
 
 export class MonopolyHost {
 	private peer: Peer;
@@ -365,8 +366,8 @@ class Room {
 		this.gameSetting = {
 			gameOverRule: GameOverRule.Earn100000,
 			initMoney: 20000,
-			multiplier: 1,
-			multiplierIncreaseRounds: 2,
+			multiplier: 0.5,
+			multiplierIncreaseRounds: 4,
 			mapId: "",
 			roundTime: 20,
 			diceNum: 2,
@@ -687,7 +688,9 @@ class Room {
 
 		const handleWorkerReady = async () => {
 			if (!this.gameSetting.mapId || !this.gameProcess) return;
+			useLoading().showLoading("正在向服务器获取地图信息...")
 			const mapInfo = await getMapById(this.gameSetting.mapId);
+			useLoading().showLoading("正在加载地图...")
 			this.gameProcess.postMessage(<WorkerCommMsg>{
 				type: WorkerCommType.LoadGameInfo,
 				data: {

@@ -13,7 +13,7 @@ const isLandscape = computed(() => deviceStatus.isLandscape);
 
 <template>
   <!-- <div v-show="!isFullScreen || !isLandscape" @click="requestFullScreen" id="screen-mask"> -->
-    <div v-show="!isLandscape" @click="requestFullScreen" id="screen-mask">
+    <div v-show="!isLandscape" id="screen-mask">
 
     <!-- <div v-show="!isFullScreen" class="text_container">
       <span>请点击任意区域进入全屏</span>

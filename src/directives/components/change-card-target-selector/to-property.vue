@@ -5,6 +5,7 @@ import { useGameInfo, useMapData } from "@/store";
 import { computed, onBeforeMount, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import ChanceCard from "@/views/game/components/chance-card.vue";
 import MiniMap from "./mini-map.vue";
+import PropertyInfoCard from "@/views/game/utils/components/property-info-card.vue";
 
 const props = defineProps<{ chanceCard: ChanceCardInfo; onUseCard: Function; onCancel: Function }>();
 const emit = defineEmits<{ (e: "useCard", targetId: string): void; (e: "cancel"): void }>();
@@ -12,6 +13,16 @@ const emit = defineEmits<{ (e: "useCard", targetId: string): void; (e: "cancel")
 const mapDataStore = useMapData();
 
 const currentSelectedTargetId = ref("");
+
+const currentSelectedProperty = computed(() => {
+	const targetMapItem = mapDataStore.mapItemsList.find((i) => i.id === currentSelectedTargetId.value);
+	if (!targetMapItem) return;
+	const targetPropertyId = targetMapItem.property?.id;
+	if (!targetPropertyId) return;
+	const targetProperty = useGameInfo().propertiesList.find((p) => p.id === targetPropertyId);
+	return targetProperty;
+});
+
 const tips = computed(() => {
 	const targetMapItem = mapDataStore.mapItemsList.find((i) => i.id === currentSelectedTargetId.value);
 	if (!targetMapItem) return "选择机会卡的目标（高亮的地方）";
@@ -32,7 +43,6 @@ const highLightItemsId = computed(() => {
 		})
 		.filter((i) => i !== undefined);
 });
-
 function handleTargetSelected() {
 	if (currentSelectedTargetId.value !== "") {
 		const targetMapItem = mapDataStore.mapItemsList.find((i) => i.id === currentSelectedTargetId.value);
@@ -55,6 +65,9 @@ function handleCancel() {
 			<div class="chance-card-container">
 				<ChanceCard id="chance-card" :chance-card="chanceCard" :disable="false" />
 			</div>
+			<div v-if="currentSelectedProperty" class="preview">
+				<PropertyInfoCard :property="currentSelectedProperty"></PropertyInfoCard>
+			</div>
 			<div class="target-container">
 				<div class="tips">{{ tips }}</div>
 				<MiniMap :high-light-list="highLightItemsId" v-model:selected-id="currentSelectedTargetId" />
@@ -67,13 +80,18 @@ function handleCancel() {
 .target-selector-container {
 	display: flex;
 	justify-content: space-between;
+	align-items: center;
 
 	& > .chance-card-container {
-		padding: 4rem 7rem 4rem 5rem;
+		padding: 4rem 2rem;
 
 		& > #chance-card {
 			scale: 1.2;
 		}
+	}
+
+	& > .preview {
+		margin: 2rem;
 	}
 
 	& > .target-container {

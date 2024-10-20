@@ -92,26 +92,36 @@ export class MonopolyClient {
 	}
 
 	public async joinRoom(roomId: string) {
-		const data = await joinRoomApi(roomId);
-		const userStore = useUserInfo();
-		let hostPeerId = data.hostPeerId;
+		console.log("🚀 ~ MonopolyClient ~ joinRoom ~ roomId:", roomId);
+		try {
+			const data = await joinRoomApi(roomId);
+			const userStore = useUserInfo();
+			let hostPeerId = data.hostPeerId;
 
-		if (data.needCreate) {
-			useLoading().showLoading("正在创建主机...");
-			if (this.gameHost) throw Error("你已经是主机了,为什么要再次创建房间!!!");
-			// 创建一个临时的 URL 指向 Blob 数据
-			this.gameHost = await MonopolyHost.create(roomId, this.iceServerHost, this.iceServerPort, data.deleteIntervalMs);
-			this.gameHost.addDestoryListener(() => {
-				this.gameHost = null;
-				this.peerClient = null;
-			});
-			hostPeerId = this.gameHost.getPeerId();
-			useLoading().showLoading("主机创建成功，正在和服务器报喜...");
-			await emitHostPeerId(roomId, hostPeerId, userStore.username, userStore.userId);
-		}
-		if (hostPeerId) {
-			useLoading().showLoading("连接主机中...");
-			await this.linkToGameHost(hostPeerId);
+			if (data.needCreate) {
+				useLoading().showLoading("正在创建主机...");
+				if (this.gameHost) throw Error("你已经是主机了,为什么要再次创建房间!!!");
+				// 创建一个临时的 URL 指向 Blob 数据
+				this.gameHost = await MonopolyHost.create(
+					roomId,
+					this.iceServerHost,
+					this.iceServerPort,
+					data.deleteIntervalMs
+				);
+				this.gameHost.addDestoryListener(() => {
+					this.gameHost = null;
+					this.peerClient = null;
+				});
+				hostPeerId = this.gameHost.getPeerId();
+				useLoading().showLoading("主机创建成功，正在和服务器报喜...");
+				await emitHostPeerId(roomId, hostPeerId, userStore.username, userStore.userId);
+			}
+			if (hostPeerId) {
+				useLoading().showLoading("连接主机中...");
+				await this.linkToGameHost(hostPeerId);
+			}
+		} catch (e) {
+			FPMessage({ type: "error", message: "服务器连接失败" });
 		}
 	}
 

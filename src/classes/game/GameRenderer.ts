@@ -743,9 +743,9 @@ export class GameRenderer {
 
 		this.mapContainer.add(buildModel);
 		gsap.to(buildModel.scale, {
-			x: 0.5,
-			y: 0.5,
-			z: 0.5,
+			x: 0.45,
+			y: 0.45,
+			z: 0.45,
 			duration: 0.4,
 			onComplete: () => {
 				const houseItem = this.housesItems.get(newProperty.id);

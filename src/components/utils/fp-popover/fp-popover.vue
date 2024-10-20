@@ -84,6 +84,7 @@ onMounted(() => {
   position: relative;
 
   & > .content {
+    z-index: -1;
     position: absolute;
   }
 }

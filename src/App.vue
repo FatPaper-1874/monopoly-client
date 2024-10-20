@@ -23,9 +23,9 @@ const isMusicPlayerVisiable = computed(() => router.name !== "login");
 	<DanmakuContainer v-if="canChat" />
 	<Background v-if="!isInGame" />
 	<Loading />
-	<RouterView></RouterView>
 	<StatusBar />
 	<MusicPlayer v-if="isMusicPlayerVisiable" />
+	<RouterView></RouterView>
 </template>
 
 <style lang="scss" scoped></style>

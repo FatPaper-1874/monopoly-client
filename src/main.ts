@@ -59,6 +59,8 @@ import {
 	faVolumeHigh,
 	faQuestion,
 	faBook,
+	faShuffle,
+	faHourglassHalf,
 } from "@fortawesome/free-solid-svg-icons";
 import { chanceCardSource } from "./directives/chanceCardDrag";
 import { useDeviceStatus, useSettig } from "@/store";
@@ -109,6 +111,8 @@ library.add(
 	faVolumeHigh,
 	faQuestion,
 	faBook,
+	faShuffle,
+	faHourglassHalf,
 );
 const pinia = createPinia();
 
