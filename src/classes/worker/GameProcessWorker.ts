@@ -16,7 +16,7 @@ import { RoundTimeTimer } from "./class/RoundTimeTimer";
 import ChanceCardNeedTypes from "./base-interface.d.ts?raw";
 import Utils from "./class/Utils?raw";
 
-const chanceCardTyps = [ChanceCardNeedTypes, Utils].join("\n");
+const effectFunctionTyps = [ChanceCardNeedTypes, Utils].join("\n");
 const operateListener = new OperateListener();
 let gameProcess: GameProcess | null = null;
 
@@ -117,6 +117,8 @@ export class GameProcess {
 		const { mapItems, properties, chanceCards } = mapInfo;
 
 		mapItems.forEach((item) => {
+			if (item.arrivedEvent)
+				item.arrivedEvent.effectCode = compileTsToJs(item.arrivedEvent.effectCode, effectFunctionTyps);
 			this.mapItemList.set(item.id, item);
 		});
 
@@ -125,7 +127,7 @@ export class GameProcess {
 		});
 
 		chanceCards.map((chanceCard) => {
-			chanceCard.effectCode = compileTsToJs(chanceCard.effectCode, chanceCardTyps);
+			chanceCard.effectCode = compileTsToJs(chanceCard.effectCode, effectFunctionTyps);
 			return chanceCard;
 		});
 
@@ -217,7 +219,7 @@ export class GameProcess {
 				this.gameBroadcast(msg);
 
 				//在计划的动画完成事件后取消监听, 防止客户端因特殊情况没有发送动画完成的指令造成永久等待
-				const animationDuration = this.animationStepDuration_ms * (this.dice.getResultNumber() + 5);
+				const animationDuration = 600;
 				let animationTimer = setTimeout(() => {
 					operateListener.emit(player.getId(), OperateType.Animation);
 				}, animationDuration);
@@ -235,6 +237,7 @@ export class GameProcess {
 			// });
 
 			player.addEventListener(PlayerEvents.AfterSetBankrupted, (isBankrupted: boolean) => {
+				console.log("🚀 ~ GameProcess ~ player.addEventListener ~ isBankrupted:", isBankrupted);
 				if (isBankrupted) {
 					//破产剥夺财产
 					Array.from(this.propertyList.values()).map((property) => {
@@ -265,6 +268,12 @@ export class GameProcess {
 			if (card) tempChanceCardList.push(new ChanceCard(card));
 		}
 		return tempChanceCardList;
+	}
+
+	private getNewChanceCard(id: string): ChanceCard {
+		const tempChanceCard = this.chanceCardInfoList.find((c) => c.id === id);
+		if (!tempChanceCard) throw new Error("错误的机会卡ID");
+		return new ChanceCard(tempChanceCard);
 	}
 
 	private gameOverCheck() {
@@ -358,7 +367,7 @@ export class GameProcess {
 				if (currentPlayer.getStop() > 0) {
 					this.gameMsgNotifyBroadcast("info", `${currentPlayer.getName()}睡着了,跳过回合`);
 					this.gameLogBroadcast(
-						`${this.createGameLinkItem(GameLinkItem.Player, currentPlayer.getId())}睡着了,跳过回合`
+						`${this.createGameLinkItem(GameLinkItem.Player, currentPlayer.getId())} 睡着了,跳过回合`
 					);
 					currentPlayer.setStop(currentPlayer.getStop() - 1);
 					currentPlayerIndex++;
@@ -523,7 +532,7 @@ export class GameProcess {
 							};
 							sendToUsers([sourcePlayer.getId()], callBackMsg);
 						} else {
-							sourcePlayer.loseCard(chanceCardId);
+							await sourcePlayer.loseCard(chanceCardId);
 							const successMsg: SocketMessage = {
 								type: SocketMsgType.MsgNotify,
 								data: "",
@@ -533,6 +542,7 @@ export class GameProcess {
 									content: `机会卡 ${chanceCard.getName()} 使用成功！`,
 								},
 							};
+							this.gameInfoBroadcast();
 							isRoundEnd = true;
 
 							this.eventMsg = `等待 ${sourcePlayer.getName()} 掷骰子`;
@@ -603,7 +613,7 @@ export class GameProcess {
 					},
 				};
 				this.gameLogBroadcast(
-					`${this.createGameLinkItem(GameLinkItem.Player, player.getId())}摇到的点数是: ${this.dice
+					`${this.createGameLinkItem(GameLinkItem.Player, player.getId())} 摇到的点数是: ${this.dice
 						.getResultArray()
 						.join("-")}`
 				);
@@ -679,7 +689,7 @@ export class GameProcess {
 						);
 						this.roundRemainingTimeBroadcast(0);
 						if (playerRes) {
-							this.handlePlayerBuildUp(arrivedPlayer, property);
+							await this.handlePlayerBuildUp(arrivedPlayer, property);
 						}
 					}
 				} else {
@@ -711,10 +721,10 @@ export class GameProcess {
 					);
 					this.gameInfoBroadcast();
 					this.gameLogBroadcast(
-						`${this.createGameLinkItem(GameLinkItem.Player, arrivedPlayer.getId())}到达了${this.createGameLinkItem(
+						`${this.createGameLinkItem(GameLinkItem.Player, arrivedPlayer.getId())} 到达了 ${this.createGameLinkItem(
 							GameLinkItem.Player,
 							owner.getId()
-						)}的地皮: ${this.createGameLinkItem(GameLinkItem.Property, property.getId())}，支付了${passCost}￥过路费`
+						)} 的地皮: ${this.createGameLinkItem(GameLinkItem.Property, property.getId())}，支付了 ${passCost}￥ 过路费`
 					);
 				}
 			} else {
@@ -739,7 +749,7 @@ export class GameProcess {
 				);
 				this.roundRemainingTimeBroadcast(0);
 				if (playerRes) {
-					this.handlePlayerBuyProperty(arrivedPlayer, property);
+					await this.handlePlayerBuyProperty(arrivedPlayer, property);
 				}
 			}
 		} else if (arriveItem.arrivedEvent) {
@@ -748,6 +758,16 @@ export class GameProcess {
 				const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
 				const arrivedFunction = new AsyncFunction("arrivedPlayer", "gameProcess", effectCode);
 				await arrivedFunction(arrivedPlayer, this);
+				this.gameMsgNotifyBroadcast(
+					"info",
+					`${arrivedPlayer.getName()} 踩到了特殊地块: ${arriveItem.arrivedEvent.name}`
+				);
+				this.gameLogBroadcast(
+					`${this.createGameLinkItem(
+						GameLinkItem.Player,
+						arrivedPlayer.getId()
+					)} 踩到了特殊地块: ${this.createGameLinkItem(GameLinkItem.ArrivedEvent, arriveItem.arrivedEvent.id)}`
+				);
 			}
 		}
 		this.gameInfoBroadcast();
@@ -757,9 +777,9 @@ export class GameProcess {
 		return this.playerList.find((player) => player.getId() === id);
 	}
 
-	private handlePayToSomeOne(source: Player, target: Player, money: number) {
-		target.gain(money, source);
-		return source.cost(money, target);
+	private async handlePayToSomeOne(source: Player, target: Player, money: number) {
+		await target.gain(money, source);
+		return await source.cost(money, target);
 	}
 
 	private nextRound() {
@@ -767,10 +787,15 @@ export class GameProcess {
 		this.gameOverCheck();
 		if (this.currentRound % this.gameSetting.multiplierIncreaseRounds === 0) {
 			this.currentMultiplier += this.gameSetting.multiplier;
+			this.playerList.forEach((p) => {
+				p.gainCard(this.getRandomChanceCard(1)[0]);
+			});
+			this.gameMsgNotifyBroadcast("info", `过路费倍率上涨为 ${this.currentMultiplier} 倍, 每人获得一张随机的机会卡`);
+			this.gameLogBroadcast(`---过路费倍率上涨为 ${this.currentMultiplier} 倍, 每人获得一张随机的机会卡---`);
 		}
 	}
 
-	private handlePlayerBuyProperty(player: Player, property: Property) {
+	private async handlePlayerBuyProperty(player: Player, property: Property) {
 		const msgToSend: SocketMessage = {
 			type: SocketMsgType.MsgNotify,
 			source: "server",
@@ -781,24 +806,52 @@ export class GameProcess {
 			},
 		};
 		if (player.getMoney() > property.getSellCost()) {
-			if (player.cost(property.getSellCost())) {
-				property.setOwner(player);
-				msgToSend.msg = { type: "success", content: `购买 ${property.getName()} 成功！` };
-			} else {
-				msgToSend.msg = { type: "warning", content: "买完就没钱咯" };
-			}
+			await property.setOwner(player);
+			this.gameInfoBroadcast();
+			this.gameMsgNotifyBroadcast("info", `${player.getName()} 买下了地皮 ${property.getName()}`);
+			this.gameLogBroadcast(
+				`${this.createGameLinkItem(GameLinkItem.Player, player.getId())} 买下了地皮 ${this.createGameLinkItem(
+					GameLinkItem.Property,
+					property.getId()
+				)}`
+			);
+			await player.cost(property.getSellCost());
 		} else {
 			msgToSend.msg = { type: "error", content: "不够钱啊穷鬼" };
+			sendToUsers([player.getId()], msgToSend);
 		}
-		this.gameInfoBroadcast();
-		sendToUsers([player.getId()], msgToSend);
-		this.gameMsgNotifyBroadcast("info", `${player.getName()} 买下了 ${property.getName()}`);
-		this.gameLogBroadcast(
-			`${this.createGameLinkItem(GameLinkItem.Player, player.getId())} 买下了 ${this.createGameLinkItem(
-				GameLinkItem.Property,
-				property.getId()
-			)}`
-		);
+
+		return;
+	}
+
+	private async handlePlayerBuildUp(player: Player, property: Property) {
+		const msgToSend: SocketMessage = {
+			type: SocketMsgType.MsgNotify,
+			source: "server",
+			data: "",
+			msg: {
+				type: "",
+				content: "",
+			},
+		};
+		if (player.getMoney() > property.getSellCost()) {
+			property.buildUp();
+			this.gameInfoBroadcast();
+			this.gameMsgNotifyBroadcast(
+				"info",
+				`${player.getName()}把地皮${property.getName()}升到了${property.getBuildingLevel()}级`
+			);
+			this.gameLogBroadcast(
+				`${this.createGameLinkItem(GameLinkItem.Player, player.getId())} 把地皮 ${this.createGameLinkItem(
+					GameLinkItem.Property,
+					property.getId()
+				)} 升到了 ${property.getBuildingLevel()} 级`
+			);
+			await player.cost(property.getSellCost());
+		} else {
+			msgToSend.msg = { type: "error", content: "不够钱啊穷鬼" };
+			sendToUsers([player.getId()], msgToSend);
+		}
 		return;
 	}
 
@@ -813,7 +866,7 @@ export class GameProcess {
 			},
 		};
 		sendToUsers([player.getId()], msgToSend);
-		this.gameLogBroadcast(`---接下来是${this.createGameLinkItem(GameLinkItem.Player, player.getId())}的回合---`);
+		this.gameLogBroadcast(`---接下来是 ${this.createGameLinkItem(GameLinkItem.Player, player.getId())} 的回合---`);
 	}
 
 	public roundRemainingTimeBroadcast = (remainingTime: number) => {
@@ -825,41 +878,6 @@ export class GameProcess {
 		};
 		this.gameBroadcast(msg);
 	};
-
-	private handlePlayerBuildUp(player: Player, property: Property) {
-		const msgToSend: SocketMessage = {
-			type: SocketMsgType.MsgNotify,
-			source: "server",
-			data: "",
-			msg: {
-				type: "",
-				content: "",
-			},
-		};
-		if (player.getMoney() > property.getSellCost()) {
-			if (player.cost(property.getBuildCost())) {
-				property.buildUp();
-				msgToSend.msg = { type: "success", content: `BuildUP ${property.getName()} 成功！` };
-			} else {
-				msgToSend.msg = { type: "warning", content: "升级完就没钱咯" };
-			}
-		} else {
-			msgToSend.msg = { type: "error", content: "不够钱啊穷鬼" };
-		}
-		sendToUsers([player.getId()], msgToSend);
-		this.gameInfoBroadcast();
-		this.gameMsgNotifyBroadcast(
-			"info",
-			`${player.getName()}把地皮${property.getName()}升到了${property.getBuildingLevel()}级`
-		);
-		this.gameLogBroadcast(
-			`${this.createGameLinkItem(GameLinkItem.Player, player.getId())}把地皮${this.createGameLinkItem(
-				GameLinkItem.Property,
-				property.getId()
-			)}升到了${property.getBuildingLevel()}级`
-		);
-		return;
-	}
 
 	public handlePlayerOffline(userId: string) {
 		const player = this.getPlayerById(userId);

@@ -44,10 +44,10 @@ export class Property implements PropertyInterface {
 		this.buildingLevel = level;
 	}
 
-	public setOwner = (player: PlayerInterface | undefined) => {
+	public setOwner = async(player: PlayerInterface | undefined) => {
 		//如果原本有主人
 		if (this.owner) {
-			this.owner.loseProperty(this);
+			await this.owner.loseProperty(this);
 		}
 		this.owner = player;
 		if (this.owner) {

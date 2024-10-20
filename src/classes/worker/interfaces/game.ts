@@ -17,44 +17,72 @@ export interface PlayerEventsCallback {
 	[PlayerEvents.BeforeSetPropertiesList]: (newPropertiesList: PropertyInterface[]) => PropertyInterface[] | undefined;
 	[PlayerEvents.AfterSetPropertiesList]: (newPropertiesList: PropertyInterface[]) => undefined;
 
-	[PlayerEvents.BeforeRound]: (player: PlayerInterface) => Promise<void>;
-	[PlayerEvents.AfterRound]: (player: PlayerInterface) => Promise<void>;
+	[PlayerEvents.BeforeRound]: (
+		player: PlayerInterface
+	) => Promise<PlayerInterface | undefined | void> | PlayerInterface | undefined | void;
+	[PlayerEvents.AfterRound]: (player: PlayerInterface) => Promise<PlayerInterface | undefined | void> | void;
 
-	[PlayerEvents.BeforeGainProperty]: (newProperty: PropertyInterface) => undefined;
-	[PlayerEvents.AfterGainProperty]: (newProperty: PropertyInterface) => undefined;
+	[PlayerEvents.BeforeGainProperty]: (
+		newProperty: PropertyInterface
+	) => Promise<PropertyInterface | undefined | void> | PropertyInterface | undefined | void;
+	[PlayerEvents.AfterGainProperty]: (
+		newProperty: PropertyInterface
+	) => Promise<PropertyInterface | undefined | void> | void;
 
-	[PlayerEvents.BeforeLoseProperty]: (lostProperty: PropertyInterface) => undefined;
-	[PlayerEvents.AfterLoseProperty]: (lostProperty: PropertyInterface) => undefined;
+	[PlayerEvents.BeforeLoseProperty]: (
+		lostProperty: PropertyInterface
+	) => Promise<PropertyInterface | undefined | void> | PropertyInterface | undefined | void;
+	[PlayerEvents.AfterLoseProperty]: (
+		lostProperty: PropertyInterface
+	) => Promise<PropertyInterface | undefined | void> | void;
 
-	[PlayerEvents.BeforeSetCardsList]: (newCardList: ChanceCardInterface[]) => ChanceCardInterface[] | undefined;
-	[PlayerEvents.AfterSetCardsList]: (newCardList: ChanceCardInterface[]) => undefined;
+	[PlayerEvents.BeforeSetCardsList]: (
+		newCardList: ChanceCardInterface[]
+	) => Promise<ChanceCardInterface[] | undefined | void> | ChanceCardInterface[] | undefined | void;
+	[PlayerEvents.AfterSetCardsList]: (
+		newCardList: ChanceCardInterface[]
+	) => Promise<ChanceCardInterface[] | undefined | void> | void;
 
-	[PlayerEvents.BeforeGainCard]: (gainCard: ChanceCardInterface) => ChanceCardInterface | undefined;
-	[PlayerEvents.AfterGainCard]: (gainCard: ChanceCardInterface) => undefined;
+	[PlayerEvents.BeforeGainCard]: (
+		gainCard: ChanceCardInterface
+	) => Promise<ChanceCardInterface | undefined | void> | ChanceCardInterface | undefined | void;
+	[PlayerEvents.AfterGainCard]: (
+		gainCard: ChanceCardInterface
+	) => Promise<ChanceCardInterface | undefined | void> | void;
 
-	[PlayerEvents.BeforeLoseCard]: (lostCard: ChanceCardInterface) => ChanceCardInterface | undefined;
-	[PlayerEvents.AfterLoseCard]: (lostCard: ChanceCardInterface) => undefined;
+	[PlayerEvents.BeforeLoseCard]: (
+		lostCard: ChanceCardInterface
+	) => Promise<ChanceCardInterface | undefined | void> | ChanceCardInterface | undefined | void;
+	[PlayerEvents.AfterLoseCard]: (
+		lostCard: ChanceCardInterface
+	) => Promise<ChanceCardInterface | undefined | void> | void;
 
-	[PlayerEvents.BeforeSetMoney]: (moneyValue: number) => number | undefined;
-	[PlayerEvents.AfterSetMoney]: (moneyValue: number) => undefined;
+	[PlayerEvents.BeforeSetMoney]: (moneyValue: number) => Promise<number | undefined | void> | number | undefined | void;
+	[PlayerEvents.AfterSetMoney]: (moneyValue: number) => Promise<number | undefined | void> | void;
 
-	[PlayerEvents.BeforeGain]: (gainMoney: number, source?: PlayerInterface) => number | undefined;
-	[PlayerEvents.AfterGain]: (gainMoney: number, source?: PlayerInterface) => undefined;
+	[PlayerEvents.BeforeGain]: (
+		gainMoney: number,
+		source?: PlayerInterface
+	) => Promise<number | undefined | void> | number | undefined | void;
+	[PlayerEvents.AfterGain]: (gainMoney: number, source?: PlayerInterface) => Promise<number | undefined | void> | void;
 
-	[PlayerEvents.BeforeCost]: (costMoney: number, target?: PlayerInterface) => number | undefined;
-	[PlayerEvents.AfterCost]: (costMoney: number, target?: PlayerInterface) => undefined;
+	[PlayerEvents.BeforeCost]: (
+		costMoney: number,
+		target?: PlayerInterface
+	) => Promise<number | undefined | void> | number | undefined | void;
+	[PlayerEvents.AfterCost]: (costMoney: number, target?: PlayerInterface) => Promise<number | undefined | void> | void;
 
-	[PlayerEvents.BeforeStop]: (stopValue: number) => number | undefined;
-	[PlayerEvents.AfterStop]: (stopValue: number) => undefined;
+	[PlayerEvents.BeforeStop]: (stopValue: number) => Promise<number | undefined | void> | number | undefined | void;
+	[PlayerEvents.AfterStop]: (stopValue: number) => Promise<number | undefined | void> | void;
 
-	[PlayerEvents.BeforeTp]: (tpValue: number) => number | undefined;
-	[PlayerEvents.AfterTp]: (tpValue: number) => undefined;
+	[PlayerEvents.BeforeTp]: (tpValue: number) => Promise<number | undefined | void> | number | undefined | void;
+	[PlayerEvents.AfterTp]: (tpValue: number) => Promise<number | undefined | void> | void;
 
-	[PlayerEvents.BeforeWalk]: (walkValue: number) => number | undefined;
-	[PlayerEvents.AfterWalk]: (walkValue: number) => undefined;
+	[PlayerEvents.BeforeWalk]: (walkValue: number) => Promise<number | undefined | void> | number | undefined | void;
+	[PlayerEvents.AfterWalk]: (walkValue: number) => Promise<number | undefined | void> | void;
 
-	[PlayerEvents.BeforeSetBankrupted]: (isBankrupted: boolean) => boolean;
-	[PlayerEvents.AfterSetBankrupted]: (isBankrupted: boolean) => undefined;
+	[PlayerEvents.BeforeSetBankrupted]: (isBankrupted: boolean) => Promise<boolean> | boolean;
+	[PlayerEvents.AfterSetBankrupted]: (isBankrupted: boolean) => Promise<boolean | undefined | void> | void;
 }
 
 export interface PropertyInterface {
@@ -71,13 +99,16 @@ export interface PropertyInterface {
 	getPassCost: () => number;
 
 	//设置房产信息
-	setOwner: (player: PlayerInterface | undefined) => void;
+	setOwner: (player: PlayerInterface | undefined) => Promise<void>;
 	setBuildingLevel: (level: 0 | 1 | 2) => void;
 
 	getPropertyInfo: () => PropertyInfo;
 }
 
 export interface PlayerInterface {
+	//自定义参数
+	extras: Record<string, any>;
+
 	//玩家信息
 	getUser: () => User;
 	getId: () => string;
@@ -86,8 +117,8 @@ export interface PlayerInterface {
 	//地产相关
 	getPropertiesList: () => PropertyInterface[];
 	setPropertiesList: (newPropertiesList: PropertyInterface[]) => void;
-	gainProperty: (property: PropertyInterface) => void;
-	loseProperty: (property: PropertyInterface) => void;
+	gainProperty: (property: PropertyInterface) => Promise<void>;
+	loseProperty: (property: PropertyInterface) => Promise<void>;
 
 	//机会卡相关
 	getCardsList: () => ChanceCardInterface[];
@@ -99,8 +130,8 @@ export interface PlayerInterface {
 	//钱相关
 	setMoney: (money: number) => void;
 	getMoney: () => number;
-	cost: (money: number, target?: PlayerInterface) => boolean;
-	gain: (money: number, source?: PlayerInterface) => number;
+	cost: (money: number, target?: PlayerInterface) => Promise<boolean>;
+	gain: (money: number, source?: PlayerInterface) => Promise<number>;
 
 	//游戏相关
 	setStop: (stop: number) => void;

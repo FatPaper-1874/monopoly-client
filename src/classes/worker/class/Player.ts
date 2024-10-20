@@ -21,6 +21,7 @@ export class Player implements PlayerInterface {
 	private isStop: number; //是否停止回合
 	private isBankrupted: boolean = false; //是否破产
 	private isOffline: boolean; //是否断线
+	public extras: Record<string, any> = {};
 
 	private callBackMap: Map<PlayerEvents, CallbackMapValue<PlayerEvents>[]> = new Map();
 
@@ -48,26 +49,26 @@ export class Player implements PlayerInterface {
 		this.emit(PlayerEvents.GetPropertiesList);
 		return this.properties;
 	};
-	public setPropertiesList = (newPropertiesList: PropertyInterface[]) => {
-		newPropertiesList = this.emit(PlayerEvents.BeforeSetPropertiesList, newPropertiesList) || newPropertiesList;
+	public setPropertiesList = async (newPropertiesList: PropertyInterface[]) => {
+		newPropertiesList = (await this.emit(PlayerEvents.BeforeSetPropertiesList, newPropertiesList)) || newPropertiesList;
 		this.properties = newPropertiesList;
 		this.emit(PlayerEvents.AfterSetPropertiesList, newPropertiesList);
 	};
 
-	public gainProperty = (property: PropertyInterface) => {
-		this.emit(PlayerEvents.BeforeGainProperty, property);
+	public gainProperty = async(property: PropertyInterface) => {
+		await this.emit(PlayerEvents.BeforeGainProperty, property);
 		const owner = property.getOwner();
 		if (owner && owner.getId() === this.getId()) this.properties.push(property);
-		this.emit(PlayerEvents.AfterGainProperty, property);
+		await this.emit(PlayerEvents.AfterGainProperty, property);
 	};
 
-	public loseProperty = (lostProperty: PropertyInterface) => {
-		this.emit(PlayerEvents.BeforeLoseProperty, lostProperty);
+	public loseProperty = async(lostProperty: PropertyInterface) => {
+		await this.emit(PlayerEvents.BeforeLoseProperty, lostProperty);
 		const index = this.properties.findIndex((property) => property.getId() === lostProperty.getId());
 		if (index != -1) {
 			this.properties.splice(index, 1);
 		}
-		this.emit(PlayerEvents.AfterLoseProperty, lostProperty);
+		await this.emit(PlayerEvents.AfterLoseProperty, lostProperty);
 	};
 
 	//机会卡相关
@@ -76,28 +77,28 @@ export class Player implements PlayerInterface {
 		return this.chanceCards;
 	};
 
-	public setCardsList = (newChanceCardList: ChanceCardInterface[]) => {
-		newChanceCardList = this.emit(PlayerEvents.BeforeSetCardsList, newChanceCardList) || newChanceCardList;
+	public setCardsList = async (newChanceCardList: ChanceCardInterface[]) => {
+		newChanceCardList = (await this.emit(PlayerEvents.BeforeSetCardsList, newChanceCardList)) || newChanceCardList;
 		this.chanceCards = newChanceCardList;
-		this.emit(PlayerEvents.AfterSetCardsList, newChanceCardList);
+		await this.emit(PlayerEvents.AfterSetCardsList, newChanceCardList);
 	};
 
-	public gainCard = (gainCard: ChanceCardInterface) => {
+	public gainCard = async (gainCard: ChanceCardInterface) => {
 		if (this.chanceCards.length >= 4) return;
-		gainCard = this.emit(PlayerEvents.BeforeGainCard, gainCard) || gainCard;
+		gainCard = (await this.emit(PlayerEvents.BeforeGainCard, gainCard)) || gainCard;
 		this.chanceCards.push(gainCard);
-		this.emit(PlayerEvents.AfterGainCard, gainCard);
+		await this.emit(PlayerEvents.AfterGainCard, gainCard);
 	};
 
-	public loseCard = (cardId: string) => {
+	public loseCard = async (cardId: string) => {
 		let card = this.chanceCards.find((card) => card.getId() === cardId);
 		if (!card) return;
-		card = this.emit(PlayerEvents.BeforeLoseCard, card) || card;
+		card = (await this.emit(PlayerEvents.BeforeLoseCard, card)) || card;
 		const index = this.chanceCards.findIndex((_card) => _card.getId() === card.getId());
 		if (index != -1) {
 			this.chanceCards.splice(index, 1);
 		}
-		this.emit(PlayerEvents.AfterLoseCard, card);
+		await this.emit(PlayerEvents.AfterLoseCard, card);
 	};
 
 	//钱相关
@@ -106,34 +107,34 @@ export class Player implements PlayerInterface {
 		return this.money;
 	};
 
-	public setMoney = (money: number) => {
-		money = this.emit(PlayerEvents.BeforeSetMoney, money) || money;
+	public setMoney = async (money: number) => {
+		money = (await this.emit(PlayerEvents.BeforeSetMoney, money)) || money;
 		this.money = money;
+		await this.emit(PlayerEvents.AfterSetMoney, money);
 		if (this.money <= 0) this.setBankrupted(true);
-		this.emit(PlayerEvents.AfterSetMoney, money);
 	};
 
-	public cost(money: number, target?: PlayerInterface) {
-		money = this.emit(PlayerEvents.BeforeCost, money, target) || money;
+	public async cost(money: number, target?: PlayerInterface) {
+		money = (await this.emit(PlayerEvents.BeforeCost, money, target)) || money;
 		this.money -= money > 0 ? money : 0;
+		await this.emit(PlayerEvents.AfterCost, money, target);
 		if (this.money <= 0) this.setBankrupted(true);
-		this.emit(PlayerEvents.AfterCost, money, target);
 		return this.money > 0;
 	}
 
-	public gain(money: number, source?: PlayerInterface) {
-		money = this.emit(PlayerEvents.BeforeGain, money, source) || money;
+	public async gain(money: number, source?: PlayerInterface) {
+		money = (await this.emit(PlayerEvents.BeforeGain, money, source)) || money;
 		this.money += money;
-		this.emit(PlayerEvents.AfterGain, money, source);
+		await this.emit(PlayerEvents.AfterGain, money, source);
 		return this.money;
 	}
 
 	//游戏相关
-	public setStop = (stop: number) => {
+	public setStop = async (stop: number) => {
 		// this.emit(PlayerEvents.SetStop, stop);
-		stop = this.emit(PlayerEvents.BeforeStop, stop) || stop;
+		stop = (await this.emit(PlayerEvents.BeforeStop, stop)) || stop;
 		this.isStop = stop;
-		this.emit(PlayerEvents.AfterStop, stop);
+		await this.emit(PlayerEvents.AfterStop, stop);
 	};
 
 	public getStop = () => {
@@ -150,13 +151,13 @@ export class Player implements PlayerInterface {
 	};
 
 	public walk = async (step: number): Promise<void> => {
-		step = this.emit(PlayerEvents.BeforeWalk, step) || step;
+		step = (await this.emit(PlayerEvents.BeforeWalk, step)) || step;
 		this.emit(PlayerEvents.Walk, step);
 		return new Promise((resolve) => {
 			this.addEventListener(
 				PlayerEvents.AnimationFinished,
-				() => {
-					this.emit(PlayerEvents.AfterWalk, step);
+				async () => {
+					await this.emit(PlayerEvents.AfterWalk, step);
 					resolve();
 				},
 				1
@@ -165,22 +166,22 @@ export class Player implements PlayerInterface {
 	};
 
 	public tp = async (positionIndex: number): Promise<void> => {
-		// this.emit(PlayerEvents.Tp, positionIndex);
-		positionIndex = this.emit(PlayerEvents.BeforeTp, positionIndex) || positionIndex;
+		positionIndex = (await this.emit(PlayerEvents.BeforeTp, positionIndex)) || positionIndex;
+		this.emit(PlayerEvents.Tp, positionIndex);
 		return new Promise((resolve) => {
-			this.addEventListener(PlayerEvents.AnimationFinished, () => {
-				this.emit(PlayerEvents.AfterTp, positionIndex);
+			this.addEventListener(PlayerEvents.AnimationFinished, async() => {
+				await this.emit(PlayerEvents.AfterTp, positionIndex);
 				resolve();
 			});
 		});
 	};
 
-	public setBankrupted = (isBankrupted: boolean) => {
+	public setBankrupted = async (isBankrupted: boolean) => {
 		// this.emit(PlayerEvents.SetBankrupted, isBankrupted);
-		const callback = this.emit(PlayerEvents.BeforeSetBankrupted, isBankrupted);
+		const callback = await this.emit(PlayerEvents.BeforeSetBankrupted, isBankrupted);
 		isBankrupted = callback === undefined ? isBankrupted : callback;
 		this.isBankrupted = isBankrupted;
-		this.emit(PlayerEvents.AfterSetBankrupted, isBankrupted);
+		await this.emit(PlayerEvents.AfterSetBankrupted, isBankrupted);
 	};
 
 	public getIsBankrupted = () => {
@@ -266,10 +267,10 @@ export class Player implements PlayerInterface {
 		});
 	}
 
-	public emit<K extends keyof PlayerEventsCallback>(
+	public async emit<K extends keyof PlayerEventsCallback>(
 		eventName: K,
 		...args: Parameters<PlayerEventsCallback[K]>
-	): ReturnType<PlayerEventsCallback[K]> {
+	): Promise<ReturnType<PlayerEventsCallback[K]>> {
 		const fnArr = this.callBackMap.get(eventName);
 		let res: ReturnType<PlayerEventsCallback[K]> = undefined as unknown as ReturnType<PlayerEventsCallback[K]>;
 		if (fnArr) {
@@ -278,9 +279,11 @@ export class Player implements PlayerInterface {
 
 				item.triggerTimes--;
 				if (item.triggerTimes >= 0) {
-					res = (item.fn as (...args: Parameters<PlayerEventsCallback[K]>) => ReturnType<PlayerEventsCallback[K]>)(
-						...args
-					);
+					const params = res !== undefined ? [res, ...args] : args;
+					console.log("🚀 ~ Player ~ params:", params)
+					res = await (
+						item.fn as (...args: Parameters<PlayerEventsCallback[K]>) => ReturnType<PlayerEventsCallback[K]>
+					)(...(params as Parameters<PlayerEventsCallback[K]>)); // 强制类型转换
 					if (item.triggerTimes === 0) {
 						fnArr.splice(index, 1);
 						index--; // 防止跳过下一个元素
