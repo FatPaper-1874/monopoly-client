@@ -32,3 +32,10 @@ export async function setRoomPrivate(roomId: string, isPrivate: boolean) {
 		isPrivate: boolean;
 	};
 }
+
+export async function setRoomStarted(roomId: string, isStarted: boolean) {
+	return (await axios.post(`${__MONOPOLYSERVER__}/room-router/set-started`, { roomId, isStarted })) as {
+		roomId: string;
+		isStarted: boolean;
+	};
+}

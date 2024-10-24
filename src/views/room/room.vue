@@ -143,7 +143,9 @@ function handleUpdateGameSetting() {
 			</div>
 
 			<div class="room-Id">
-				<button v-if="isOwner" class="set-private-button" @click="handleSetPrivate">{{ isPrivate ? "点击公开" : "点击隐藏" }}</button>
+				<button v-if="isOwner" class="set-private-button" @click="handleSetPrivate">
+					{{ isPrivate ? "点击公开" : "点击隐藏" }}
+				</button>
 				<span @click="handleCopyRoomId" style="flex: 1; text-align: center">
 					房间ID:<span>{{ roomId }}</span>
 				</span>
@@ -200,6 +202,10 @@ function handleUpdateGameSetting() {
 							v-model="_tempGameSettingFrom.multiplierIncreaseRounds"
 						/>回合
 					</div>
+				</div>
+				<div class="options">
+					<span class="label">机会卡可视</span>
+					<input :disabled="!isOwner" type="checkbox" v-model="_tempGameSettingFrom.chanceCardVisible" />
 				</div>
 				<button v-if="isOwner" class="submit" @click="handleUpdateGameSetting">更新设置</button>
 			</div>
@@ -316,10 +322,10 @@ function handleUpdateGameSetting() {
 	margin-bottom: 0.8rem;
 	padding: 0.3rem;
 
-	&>.set-private-button{
+	& > .set-private-button {
 		height: 90%;
 		min-height: 2.5rem;
-		margin-left: .3rem;
+		margin-left: 0.3rem;
 		border-radius: 0.4rem;
 	}
 
@@ -425,6 +431,40 @@ function handleUpdateGameSetting() {
 				color: var(--color-text-primary);
 				padding: 0.5rem 0.7rem;
 				margin-right: 0.5rem;
+			}
+		}
+
+		& > input[type="checkbox"] {
+			cursor: pointer;
+			position: relative;
+			margin: 0.7rem;
+			width: 1.5rem;
+			height: 1.5rem;
+			margin-right: auto;
+			display: block;
+
+			&::after {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				color: #000;
+				width: 1.6rem;
+				height: 1.6rem;
+				display: inline-block;
+				visibility: visible;
+				padding-left: 0px;
+				text-align: center;
+				content: " ";
+				border-radius: 3px;
+			}
+
+			&:checked::after {
+				content: "✓";
+				color: #fff;
+				font-size: 1rem;
+				font-weight: bold;
+				background-color: var(--color-primary);
 			}
 		}
 	}

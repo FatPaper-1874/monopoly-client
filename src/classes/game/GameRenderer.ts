@@ -278,7 +278,13 @@ export class GameRenderer {
 		//加载地皮
 		const gameInfo = useGameInfo();
 		gameInfo.propertiesList.forEach((property) => {
-			const textSprite = new TextSprite(`${property.name}\n可购买: ${property.sellCost}￥`, 64, "#000000", 10, 82);
+			const textSprite = new TextSprite(
+				`${property.name}\n可购买: ${Math.round(property.sellCost)}￥`,
+				64,
+				"#000000",
+				10,
+				82
+			);
 			textSprite.getSprite().scale.set(2.5, 2.5, 2.5);
 			this.housesItems.set(property.id, {
 				group: new Group(),
@@ -543,9 +549,11 @@ export class GameRenderer {
 			}
 		});
 
-		useEventBus().on("player-tp", async (walkPlayerId: string, positionIndex: number) => {
+		useEventBus().on("player-tp", async (walkPlayerId: string, positionIndex: number, walkId: string) => {
 			const playerEntity = this.getPlayerEntity(walkPlayerId);
 			if (playerEntity) {
+				this.currentFocusModule = this.playerEntities.get(walkPlayerId)?.model || null;
+				this.isLockingRole = true;
 				playerEntity.model.scale.set(
 					Math.sign(playerEntity.model.scale.x),
 					Math.sign(playerEntity.model.scale.y),
@@ -564,8 +572,11 @@ export class GameRenderer {
 					repeat: 1,
 				});
 				this.playerPosition.set(walkPlayerId, positionIndex);
+
+				this.currentFocusModule = null;
+				this.isLockingRole = false;
 				this.breakUpPlayersInSameMapItem();
-				useMonopolyClient().AnimationComplete();
+				useMonopolyClient().AnimationComplete(walkId);
 			}
 		});
 	}
@@ -606,11 +617,14 @@ export class GameRenderer {
 						if (property.owner) {
 							const costList = [property.cost_lv0, property.cost_lv1, property.cost_lv2];
 							houseItemValue.textSprite.updateText(
-								`${property.name}\n过路费: ${costList[property.buildingLevel] * newMultiplier}￥`,
+								`${property.name}\n过路费: ${Math.round(costList[property.buildingLevel] * newMultiplier)}￥`,
 								property.owner.color
 							);
 						} else {
-							houseItemValue.textSprite.updateText(`${property.name}\n可购买: ${property.sellCost}￥`, "#000000");
+							houseItemValue.textSprite.updateText(
+								`${property.name}\n可购买: ${Math.round(property.sellCost)}￥`,
+								"#000000"
+							);
 						}
 					});
 				}
@@ -753,11 +767,16 @@ export class GameRenderer {
 					const costList = [newProperty.cost_lv0, newProperty.cost_lv1, newProperty.cost_lv2];
 					if (newProperty.owner) {
 						houseItem.textSprite.updateText(
-							`${newProperty.name}\n过路费: ${costList[newProperty.buildingLevel] * useGameInfo().currentMultiplier}￥`,
+							`${newProperty.name}\n过路费: ${Math.round(
+								costList[newProperty.buildingLevel] * useGameInfo().currentMultiplier
+							)}￥`,
 							newProperty.owner.color
 						);
 					} else {
-						houseItem.textSprite.updateText(`${newProperty.name}\n可购买: ${newProperty.sellCost}￥`, "#000000");
+						houseItem.textSprite.updateText(
+							`${newProperty.name}\n可购买: ${Math.round(newProperty.sellCost)}￥`,
+							"#000000"
+						);
 					}
 					const textSpriteModel = houseItem.textSprite.getSprite();
 
@@ -1012,8 +1031,9 @@ export class GameRenderer {
 				offsetArr.forEach((offset, index) => {
 					const playerEntity = this.getPlayerEntity(a[index].id);
 					if (playerEntity) {
-						playerEntity.model.position.x += offset.offsetX;
-						playerEntity.model.position.z += offset.offsetY;
+						// 使用初始位置减去偏移量
+						playerEntity.model.position.x = x + offset.offsetX;
+						playerEntity.model.position.z = z + offset.offsetY;
 						const scale = 1 - 1 / a.length;
 
 						gsap.to(playerEntity.model.scale, {

@@ -5,7 +5,7 @@ import { __PROTOCOL__ } from "@G/global.config";
 import { computed } from "vue";
 import ChanceCard from "./chance-card.vue";
 import BuffItem from "./buff-item.vue";
-import { useGameInfo } from "@/store";
+import { useGameInfo, useRoomInfo } from "@/store";
 import { PropertyLevel } from "@/utils/var";
 
 const props = defineProps<{
@@ -20,6 +20,10 @@ const playersPropertyies = computed(() => {
 
 const avatarSrc = computed(() => {
 	return props.player.user.avatar ? `${__PROTOCOL__}://${props.player.user.avatar}` : "";
+});
+
+const chanceCardVisible = computed(() => {
+	return useRoomInfo().gameSetting.chanceCardVisible;
 });
 </script>
 
@@ -73,9 +77,10 @@ const avatarSrc = computed(() => {
 				<FontAwesomeIcon icon="wand-sparkles" />
 				机会卡( {{ player.chanceCards.length }} / 4 )
 			</div>
-			<div class="card-list">
+			<div v-if="chanceCardVisible" class="card-list">
 				<ChanceCard v-for="card in player.chanceCards" :chance-card="card" :disable="false" :key="card.id" />
 			</div>
+			<div v-else>房主说不可以看喔😣</div>
 		</div>
 	</div>
 </template>
@@ -161,7 +166,7 @@ const avatarSrc = computed(() => {
 
 				& > .properyies-list {
 					padding: 1.2rem;
-					padding-top: .6rem;
+					padding-top: 0.6rem;
 					flex: 1;
 					display: flex;
 					flex-direction: column;

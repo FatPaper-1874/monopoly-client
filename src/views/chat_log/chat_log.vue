@@ -46,19 +46,8 @@ watch(gameLogList, () => {
 	});
 });
 
-watch(isChatShow, (isShow) => {
-	gsap.to(".chat_main-container", {
-		height: isShow ? "18rem" : "0",
-	});
-	gsap.to(".chat_show-button", {
-		marginLeft: isShow ? "0" : "7rem",
-	});
-});
-
-watch(isGameLogShow, (isShow) => {
-	gsap.to(".game_log_main-container", {
-		height: isShow ? "18rem" : "0",
-	});
+const containerVisible = computed(() => {
+	return isChatShow.value || isGameLogShow.value;
 });
 
 function handleChatShow() {
@@ -77,42 +66,58 @@ function handleGameLogShow() {
 		chatStore.visible = false;
 	}
 }
+
+function handleHideContainer(){
+	const chatStore = useChat();
+	const gameLogStore = useGameLog();
+	chatStore.visible = false;
+	gameLogStore.visible = false;
+}
 </script>
 
 <template>
 	<div class="chat_log">
-		<div class="container">
+		<div class="container" :style="{ height: containerVisible ? '18rem' : '0' }">
 			<div class="chat-container">
-				<button class="chat_show-button" @click="handleChatShow">
+				<button class="button" @click="handleChatShow">
 					<FontAwesomeIcon icon="comments" style="margin-right: 0.3rem" />
 					聊天 <span style="font-size: 0.8em">{{ newMessageNotify }}</span>
 				</button>
-				<div class="chat_main-container">
-					<div class="chat_content-container">
-						<TransitionGroup name="list">
-							<ChatMessageItem
-								v-for="message in chatMessageList"
-								:key="message.user.userId + message.time"
-								:chat-message="message"
-							/>
-						</TransitionGroup>
+
+				<button class="button" @click="handleGameLogShow">
+					<FontAwesomeIcon icon="book" style="margin-right: 0.3rem" />
+					游戏记录
+				</button>
+
+				<button v-show="containerVisible" class="button" @click="handleHideContainer">
+					<FontAwesomeIcon icon="angle-down" style="font-size: 1.2rem;" />
+				</button>
+
+				<div class="containers">
+					<div v-show="isChatShow" class="chat_main-container">
+						<div class="chat_content-container">
+							<TransitionGroup name="list">
+								<ChatMessageItem
+									v-for="message in chatMessageList"
+									:key="message.user.userId + message.time"
+									:chat-message="message"
+								/>
+							</TransitionGroup>
+						</div>
+					</div>
+					<div v-show="isGameLogShow" class="game_log_main-container">
+						<div class="game_log_content-container">
+							<TransitionGroup name="list">
+								<GameLogItem v-for="log in gameLogList" :key="log.id" :game-log="log" />
+							</TransitionGroup>
+						</div>
 					</div>
 				</div>
 			</div>
 
-			<div class="game_log-container">
-				<button class="game_log_show-button" @click="handleGameLogShow">
-					<FontAwesomeIcon icon="book" style="margin-right: 0.3rem" />
-					游戏记录
-				</button>
-				<div class="game_log_main-container">
-					<div class="game_log_content-container">
-						<TransitionGroup name="list">
-							<GameLogItem v-for="log in gameLogList" :key="log.time + log.content.slice(0, 12)" :game-log="log" />
-						</TransitionGroup>
-					</div>
-				</div>
-			</div>
+			<!-- <div class="game_log-container">
+				
+			</div> -->
 		</div>
 
 		<form @submit="sendChatMessage" class="chat_input-container">
@@ -156,8 +161,7 @@ function handleGameLogShow() {
 		}
 	}
 
-	.chat_show-button,
-	.game_log_show-button {
+	.button {
 		width: fit-content;
 		padding: 0.4rem 1.2rem;
 		font-size: 0.9rem;
@@ -166,39 +170,38 @@ function handleGameLogShow() {
 		color: var(--color-text-white);
 		border-radius: 0.5rem 0.5rem 0 0;
 		pointer-events: auto;
+		margin-right: .3rem;
 	}
 
-	.chat_show-button {
-		margin-left: 7rem;
-	}
-
-	.chat_main-container,
-	.game_log_main-container {
-		display: flex;
+	.containers {
 		height: 0;
-		flex-direction: column;
-		box-shadow: var(--box-shadow-dark);
-		border-radius: 0 1rem 0 0;
-		background-color: rgba($color: #ffffff, $alpha: 0.9);
-		overflow: hidden;
-		pointer-events: auto;
+		.chat_main-container,
+		.game_log_main-container {
+			display: flex;
+			height: 18rem;
+			flex-direction: column;
+			box-shadow: var(--box-shadow-dark);
+			border-radius: 0 1rem 0 0;
+			background-color: rgba($color: #ffffff, $alpha: 0.9);
+			overflow: hidden;
+			pointer-events: auto;
 
-		.chat_content-container,
-		.game_log_content-container {
-			flex: 1;
-			width: 100%;
-			padding: 0.6rem;
-			box-sizing: border-box;
-			overflow-y: scroll;
-			overflow-x: hidden;
-			backdrop-filter: blur(2px);
-		}
+			.chat_content-container,
+			.game_log_content-container {
+				flex: 1;
+				width: 100%;
+				padding: 0.6rem;
+				box-sizing: border-box;
+				overflow-y: scroll;
+				overflow-x: hidden;
+				backdrop-filter: blur(2px);
+			}
 
-		.chat_content-container {
-			padding-bottom: 2.2rem;
+			.chat_content-container {
+				padding-bottom: 2.2rem;
+			}
 		}
 	}
-
 	.chat_input-container {
 		width: max-content;
 		display: flex;

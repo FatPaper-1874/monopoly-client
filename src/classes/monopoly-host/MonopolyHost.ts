@@ -8,7 +8,7 @@ import GameProcessWorker from "@/classes/worker/GameProcessWorker?worker";
 import { WorkerCommMsg } from "@/interfaces/worker";
 import { WorkerCommType } from "@/enums/worker";
 import { getMapById, getMapsList } from "@/utils/api/map";
-import { deleteRoom, emitRoomHeart } from "@/utils/api/room-router";
+import { deleteRoom, emitRoomHeart, setRoomStarted } from "@/utils/api/room-router";
 import { asyncMission } from "@/utils/async-mission-queue";
 import { __ICE_SERVER_PATH__, __PROTOCOL__ } from "@G/global.config";
 import { useLoading } from "@/store";
@@ -271,7 +271,8 @@ export class MonopolyHost {
 		this.room.changeGameSetting(data.data);
 	}
 
-	private handleGameStart() {
+	private async handleGameStart() {
+		await setRoomStarted(this.room.getRoomId(), true);
 		this.room.startGame();
 	}
 
@@ -371,6 +372,7 @@ class Room {
 			mapId: "",
 			roundTime: 20,
 			diceNum: 2,
+			chanceCardVisible: true,
 		};
 	}
 
@@ -714,7 +716,8 @@ class Room {
 		const handleGameStart = () => {};
 	}
 
-	private handleGameOver() {
+	private async handleGameOver() {
+		await setRoomStarted(this.getRoomId(), false);
 		Array.from(this.userList.values()).forEach((u) => {
 			u.isReady = false;
 		});

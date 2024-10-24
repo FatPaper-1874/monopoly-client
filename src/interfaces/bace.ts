@@ -15,6 +15,7 @@ export interface GameSetting {
 	roundTime: number;
 	mapId: string;
 	diceNum: number;
+	chanceCardVisible: boolean;
 }
 
 export interface Music {
@@ -81,6 +82,7 @@ export interface ChatMessage {
 }
 
 export interface GameLog {
+	id: string;
 	time: number;
 	content: string;
 }

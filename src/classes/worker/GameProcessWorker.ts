@@ -209,21 +209,22 @@ export class GameProcess {
 			});
 
 			player.addEventListener(PlayerEvents.Tp, async (positionIndex: number) => {
+				const walkId = randomString(16);
 				const msg: SocketMessage = {
 					type: SocketMsgType.PlayerTp,
 					source: "server",
-					data: { playerId: player.getId(), positionIndex },
+					data: { playerId: player.getId(), positionIndex, walkId },
 				};
 				player.setPositionIndex(positionIndex);
 				this.gameInfoBroadcast();
 				this.gameBroadcast(msg);
 
 				//在计划的动画完成事件后取消监听, 防止客户端因特殊情况没有发送动画完成的指令造成永久等待
-				const animationDuration = 600;
+				const animationDuration = 2000;
 				let animationTimer = setTimeout(() => {
-					operateListener.emit(player.getId(), OperateType.Animation);
+					operateListener.emit(player.getId(), OperateType.Animation + walkId);
 				}, animationDuration);
-				await operateListener.onceAsync(player.getId(), OperateType.Animation, () => {
+				await operateListener.onceAsync(player.getId(), OperateType.Animation + walkId, () => {
 					clearTimeout(animationTimer);
 				});
 				player.emit(PlayerEvents.AnimationFinished);
@@ -369,7 +370,7 @@ export class GameProcess {
 					this.gameLogBroadcast(
 						`${this.createGameLinkItem(GameLinkItem.Player, currentPlayer.getId())} 睡着了,跳过回合`
 					);
-					currentPlayer.setStop(currentPlayer.getStop() - 1);
+					await currentPlayer.setStop(currentPlayer.getStop() - 1);
 					currentPlayerIndex++;
 					continue;
 				}
@@ -967,7 +968,7 @@ export class GameProcess {
 	}
 
 	public gameLogBroadcast(log: string) {
-		const gameLog: GameLog = { time: Date.now() - this.startTime, content: log };
+		const gameLog: GameLog = { id: randomString(8), time: Date.now() - this.startTime, content: log };
 		this.gameLogList.push(gameLog);
 		this.gameBroadcast({
 			type: SocketMsgType.GameLog,

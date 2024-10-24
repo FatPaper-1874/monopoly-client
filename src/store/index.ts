@@ -73,6 +73,7 @@ export const useRoomInfo = defineStore("roomInfo", {
 				mapId: "",
 				roundTime: 15,
 				diceNum: 2,
+				chanceCardVisible: true,
 			},
 		};
 	},

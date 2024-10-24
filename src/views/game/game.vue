@@ -93,9 +93,14 @@ onBeforeUnmount(() => {
 				<Dices @click="handleRollDice"></Dices>
 			</div>
 
-			<div class="countdown-timer ui-item">
-				<CountdownTimer />
-			</div>
+			<teleport to="body">
+				<div
+					style="position: fixed; top: 15%; left: 50%; transform: translate(-50%, -50%); z-index: 99999999"
+					class="countdown-timer ui-item"
+				>
+					<CountdownTimer />
+				</div>
+			</teleport>
 		</div>
 
 		<scoreboard />
@@ -171,14 +176,6 @@ onBeforeUnmount(() => {
 		&.player-contianer {
 			top: 4.2rem;
 			right: 0;
-		}
-
-		&.countdown-timer {
-			position: absolute;
-			top: 15%;
-			left: 50%;
-			transform: translate(-50%, -50%);
-			z-index: 5000;
 		}
 
 		&.tool-bar {

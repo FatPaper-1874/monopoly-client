@@ -62,13 +62,17 @@ function handleLogout() {
 	router.replace({ name: "login" });
 }
 
-async function joinRoom(e: Event) {
+async function handleJoinRoom(e: Event) {
 	e.preventDefault();
 	const _roomId = roomId.value;
 	if (!_roomId) {
 		FPMessage({ type: "error", message: "请输入房间号" });
 		return;
 	}
+	await joinRoom(_roomId);
+}
+
+async function joinRoom(id: string) {
 	try {
 		const monopolyClient = await useMonopolyClient({
 			iceServer: {
@@ -77,7 +81,7 @@ async function joinRoom(e: Event) {
 			},
 		});
 		useLoading().showLoading("正在尝试连接");
-		await monopolyClient.joinRoom(_roomId);
+		await monopolyClient.joinRoom(id);
 	} catch (e: any) {
 		FPMessage({ type: "error", message: e.message || e });
 	} finally {
@@ -98,7 +102,7 @@ async function handleGetRandomPublicRoom(e: Event) {
 		const res = await getRandomPublicRoom();
 		if (res.roomId) {
 			FPMessage({ type: "success", message: "遇到等待的小伙伴了呢!" });
-			roomId.value = res.roomId;
+			await joinRoom(res.roomId);
 		} else {
 			FPMessage({ type: "error", message: "现在没有公开的房间喔" });
 		}
@@ -124,7 +128,7 @@ async function handleGetRandomPublicRoom(e: Event) {
 				·输入房间号可加入房间，第一个使用房间号的将成为主机(房主)<br />
 				·建议使用稍微复杂的房间号(防止误入别人的房间)<br />
 			</div>
-			<form @submit="joinRoom">
+			<form @submit="handleJoinRoom">
 				<input maxlength="12" v-model="roomId" type="text" placeholder="房间号(1-12个字符)" />
 				<button type="submit">加入/创建房间</button>
 				<FpPopover placement="bottom">
@@ -211,7 +215,8 @@ async function handleGetRandomPublicRoom(e: Event) {
 			justify-content: space-around;
 
 			& .random-room-button {
-				padding: 0 .6rem;
+				width: 3rem;
+				padding: 0 0.6rem;
 			}
 
 			& .tips {

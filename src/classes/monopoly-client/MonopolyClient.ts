@@ -439,8 +439,12 @@ export class MonopolyClient {
 	}
 
 	private handlePlayerTp(data: SocketMessage) {
-		const { playerId, positionIndex } = data.data as { playerId: string; positionIndex: number };
-		useEventBus().emit("player-tp", playerId, positionIndex);
+		const { playerId, positionIndex, walkId } = data.data as {
+			playerId: string;
+			positionIndex: number;
+			walkId: string;
+		};
+		useEventBus().emit("player-tp", playerId, positionIndex, walkId);
 	}
 
 	private handleBuyProperty(data: SocketMessage) {

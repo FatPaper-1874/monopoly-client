@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { MapItem } from "@/interfaces/game";
+import { MapItem, PlayerInfo } from "@/interfaces/game";
 import { useGameInfo, useMapData } from "@/store";
-import { onMounted, nextTick, computed } from "vue";
+import { onMounted, nextTick, computed, toRaw } from "vue";
 
 const mapDataStore = useMapData();
 
@@ -9,14 +9,20 @@ const props = defineProps<{ highLightList: string[]; selectedId: string }>();
 const emits = defineEmits(["update:selectedId"]);
 
 const properties = useGameInfo().propertiesList;
+const playerList = useGameInfo().playersList;
+const indexList = useMapData().mapIndexList;
 const myInfo = useGameInfo().getMyInfo;
 
+type MapItemWithPlayer = MapItem & {
+	players: PlayerInfo[];
+};
 const mapItemsList = computed(() => {
-	const mapItemsList = mapDataStore.mapItemsList;
+	const mapItemsList = <MapItemWithPlayer[]>toRaw(mapDataStore.mapItemsList);
 	const minX = Math.min(...mapItemsList.map((item) => item.x));
 	const minY = Math.min(...mapItemsList.map((item) => item.y));
 
 	return mapItemsList.map((item) => {
+		item.players = [];
 		item.x = item.x - minX;
 		item.y = item.y - minY;
 		if (item.property) {
@@ -24,6 +30,11 @@ const mapItemsList = computed(() => {
 			const livePropertyInfo = properties.find((p) => p.id === propertyId);
 			if (livePropertyInfo) {
 				item.property.owner = livePropertyInfo.owner;
+			}
+		}
+		for (const player of playerList) {
+			if (item.id === indexList[player.positionIndex]) {
+				item.players.push(player);
 			}
 		}
 		return item;
@@ -67,7 +78,11 @@ function initMiniMap() {
 			@click="handleMapItemClick(mapItem)"
 			:disable="!props.highLightList.includes(mapItem.id)"
 			class="map-item"
-			:class="{ highlight: props.highLightList.includes(mapItem.id), selected: props.selectedId === mapItem.id }"
+			:class="{
+				highlight: props.highLightList.includes(mapItem.id),
+				selected: props.selectedId === mapItem.id,
+				road: indexList.includes(mapItem.id),
+			}"
 			:style="{
 				gridRowStart: mapItem.y + 1,
 				gridColumnStart: mapItem.x + 1,
@@ -79,11 +94,12 @@ function initMiniMap() {
 		>
 			{{ mapItem.property?.owner?.name[0] }}
 			<div
-				v-if="myCurrentMapItemId === mapItem.id"
-				:style="{ backgroundColor: myInfo ? myInfo.user.color : 'initial' }"
+				v-for="(player, index) in mapItem.players"
+				:key="player.id"
+				:style="{ backgroundColor: player.user.color, animationDelay: `${index * 1}s` }"
 				class="player-block"
 			>
-				你
+				{{ player.user.username[0] }}
 			</div>
 		</div>
 	</div>
@@ -104,7 +120,7 @@ function initMiniMap() {
 		width: $map-item-size;
 		height: $map-item-size;
 		border-radius: 10%;
-		background-color: #707070;
+		background-color: #414141;
 		cursor: pointer;
 		box-sizing: border-box;
 		display: flex;
@@ -124,11 +140,12 @@ function initMiniMap() {
 			line-height: $block-size;
 			text-align: center;
 			vertical-align: middle;
+			aspect-ratio: 1/1;
 		}
 
 		&.highlight {
 			background-color: #fff;
-			border: 10% solid #fff;
+			border: 0.2rem solid #fff;
 			line-height: $map-item-size;
 			text-align: center;
 			vertical-align: middle;
@@ -168,6 +185,10 @@ function initMiniMap() {
 					}
 				}
 			}
+		}
+
+		&.road {
+			background-color: #707070;
 		}
 
 		&[disable="true"] {
