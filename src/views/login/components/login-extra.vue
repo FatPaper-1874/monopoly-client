@@ -2,6 +2,10 @@
 import FpPopover from "@/components/utils/fp-popover/fp-popover.vue";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 
+function toAFD(){
+	window.open("https://afdian.com/a/fatpaper");
+}
+
 function toLog() {
 	window.open("https://fatpaper.site/archives/monopoly-log");
 }
@@ -21,6 +25,14 @@ function toBilibili() {
 
 <template>
 	<div class="login-extra">
+		<fp-popover placement="right" trigger="hover">
+			<div @click="toAFD" class="login-extra-item about">
+				<FontAwesomeIcon icon="sack-dollar" />
+			</div>
+			<template #content>
+				<div class="extra-content">给作者支持!</div>
+			</template>
+		</fp-popover>
 		<fp-popover placement="right" trigger="hover">
 			<div @click="toLog" class="login-extra-item about">
 				<FontAwesomeIcon icon="bullhorn" />
@@ -52,7 +64,7 @@ function toBilibili() {
 			</template>
 		</fp-popover>
 
-		<span class="version">v0.1.0</span>
+		<span class="version">v0.1.1</span>
 	</div>
 </template>
 
@@ -75,7 +87,7 @@ function toBilibili() {
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		margin: 1rem 0;
+		margin: .7rem 0;
 		background-color: rgba(255, 255, 255, 0.8);
 		font-size: 2rem;
 		border-radius: 0.7rem;
