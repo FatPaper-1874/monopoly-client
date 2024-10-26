@@ -101,7 +101,7 @@ export class MonopolyHost {
 					_this.room.leave(clientUserId);
 					_this.clientList.delete(clientUserId);
 				},
-				5000,
+				20000,
 				true
 			);
 
@@ -230,7 +230,7 @@ export class MonopolyHost {
 						data: Date.now(),
 					})
 				);
-			}, 1000)
+			}, 3000)
 		);
 	}
 

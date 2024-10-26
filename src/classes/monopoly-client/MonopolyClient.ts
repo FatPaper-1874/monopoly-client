@@ -256,14 +256,14 @@ export class MonopolyClient {
 		() => {
 			FPMessage({
 				type: "error",
-				message: "与主机断开连接, 即将返回主页",
+				message: "与主机断开连接, 即将返回主页, 输入id进入房间即可重新连接",
 				onClosed: () => {
 					router.replace("room-router");
 					this.destory();
 				},
 			});
 		},
-		5000,
+		20000,
 		true
 	);
 
