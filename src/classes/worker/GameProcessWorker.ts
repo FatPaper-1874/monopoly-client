@@ -156,6 +156,7 @@ export class GameProcess {
 					},
 				};
 				this.gameBroadcast(msg);
+				this.gameOverCheck();
 				return;
 			});
 
@@ -171,6 +172,7 @@ export class GameProcess {
 					},
 				};
 				this.gameBroadcast(msg);
+				this.gameOverCheck();
 				return;
 			});
 
