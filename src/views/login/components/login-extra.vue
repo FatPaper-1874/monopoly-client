@@ -64,7 +64,7 @@ function toBilibili() {
 			</template>
 		</fp-popover>
 
-		<span class="version">v0.1.1</span>
+		<span class="version">v0.1.2</span>
 	</div>
 </template>
 
