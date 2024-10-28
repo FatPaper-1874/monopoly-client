@@ -17,6 +17,7 @@ export interface GameSetting {
 	diceNum: number;
 	chanceCardVisible: boolean;
 	overMoney: number;
+	slackOffMode: boolean;
 }
 
 export interface Music {

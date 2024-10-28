@@ -12,7 +12,12 @@ export type WorkerCommMsg = {
 
 interface WorkerCommDataTypeMap {
 	//Worker Receive
-	[WorkerCommType.LoadGameInfo]: { setting: GameSetting; mapInfo: GameMap; userList: UserInRoomInfo[] };
+	[WorkerCommType.LoadGameInfo]: {
+		setting: GameSetting;
+		mapInfo: GameMap;
+		userList: UserInRoomInfo[];
+		roomOwnerId: string;
+	};
 	[WorkerCommType.EmitOperation]: { userId: string; operateType: OperateType; data: SocketMessage };
 	[WorkerCommType.UserOffLine]: { userId: string };
 	[WorkerCommType.UserReconnect]: { userId: string };

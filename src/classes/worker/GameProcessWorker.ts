@@ -29,8 +29,8 @@ self.addEventListener("message", (ev) => {
 	switch (data.type) {
 		case WorkerCommType.LoadGameInfo:
 			{
-				const { mapInfo, setting, userList } = data.data;
-				gameProcess = new GameProcess(mapInfo, setting, userList);
+				const { mapInfo, setting, userList, roomOwnerId } = data.data;
+				gameProcess = new GameProcess(mapInfo, setting, userList, roomOwnerId);
 				gameProcess.start();
 			}
 			break;
@@ -94,11 +94,35 @@ export class GameProcess {
 	//Utils
 	private dice: Dice;
 
-	constructor(mapInfo: GameMap, gameSetting: GameSetting, users: UserInRoomInfo[]) {
+	constructor(mapInfo: GameMap, gameSetting: GameSetting, users: UserInRoomInfo[], roomOwnerId: string) {
 		this.mapInfo = mapInfo;
 		this.gameSetting = gameSetting;
 		this.dice = new Dice(gameSetting.diceNum);
 		this.roundTimeTimer = new RoundTimeTimer(gameSetting.roundTime, 1000);
+		if (gameSetting.slackOffMode) {
+			operateListener.on(roomOwnerId, OperateType.PauseGame, () => {
+				console.log("PauseGame");
+				this.roundTimeTimer.pause();
+				this.gameBroadcast(<SocketMessage>{
+					type: SocketMsgType.PauseGame,
+					msg: {
+						type: "info",
+						content: "房主摸鱼被发现了，游戏暂停",
+					},
+				});
+			});
+			operateListener.on(roomOwnerId, OperateType.ResumeGame, () => {
+				console.log("ResumeGame");
+				this.roundTimeTimer.resume();
+				this.gameBroadcast(<SocketMessage>{
+					type: SocketMsgType.ResumeGame,
+					msg: {
+						type: "info",
+						content: "房主回来了，游戏继续",
+					},
+				});
+			});
+		}
 
 		this.loadGameMap(mapInfo);
 		this.initPlayer(users);

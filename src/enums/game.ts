@@ -11,6 +11,9 @@ export enum OperateType {
 	Animation = "AnimationComplete", //前端动画完成回馈
 	BuyProperty = "BuyProperty", //买房子
 	BuildHouse = "BuildHouse", //升级房子
+
+	PauseGame = "PauseGame", //房主暂停游戏
+	ResumeGame = "ResumeGame", //房主恢复游戏
 }
 
 export enum ChanceCardType {

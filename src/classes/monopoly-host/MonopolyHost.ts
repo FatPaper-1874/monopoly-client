@@ -11,7 +11,7 @@ import { getMapById, getMapsList } from "@/utils/api/map";
 import { deleteRoom, emitRoomHeart, setRoomStarted } from "@/utils/api/room-router";
 import { asyncMission } from "@/utils/async-mission-queue";
 import { __ICE_SERVER_PATH__, __PROTOCOL__ } from "@G/global.config";
-import { useLoading } from "@/store";
+import { useDeviceStatus, useLoading } from "@/store";
 
 export class MonopolyHost {
 	private peer: Peer;
@@ -402,6 +402,7 @@ class Room {
 			diceNum: 2,
 			chanceCardVisible: true,
 			overMoney: 100000,
+			slackOffMode: false,
 		};
 	}
 
@@ -731,7 +732,19 @@ class Room {
 						const { socketClient, ...userInfo } = u;
 						return userInfo;
 					}),
+					roomOwnerId: this.ownerId,
 				},
+			});
+			const deviceStatusStore = useDeviceStatus();
+			deviceStatusStore.$subscribe((mutation, state) => {
+				if (this.gameProcess)
+					this.gameProcess.postMessage(<WorkerCommMsg>{
+						type: WorkerCommType.EmitOperation,
+						data: {
+							userId: this.ownerId,
+							operateType: state.isFocus ? OperateType.ResumeGame : OperateType.PauseGame,
+						},
+					});
 			});
 		};
 

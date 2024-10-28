@@ -247,6 +247,13 @@ export class MonopolyClient {
 						break;
 					case SocketMsgType.GameOver:
 						this.handleGameOver(data);
+						break;
+					case SocketMsgType.PauseGame:
+						this.handleGamePause();
+						break;
+					case SocketMsgType.ResumeGame:
+						this.handleGameResume();
+						break;
 					default:
 						break;
 				}
@@ -529,6 +536,14 @@ export class MonopolyClient {
 	private handleGameOver(data: SocketMessage) {
 		const gameInfoStore = useGameInfo();
 		gameInfoStore.isGameOver = true;
+	}
+
+	private handleGamePause() {
+		useLoading().showLoading("房主摸鱼被发现了，游戏暂停，等待房主回来");
+	}
+
+	private handleGameResume() {
+		useLoading().hideLoading();
 	}
 
 	public sendRoomChatMessage(message: string, roomId: string) {

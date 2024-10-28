@@ -220,7 +220,17 @@ function handleUpdateGameSetting() {
 				</div>
 				<div class="options">
 					<span class="label">机会卡可视</span>
-					<input :disabled="!isOwner" type="checkbox" v-model="_tempGameSettingFrom.chanceCardVisible" />
+					<div>
+						<input :disabled="!isOwner" type="checkbox" v-model="_tempGameSettingFrom.chanceCardVisible" />
+						<span>(玩家详情只显示机会卡数量)</span>
+					</div>
+				</div>
+				<div class="options">
+					<span class="label">摸鱼模式</span>
+					<div>
+						<input :disabled="!isOwner" type="checkbox" v-model="_tempGameSettingFrom.slackOffMode" />
+						<span>(房主离开/隐藏视窗会暂停游戏)</span>
+					</div>
 				</div>
 				<button v-if="isOwner" class="submit" @click="handleUpdateGameSetting">更新设置</button>
 			</div>
@@ -419,14 +429,17 @@ function handleUpdateGameSetting() {
 }
 
 .map-option {
-	width: 95%;
+	width: 100%;
+	padding: 0.6rem;
+	box-sizing: border-box;
 	flex: 1;
+	overflow-y: auto;
 
 	& > .options {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		margin: 0.2rem 0;
+		margin: 0.4rem 0;
 		color: var(--color-text-primary);
 		padding: 0 0.5rem;
 
@@ -447,39 +460,44 @@ function handleUpdateGameSetting() {
 				padding: 0.5rem 0.7rem;
 				margin-right: 0.5rem;
 			}
-		}
 
-		& > input[type="checkbox"] {
-			cursor: pointer;
-			position: relative;
-			margin: 0.7rem;
-			width: 1.5rem;
-			height: 1.5rem;
-			margin-right: auto;
-			display: block;
+			& > input[type="checkbox"] {
+				cursor: pointer;
+				position: relative;
+				margin: 0.7rem;
+				width: 1.5rem;
+				height: 1.5rem;
+				display: block;
+				flex: 0;
 
-			&::after {
-				position: absolute;
-				top: 50%;
-				left: 50%;
-				transform: translate(-50%, -50%);
-				color: #000;
-				width: 1.6rem;
-				height: 1.6rem;
-				display: inline-block;
-				visibility: visible;
-				padding-left: 0px;
-				text-align: center;
-				content: " ";
-				border-radius: 3px;
+				&::after {
+					position: absolute;
+					top: 50%;
+					left: 50%;
+					transform: translate(-50%, -50%);
+					color: #000;
+					width: 1.6rem;
+					height: 1.6rem;
+					display: inline-block;
+					visibility: visible;
+					padding-left: 0px;
+					text-align: center;
+					content: " ";
+					border-radius: 3px;
+				}
+
+				&:checked::after {
+					content: "✓";
+					color: #fff;
+					font-size: 1rem;
+					font-weight: bold;
+					background-color: var(--color-primary);
+				}
 			}
 
-			&:checked::after {
-				content: "✓";
-				color: #fff;
-				font-size: 1rem;
-				font-weight: bold;
-				background-color: var(--color-primary);
+			& > span {
+				flex: 1;
+				font-size: 0.8rem;
 			}
 		}
 	}

@@ -33,6 +33,9 @@ export enum SocketMsgType {
 	BuildHouse, //升级房子
 	Bankrupt, //破产
 	GameOver, //游戏结束
+
+	PauseGame, //房主暂停游戏
+	ResumeGame, //房主恢复游戏
 }
 
 export enum ChangeRoleOperate {

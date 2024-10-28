@@ -1,77 +1,71 @@
 export class RoundTimeTimer {
 	private roundTime: number;
 	private intervalMs: number = 1000;
-	private timeoutTimer: any;
 	private intervalTimer: any;
 	private timeOutFunction: Function | null = null;
+	private remainingTime: number = 0;
 	private intervalFunction: ((remainingTime: number) => void) | null = null;
-
-	private currentRemainingTime = 0;
+	private isPause = false;
 
 	constructor(roundTime: number, intervalMs = 1000) {
 		this.roundTime = roundTime;
 		this.intervalMs = intervalMs;
-		this.currentRemainingTime = roundTime;
+		this.remainingTime = roundTime;
 	}
 
 	public async start(callback: Function | null, timeS: number = this.roundTime): Promise<void> {
+		this.remainingTime = timeS * 1000;
+		if (callback) this.timeOutFunction = callback;
+		this.clearInterval();
 		return new Promise((resolve) => {
-			if (callback) this.timeOutFunction = callback;
-			if (this.timeoutTimer) clearTimeout(this.timeoutTimer);
-			this.currentRemainingTime = this.roundTime;
-			this.runIntervalFunction();
-			if (this.timeOutFunction)
-				this.timeoutTimer = setTimeout(() => {
+			this.intervalTimer = setInterval(() => {
+				if (!this.isPause) this.runIntervalFunction();
+				if (this.remainingTime <= 0) {
 					this.runTimeOutFunction();
+					this.clearInterval();
 					resolve();
-				}, timeS * 1000);
+				}
+				if (!this.isPause) this.remainingTime -= this.intervalMs;
+			}, this.intervalMs);
 		});
 	}
 
+	public nextTick() {}
+
+	public pause() {
+		this.isPause = true;
+	}
+
+	public resume() {
+		this.isPause = false;
+	}
+
 	public stop() {
-		this.clearTimeout();
 		this.clearInterval();
 	}
 
 	public async setTimeOutFunction(newFunction: Function | null) {
-		this.timeOutFunction = newFunction;
 		this.intervalFunction && this.setIntervalFunction(this.intervalFunction);
 		await this.start(newFunction);
 	}
 
 	public setIntervalFunction(countDownCallback: (remainingTime: number) => void | null) {
 		this.intervalFunction = countDownCallback;
-		if (this.intervalTimer) clearInterval(this.intervalTimer);
-		this.intervalTimer = setInterval(() => {
-			this.runIntervalFunction();
-		}, this.intervalMs);
-	}
-
-	public async waitAsyncResolveOrTimeOut(asyncFunction: Promise<any>, resetInterval = true) {
-		if (resetInterval) this.start(null);
-		await Promise.race([asyncFunction, this.start]);
-		this.timeOutFunction && this.timeOutFunction();
-		this.clearTimeout();
+		// this.clearInterval();
+		// if (!this.isPause) {
+		// 	this.intervalTimer = setInterval(() => {
+		// 		this.runIntervalFunction();
+		// 	}, this.intervalMs);
+		// }
 	}
 
 	private runIntervalFunction() {
-		if (!this.intervalFunction) return;
-		this.intervalFunction(this.currentRemainingTime);
-		if (this.currentRemainingTime > 0) this.currentRemainingTime--;
+		this.intervalFunction && this.intervalFunction(Math.round(this.remainingTime / 1000));
 	}
 
 	private runTimeOutFunction() {
 		if (!this.timeOutFunction) return;
-		this.currentRemainingTime = 0;
 		this.timeOutFunction();
-		this.clearTimeout();
-	}
-
-	public clearTimeout() {
-		if (this.timeoutTimer) {
-			clearTimeout(this.timeoutTimer);
-			this.timeoutTimer = null;
-		}
 	}
 
 	public clearInterval() {
@@ -82,7 +76,6 @@ export class RoundTimeTimer {
 	}
 
 	public destroy() {
-		this.clearTimeout();
 		this.clearInterval();
 	}
 }
