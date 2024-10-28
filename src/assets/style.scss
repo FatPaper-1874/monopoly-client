@@ -17,7 +17,7 @@ body {
 }
 
 html {
-  font-size: calc(1.5vmin + 2px);
+  font-size: calc(1.5vmin + 0.13rem);
 }
 
 * {
@@ -50,7 +50,7 @@ html {
     width: 2rem;
     height: 2rem;
     border-radius: 50%;
-    border: 3px solid white;
+    border: .2rem solid white;
     border-top-color: transparent;
     animation: spin 1s linear infinite;
     z-index: 2;
@@ -110,10 +110,10 @@ html {
   --color-text-error: #F56C6C;
   --color-text-message: #095fce;
 
-  --box-shadow: 0px 0px 12px rgba(0, 0, 0, .12);
-  --box-shadow-dark: 0px 0px 12px rgba(0, 0, 0, .22);
-  --text-shadow: 3px 3px 2px rgba(0, 0, 0, 0.15);
-  --text-shadow-light: 3px 3px 2px rgba(255, 255, 255, 1);
+  --box-shadow: 0px 0px 10.13rem rgba(0, 0, 0, .12);
+  --box-shadow-dark: 0px 0px 10.13rem rgba(0, 0, 0, .22);
+  --text-shadow: .2rem .2rem 0.13rem rgba(0, 0, 0, 0.15);
+  --text-shadow-light: .2rem .2rem 0.13rem rgba(255, 255, 255, 1);
   --text-shadow-surround-white: #fff -1px 0 0, #fff 1px 0 0, #fff 0 1px 0, #fff 0 -1px 0;
 }
 
@@ -158,7 +158,7 @@ html {
 //   color: #ffb05c;
 //   font-size: 1em;
 //   background-color: #ffffff;
-//   box-shadow: 3px 3px 3px #ffb05c;
+//   box-shadow: .2rem .2rem .2rem #ffb05c;
 //   border-radius: 10px;
 
 //   &:hover {

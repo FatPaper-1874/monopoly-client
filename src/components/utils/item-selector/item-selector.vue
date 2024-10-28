@@ -16,7 +16,7 @@ const emits = defineEmits(["select", "update:selectedKey"]);
 
 const _selectedList = reactive<string[]>([]);
 
-function handleItemClick(item: any){
+function handleItemClick(item: any) {
 	const itemId = item[props.keyName];
 	if (props.multiple) {
 		if (_selectedList.includes(itemId)) {
@@ -36,7 +36,7 @@ function handleItemClick(item: any){
 		emits("select", itemId);
 		emits("update:selectedKey", itemId);
 	}
-};
+}
 </script>
 
 <template>
@@ -67,7 +67,7 @@ function handleItemClick(item: any){
 			color: var(--color-second);
 			background-color: #ffffff;
 			border-radius: 1em;
-			box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.12);
+			box-shadow: 0px 0px 10.13rem rgba(0, 0, 0, 0.12);
 			border: 4px solid var();
 			z-index: 1000;
 		}

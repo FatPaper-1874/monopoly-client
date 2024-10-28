@@ -67,7 +67,7 @@ function handleGameLogShow() {
 	}
 }
 
-function handleHideContainer(){
+function handleHideContainer() {
 	const chatStore = useChat();
 	const gameLogStore = useGameLog();
 	chatStore.visible = false;
@@ -90,7 +90,7 @@ function handleHideContainer(){
 				</button>
 
 				<button v-show="containerVisible" class="button" @click="handleHideContainer">
-					<FontAwesomeIcon icon="angle-down" style="font-size: 1.2rem;" />
+					<FontAwesomeIcon icon="angle-down" style="font-size: 1.2rem" />
 				</button>
 
 				<div class="containers">
@@ -170,7 +170,7 @@ function handleHideContainer(){
 		color: var(--color-text-white);
 		border-radius: 0.5rem 0.5rem 0 0;
 		pointer-events: auto;
-		margin-right: .3rem;
+		margin-right: 0.3rem;
 	}
 
 	.containers {
@@ -194,7 +194,7 @@ function handleHideContainer(){
 				box-sizing: border-box;
 				overflow-y: scroll;
 				overflow-x: hidden;
-				backdrop-filter: blur(2px);
+				backdrop-filter: blur(0.13rem);
 			}
 
 			.chat_content-container {

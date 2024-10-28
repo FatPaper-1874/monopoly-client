@@ -2,7 +2,7 @@
 import FpPopover from "@/components/utils/fp-popover/fp-popover.vue";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 
-function toAFD(){
+function toAFD() {
 	window.open("https://afdian.com/a/fatpaper");
 }
 
@@ -69,7 +69,7 @@ function toBilibili() {
 </template>
 
 <style scoped lang="scss">
-.version{
+.version {
 	color: rgba(255, 255, 255, 0.85);
 }
 .login-extra {
@@ -87,7 +87,7 @@ function toBilibili() {
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		margin: .7rem 0;
+		margin: 0.7rem 0;
 		background-color: rgba(255, 255, 255, 0.8);
 		font-size: 2rem;
 		border-radius: 0.7rem;
@@ -98,11 +98,11 @@ function toBilibili() {
 
 		&.to-bilibili {
 			color: #fb7299;
-			text-shadow: 3px 3px 2px #ffb9b3;
+			text-shadow: 0.2rem 0.2rem 0.13rem #ffb9b3;
 		}
 
 		& svg {
-			filter: drop-shadow(3px 3px 2px rgba(0, 0, 0, 0.15));
+			filter: drop-shadow(0.2rem 0.2rem 0.13rem rgba(0, 0, 0, 0.15));
 		}
 	}
 

@@ -159,7 +159,7 @@ async function handleGetRandomPublicRoom(e: Event) {
 		border: 0.3rem solid rgba(255, 255, 255, 0.65);
 		border-radius: 1.5rem;
 		background-color: rgba(255, 255, 255, 0.65);
-		backdrop-filter: blur(3px);
+		backdrop-filter: blur(0.2rem);
 	}
 
 	.user-container {

@@ -274,7 +274,7 @@ function toRoomList() {
 				font-weight: bold;
 				color: #ffffff;
 				margin-bottom: 0.5rem;
-				text-shadow: 3px 3px 2px rgb(255, 182, 59);
+				text-shadow: 0.2rem 0.2rem 0.13rem rgb(255, 182, 59);
 			}
 		}
 
@@ -297,12 +297,12 @@ function toRoomList() {
 				font-size: 2.8rem;
 				color: #ffffff;
 				margin-bottom: 0;
-				text-shadow: 3px 3px 2px rgb(255, 182, 59);
+				text-shadow: 0.2rem 0.2rem 0.13rem rgb(255, 182, 59);
 
 				&:first-child {
 					font-size: 0;
 					color: var(--color-primary);
-					text-shadow: 2px 2px 2px rgb(255, 245, 229);
+					text-shadow: 0.13rem 0.13rem 0.13rem rgb(255, 245, 229);
 				}
 			}
 
@@ -398,13 +398,13 @@ function toRoomList() {
 	@keyframes rotate1 {
 		0%,
 		100% {
-			-webkit-transform: translate3d(3px, 3px, 3px);
-			transform: translate3d(3px, 3px, 3px);
+			-webkit-transform: translate3d(0.2rem, 0.2rem, 0.2rem);
+			transform: translate3d(0.2rem, 0.2rem, 0.2rem);
 		}
 
 		50% {
-			-webkit-transform: translate3d((-3px, 3px, -3px));
-			transform: translate3d((-3px, 3px, -3px));
+			-webkit-transform: translate3d((-0.2rem, 0.2rem, -0.2rem));
+			transform: translate3d((-0.2rem, 0.2rem, -0.2rem));
 		}
 	}
 

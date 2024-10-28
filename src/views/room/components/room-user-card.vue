@@ -136,7 +136,7 @@ $top-bar-height: $avatar-size;
 	border-radius: 0.8rem;
 	overflow: hidden;
 	background-color: rgba(255, 255, 255, 0.7);
-	backdrop-filter: blur(3px);
+	backdrop-filter: blur(0.2rem);
 	box-sizing: border-box;
 	box-shadow: var(--box-shadow);
 
@@ -208,8 +208,8 @@ $top-bar-height: $avatar-size;
 		color: #ffffff;
 		background-color: rgb(255, 221, 25);
 		text-align: center;
-		box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.1);
-		text-shadow: 3px 3px 2px rgba(0, 0, 0, 0.1);
+		box-shadow: 0.13rem 0.13rem 0.2rem rgba(0, 0, 0, 0.1);
+		text-shadow: 0.2rem 0.2rem 0.13rem rgba(0, 0, 0, 0.1);
 		z-index: 100;
 	}
 

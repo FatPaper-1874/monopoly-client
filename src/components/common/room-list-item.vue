@@ -36,14 +36,14 @@ const props = defineProps({
 	justify-content: space-between;
 	align-items: center;
 	background-color: #ffffff;
-	box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+	box-shadow: 1px 1px 0.2rem rgba(0, 0, 0, 0.1);
 	overflow: hidden;
 	cursor: pointer;
 	transition: 0.1s;
 
 	&:hover {
 		transform: scale(1.005, 1.005);
-		box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.15);
+		box-shadow: 0.13rem 0.13rem 0.2rem rgba(0, 0, 0, 0.15);
 	}
 
 	& > .room-info-container {

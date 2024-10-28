@@ -2,15 +2,17 @@
 import { useGameInfo } from "@/store/index";
 import { computed } from "vue";
 import playerCard from "./player-card.vue";
-import {useRouter} from "vue-router";
+import { useRouter } from "vue-router";
 
 const router = useRouter();
 const isGameOver = computed(() => useGameInfo().isGameOver);
-const playerListSorted = computed(() => useGameInfo().playersList.sort((playerA, playerB) => playerB.money - playerA.money));
+const playerListSorted = computed(() =>
+	useGameInfo().playersList.sort((playerA, playerB) => playerB.money - playerA.money)
+);
 
-function toRoomList(){
-  useGameInfo().$reset();
-  router.replace('/room');
+function toRoomList() {
+	useGameInfo().$reset();
+	router.replace("/room");
 }
 </script>
 
@@ -21,13 +23,13 @@ function toRoomList(){
 				<div class="title">游戏结束</div>
 				<div class="player-list-container">
 					<div class="player-container" v-for="(player, index) in playerListSorted">
-            <div class="No">{{ index + 1 }}</div>
-            <playerCard :player="player" :round-mark="false" />
-          </div>
+						<div class="No">{{ index + 1 }}</div>
+						<playerCard :player="player" :round-mark="false" />
+					</div>
 				</div>
-        <div class="go-back">
-          <button @click="toRoomList">返回大厅</button>
-        </div>
+				<div class="go-back">
+					<button @click="toRoomList">返回大厅</button>
+				</div>
 			</div>
 		</div>
 	</transition>
@@ -54,13 +56,13 @@ function toRoomList(){
 }
 
 .contianer {
-  width: 30rem;
-  height: 60%;
-  border-radius: 12px;
-  overflow: hidden;
-  background-color: var(--color-bg-light);
-  display: flex;
-  flex-direction: column;
+	width: 30rem;
+	height: 60%;
+	border-radius: 10.13rem;
+	overflow: hidden;
+	background-color: var(--color-bg-light);
+	display: flex;
+	flex-direction: column;
 }
 
 .title {
@@ -73,39 +75,39 @@ function toRoomList(){
 	padding: 0 10px;
 }
 
-.No{
-  min-width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  margin-right: 1rem;
-  text-align: center;
-  line-height: 3rem;
-  font-size: 2rem;
-  background-color: var(--color-primary);
+.No {
+	min-width: 3rem;
+	height: 3rem;
+	border-radius: 50%;
+	margin-right: 1rem;
+	text-align: center;
+	line-height: 3rem;
+	font-size: 2rem;
+	background-color: var(--color-primary);
 }
 
 .player-list-container {
 	flex: 1;
 	display: flex;
 	flex-direction: column;
-  align-items: center;
-  color: #fff;
+	align-items: center;
+	color: #fff;
 }
 
-.player-container{
-  width: 25rem;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
+.player-container {
+	width: 25rem;
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
 }
 
-.go-back{
-  width: 100%;
+.go-back {
+	width: 100%;
 
-  button{
-    width: 100%;
-    height: 2rem;
-  }
+	button {
+		width: 100%;
+		height: 2rem;
+	}
 }
 
 .fade-enter-active,

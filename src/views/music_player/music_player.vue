@@ -201,7 +201,7 @@ onBeforeUnmount(() => {
 	height: 2.2rem;
 	// border-radius: 0 0 0.5rem 0.5rem;
 	background-color: var(--color-second);
-	box-shadow: 0px 0px 2px rgba(0, 0, 0, .12);
+	box-shadow: 0px 0px 0.13rem rgba(0, 0, 0, 0.12);
 	padding: 0.4rem;
 	box-sizing: border-box;
 	display: flex;
@@ -328,7 +328,7 @@ onBeforeUnmount(() => {
 	bottom: -2rem;
 	border-radius: 0 0 0.5rem 0.5rem;
 	background-color: var(--color-second);
-	box-shadow: 0px 1px 2px rgba(0, 0, 0, .12);
+	box-shadow: 0px 1px 0.13rem rgba(0, 0, 0, 0.12);
 	z-index: -1;
 	display: flex;
 	justify-content: space-between;
@@ -362,7 +362,7 @@ onBeforeUnmount(() => {
 		text-align: center;
 		color: var(--color-second);
 		user-select: none;
-		padding: .1rem;
+		padding: 0.1rem;
 		background-color: rgba(255, 255, 255, 0.75);
 	}
 }

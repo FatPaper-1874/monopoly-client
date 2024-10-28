@@ -6,7 +6,6 @@ import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { __PROTOCOL__ } from "@G/global.config";
 import gsap from "gsap";
 
-
 // const props = defineProps({
 // 	player: { type: Object as PropType<PlayerInfo>, default: {} },
 // 	roundMark: { type: Boolean, default: true },
@@ -74,7 +73,7 @@ watch(
 	border-radius: 0.8rem;
 	padding: 0.4rem 0.6rem;
 	background-color: rgba($color: #ffffff, $alpha: 0.85);
-	backdrop-filter: blur(3px);
+	backdrop-filter: blur(0.2rem);
 	border: 0.25rem solid rgba($color: #ffffff, $alpha: 0.85);
 	box-sizing: border-box;
 	user-select: none;

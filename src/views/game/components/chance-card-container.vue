@@ -95,7 +95,8 @@ const _canUseChanceCard = computed(() => utilStore.canUseCard);
 		margin-bottom: 0.3rem;
 		position: absolute;
 		bottom: 0;
-		z-index: 1;text-wrap: nowrap;
+		z-index: 1;
+		text-wrap: nowrap;
 	}
 
 	//& > .bg {
@@ -109,7 +110,7 @@ const _canUseChanceCard = computed(() => utilStore.canUseCard);
 	//  border-radius: 0.8rem 0.8rem 0 0;
 	//  border-bottom: 0;
 	//  z-index: -1;
-	//  backdrop-filter: blur(2px);
+	//  backdrop-filter: blur(0.13rem);
 	//  pointer-events: none;
 	//}
 }

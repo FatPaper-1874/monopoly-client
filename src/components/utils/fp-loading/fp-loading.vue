@@ -44,7 +44,7 @@ watch(loading, (newValue) => {
 	width: 50px;
 	height: 50px;
 	border-radius: 50%;
-	border: 3px solid white;
+	border: 0.2rem solid white;
 	border-top-color: transparent;
 	animation: spin 1s linear infinite;
 }

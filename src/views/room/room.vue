@@ -290,7 +290,7 @@ function handleUpdateGameSetting() {
 		box-sizing: border-box;
 		border-radius: 0.6rem;
 		background-color: rgba(255, 255, 255, 0.7);
-		backdrop-filter: blur(3px);
+		backdrop-filter: blur(0.2rem);
 		box-shadow: var(--box-shadow);
 		overflow: hidden;
 		display: flex;
@@ -321,7 +321,7 @@ function handleUpdateGameSetting() {
 	width: 100%;
 	color: #ffffff;
 	background-color: rgba(255, 255, 255, 0.65);
-	backdrop-filter: blur(3px);
+	backdrop-filter: blur(0.2rem);
 	background-color: var(--color-third);
 	display: flex;
 	justify-content: space-between;
@@ -483,7 +483,7 @@ function handleUpdateGameSetting() {
 					padding-left: 0px;
 					text-align: center;
 					content: " ";
-					border-radius: 3px;
+					border-radius: 0.2rem;
 				}
 
 				&:checked::after {
@@ -517,7 +517,7 @@ function handleUpdateGameSetting() {
 	width: 100%;
 	color: #ffffff;
 	background-color: rgba(255, 255, 255, 0.65);
-	backdrop-filter: blur(3px);
+	backdrop-filter: blur(0.2rem);
 	background-color: var(--color-third);
 	display: flex;
 	justify-content: space-between;
