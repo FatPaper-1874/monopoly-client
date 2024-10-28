@@ -16,6 +16,7 @@ export interface GameSetting {
 	mapId: string;
 	diceNum: number;
 	chanceCardVisible: boolean;
+	overMoney: number;
 }
 
 export interface Music {

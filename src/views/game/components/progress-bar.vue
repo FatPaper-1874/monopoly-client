@@ -1,21 +1,22 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { useGameInfo } from "@/store";
+import { useGameInfo, useRoomInfo } from "@/store";
 import { lightenColor } from "@/utils";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { __PROTOCOL__ } from "@G/global.config";
 
 const playerList = computed(() => useGameInfo().playersList);
+const overMoney = computed(() => useRoomInfo().gameSetting.overMoney);
 
 function getBlockHeight(money: number) {
-	const height = money / 100000;
+	const height = money / overMoney.value;
 	return height < 1 ? (height > 0 ? height * 100 + "%" : "0") : "100%";
 }
 </script>
 
 <template>
 	<div class="progress-bar">
-		<div class="target-bar">目标: ￥{{ 100000 }}</div>
+		<div class="target-bar">目标: ￥{{ overMoney }}</div>
 		<div
 			:style="{ height: getBlockHeight(player.money), backgroundColor: player.user.color }"
 			class="player-block"

@@ -67,13 +67,14 @@ export const useRoomInfo = defineStore("roomInfo", {
 			roleList: new Array<Role>(),
 			gameSetting: {
 				gameOverRule: GameOverRule.LeftOnePlayer,
-				initMoney: 100000,
+				initMoney: 20000,
 				multiplier: 1,
 				multiplierIncreaseRounds: 2,
 				mapId: "",
 				roundTime: 15,
 				diceNum: 2,
 				chanceCardVisible: true,
+				overMoney: 100000,
 			},
 		};
 	},

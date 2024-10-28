@@ -401,6 +401,7 @@ class Room {
 			roundTime: 20,
 			diceNum: 2,
 			chanceCardVisible: true,
+			overMoney: 100000,
 		};
 	}
 

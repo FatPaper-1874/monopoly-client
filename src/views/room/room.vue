@@ -128,6 +128,10 @@ function handleChangeMap() {
 }
 
 function handleUpdateGameSetting() {
+	if (_tempGameSettingFrom.value.overMoney <= _tempGameSettingFrom.value.initMoney) {
+		FPMessage({ type: "error", message: "目标金钱必须大于初始金钱" });
+		return;
+	}
 	if (socketClient) {
 		socketClient.changeGameSetting(toRaw(_tempGameSettingFrom.value));
 	}
@@ -164,6 +168,17 @@ function handleUpdateGameSetting() {
 			</div>
 
 			<div class="map-option">
+				<div class="options">
+					<span class="label">目标金额</span>
+					<div>
+						<input
+							:disabled="!isOwner"
+							type="number"
+							:min="_tempGameSettingFrom.initMoney"
+							v-model="_tempGameSettingFrom.overMoney"
+						/>￥
+					</div>
+				</div>
 				<div class="options">
 					<span class="label">骰子数量</span>
 					<div>

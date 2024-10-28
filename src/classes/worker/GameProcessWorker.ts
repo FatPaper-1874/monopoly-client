@@ -284,7 +284,7 @@ export class GameProcess {
 		switch (gameOverRule) {
 			case GameOverRule.Earn100000:
 				if (
-					this.playerList.some((player) => player.getMoney() >= 100000) ||
+					this.playerList.some((player) => player.getMoney() >= this.gameSetting.overMoney) ||
 					(this.playerList.length === 1 && this.playerList.every((p) => p.getIsBankrupted())) || //一个人游戏
 					(this.playerList.length > 1 && this.playerList.filter((player) => !player.getIsBankrupted()).length <= 1)
 				)
