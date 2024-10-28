@@ -330,7 +330,11 @@ export class GameRenderer {
 		this.addPlayerMoveWatcher();
 
 		//回合到切换到自己的视角
-		useEventBus().on("RoundTurn", this.focusMe.bind(this));
+		useEventBus().on("RoundTurn", () => {
+			if (this.isLockingRoleFromSetting) {
+				this.focusMe.bind(this);
+			}
+		});
 
 		this.focusMe();
 	}
@@ -1170,7 +1174,7 @@ export class GameRenderer {
 	//让摄像机看自己
 	private focusMe() {
 		this.currentFocusModule = this.playerEntities.get(useUserInfo().userId)?.model || null;
-		if (this.currentFocusModule && this.isLockingRoleFromSetting) {
+		if (this.currentFocusModule) {
 			this.updateCamera(this.controls, this.currentFocusModule, 7, 30);
 			this.controls.update();
 		}
