@@ -228,6 +228,7 @@ export const useSettig = defineStore("setting", {
 			cardUseMode: CardUseMode.Click,
 			autoMusic: true,
 			musicVolume: 1,
+			lockRole: true,
 		};
 	},
 });

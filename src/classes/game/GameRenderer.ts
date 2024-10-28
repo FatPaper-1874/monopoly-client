@@ -30,7 +30,7 @@ import {
 import gsap from "gsap";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { ChanceCardInfo, ItemType, MapItem, Model, PlayerInfo, PropertyInfo } from "@/interfaces/game";
-import { useDeviceStatus, useGameInfo, useLoading, useMapData, useUserInfo } from "@/store";
+import { useDeviceStatus, useGameInfo, useLoading, useMapData, useSettig, useUserInfo } from "@/store";
 import { Component, ComponentPublicInstance, createApp, toRaw, watch, WatchStopHandle } from "vue";
 import { loadItemTypeModules } from "@/utils/three/itemtype-loader";
 import { useMonopolyClient } from "@/classes/monopoly-client/MonopolyClient";
@@ -65,6 +65,7 @@ export class GameRenderer {
 	private composer: EffectComposer;
 	private renderPass: RenderPass;
 	private chanceCardTargetOutlinePass: OutlinePass;
+	private playerInRoundOutlinePass: OutlinePass;
 	private controls: OrbitControls;
 
 	private mapContainer: Group = new Group();
@@ -91,6 +92,7 @@ export class GameRenderer {
 	private commonWatchers: WatchStopHandle[] = [];
 
 	private isLockingRole: boolean = false;
+	private isLockingRoleFromSetting: boolean = useSettig().lockRole;
 
 	private currentFocusModule: Object3D | null = null;
 
@@ -115,6 +117,11 @@ export class GameRenderer {
 			this.scene,
 			this.camera
 		);
+		this.playerInRoundOutlinePass = new OutlinePass(
+			new Vector2(canvas.clientWidth, canvas.clientHeight),
+			this.scene,
+			this.camera
+		);
 		const pixelRatio = this.renderer.getPixelRatio();
 		// width、height是canva画布的宽高度
 
@@ -123,6 +130,7 @@ export class GameRenderer {
 		// this.composer.addPass(smaaPass);
 		this.composer.addPass(this.renderPass);
 		this.composer.addPass(this.chanceCardTargetOutlinePass);
+		this.composer.addPass(this.playerInRoundOutlinePass);
 		const gammaPass = new ShaderPass(GammaCorrectionShader);
 		this.composer.addPass(gammaPass);
 
@@ -232,7 +240,7 @@ export class GameRenderer {
 			this.handlePropertyRaycaster(propertyRaycaster, pointer);
 			this.handleArrivedEventRaycaster(propertyRaycaster, pointer);
 
-			if (this.isLockingRole && this.currentFocusModule) {
+			if (this.isLockingRole && this.isLockingRoleFromSetting && this.currentFocusModule) {
 				this.updateCamera(this.controls, this.currentFocusModule, 7, 30);
 			}
 			this.controls.update(100);
@@ -298,6 +306,9 @@ export class GameRenderer {
 
 		//监听倍数变化，实时更新房屋的显示
 		this.addMultiplierWatcher();
+
+		//监听设置的变化
+		this.addSettingWatcher();
 	}
 
 	private async initPlayer() {
@@ -374,6 +385,15 @@ export class GameRenderer {
 		this.chanceCardTargetOutlinePass.edgeStrength = 5;
 		//模型闪烁频率控制，默认0不闪烁
 		this.chanceCardTargetOutlinePass.pulsePeriod = 2;
+
+		//模型描边颜色，默认白色
+		this.playerInRoundOutlinePass.visibleEdgeColor.set(0x00ff00);
+		//高亮发光描边厚度
+		this.playerInRoundOutlinePass.edgeThickness = 1;
+		//高亮描边发光强度
+		this.playerInRoundOutlinePass.edgeStrength = 5;
+		//模型闪烁频率控制，默认0不闪烁
+		this.playerInRoundOutlinePass.pulsePeriod = 0;
 	}
 
 	private handlePropertyRaycaster(raycaster: Raycaster, pointer: Vector2) {
@@ -532,7 +552,11 @@ export class GameRenderer {
 			if (playerEntity) {
 				const sourcePosition = toRaw(this.playerPosition.get(walkPlayerId)) as number;
 				const mapIndexLength = toRaw(mapDataStore.mapIndexList.length);
-				this.currentFocusModule = this.playerEntities.get(walkPlayerId)?.model || null;
+				const model = this.playerEntities.get(walkPlayerId)?.model;
+				if (model) {
+					this.currentFocusModule = model;
+					// this.playerInRoundOutlinePass.selectedObjects = [model];
+				}
 				this.isLockingRole = true;
 				gsap.to(playerEntity.model.scale, {
 					x: Math.sign(playerEntity.model.scale.x),
@@ -552,7 +576,11 @@ export class GameRenderer {
 		useEventBus().on("player-tp", async (walkPlayerId: string, positionIndex: number, walkId: string) => {
 			const playerEntity = this.getPlayerEntity(walkPlayerId);
 			if (playerEntity) {
-				this.currentFocusModule = this.playerEntities.get(walkPlayerId)?.model || null;
+				const model = this.playerEntities.get(walkPlayerId)?.model;
+				if (model) {
+					this.currentFocusModule = model;
+					// this.playerInRoundOutlinePass.selectedObjects = [model];
+				}
 				this.isLockingRole = true;
 				playerEntity.model.scale.set(
 					Math.sign(playerEntity.model.scale.x),
@@ -630,6 +658,17 @@ export class GameRenderer {
 				}
 			)
 		);
+	}
+
+	private addSettingWatcher() {
+		const settingStore = useSettig();
+		const lockRoleWatcher = watch(
+			() => settingStore.lockRole,
+			(newValue) => {
+				this.isLockingRoleFromSetting = newValue;
+			}
+		);
+		this.commonWatchers.push(lockRoleWatcher);
 	}
 
 	private addChanceCardUseWatcher() {
@@ -1131,7 +1170,7 @@ export class GameRenderer {
 	//让摄像机看自己
 	private focusMe() {
 		this.currentFocusModule = this.playerEntities.get(useUserInfo().userId)?.model || null;
-		if (this.currentFocusModule) {
+		if (this.currentFocusModule && this.isLockingRoleFromSetting) {
 			this.updateCamera(this.controls, this.currentFocusModule, 7, 30);
 			this.controls.update();
 		}

@@ -84,6 +84,40 @@ const router = useRoute();
 						</div>
 					</div>
 				</div>
+
+				<div class="setting-item">
+					<div class="label">移动时视角</div>
+					<div class="content">
+						<div>
+							<input
+								type="radio"
+								name="lock-role-mode"
+								:value="true"
+								id="lock-role-mode-true"
+								v-model="settingStore.lockRole"
+								hidden
+							/>
+							<label for="lock-role-mode-true">
+								<FontAwesomeIcon icon="square-check" v-if="settingStore.lockRole" />
+								锁定</label
+							>
+						</div>
+						<div>
+							<input
+								type="radio"
+								name="lock-role-mode"
+								:value="false"
+								id="lock-role-mode-false"
+								v-model="settingStore.lockRole"
+								hidden
+							/>
+							<label for="lock-role-mode-false">
+								<FontAwesomeIcon icon="square-check" v-if="!settingStore.lockRole" />
+								自由</label
+							>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 	</FpDialog>
