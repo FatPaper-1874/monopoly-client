@@ -255,6 +255,12 @@ export class GameProcess {
 						operateListener.removeAll(player.getId());
 						player.removeAllListeners();
 					}
+					this.gameBroadcast(<SocketMessage>{
+						type: SocketMsgType.MsgNotify,
+						msg: { type: "info", content: `${player.getName()} 破产了` },
+					});
+
+					this.gameLogBroadcast(`${this.createGameLinkItem(GameLinkItem.Player, player.getId())} 破产了`);
 				}
 			});
 			return player;
