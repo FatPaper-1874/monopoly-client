@@ -56,10 +56,13 @@ export class MonopolyClient {
 	private peerClient: PeerClient | null = null;
 	private conn: DataConnection | null = null;
 	private gameHost: MonopolyHost | null = null;
+	private isOnline = false;
 
 	private intervalList: any[] = [];
 
 	private static instance: MonopolyClient | null;
+
+	private sendHeartTime = 0;
 
 	public static getInstance(): MonopolyClient;
 	public static getInstance(options: MonopolyClientOptions): Promise<MonopolyClient>;
@@ -146,6 +149,14 @@ export class MonopolyClient {
 				type: "success",
 				message: "主机连接成功🤗",
 			});
+			this.isOnline = true;
+
+			this.intervalList.push(
+				setInterval(() => {
+					this.sendHeartTime = Date.now();
+					this.sendMsg(SocketMsgType.Heart, "");
+				}, 3000)
+			);
 
 			this.conn.on("data", (_data: any) => {
 				// const data = JSON.parse(_data as string);
@@ -240,6 +251,36 @@ export class MonopolyClient {
 						break;
 				}
 			});
+
+			this.conn.on("close", () => {
+				console.log("🚀 ~ MonopolyHost ~ conn.on ~ close:");
+				if (this.isOnline) {
+					this.isOnline = false;
+					FPMessage({
+						type: "error",
+						message: "与主机断开连接, 即将返回主页, 输入id进入房间即可重新连接",
+						onClosed: () => {
+							router.replace("room-router");
+							this.destory();
+						},
+					});
+				}
+			});
+
+			this.conn.on("error", (err) => {
+				console.log("🚀 ~ MonopolyHost ~ conn.on ~ error:", err.type);
+				if (this.isOnline && err.type === "not-open-yet") {
+					this.isOnline = false;
+					FPMessage({
+						type: "error",
+						message: "与主机断开连接, 即将返回主页, 输入id进入房间即可重新连接",
+						onClosed: () => {
+							router.replace("room-router");
+							this.destory();
+						},
+					});
+				}
+			});
 		} catch (e: any) {
 			FPMessage({ type: "error", message: e });
 		}
@@ -247,8 +288,8 @@ export class MonopolyClient {
 
 	private handleHeart(data: SocketMessage) {
 		const gameInfoStore = useGameInfo();
-		gameInfoStore.ping = Date.now() - data.data;
-		this.sendMsg(SocketMsgType.Heart, "");
+		gameInfoStore.ping = Math.round((Date.now() - this.sendHeartTime) / 2);
+		// this.sendMsg(SocketMsgType.Heart, "");
 		this.handleNoHeart.fn();
 	}
 
@@ -495,6 +536,7 @@ export class MonopolyClient {
 	}
 
 	public async leaveRoom() {
+		this.isOnline = false;
 		await this.sendMsg(SocketMsgType.LeaveRoom, "");
 		this.destory();
 		const roomInfoStore = useRoomInfo();
@@ -552,7 +594,11 @@ export class MonopolyClient {
 	}
 
 	public destory() {
+		this.isOnline = false;
 		this.handleNoHeart.cancel();
+		this.intervalList.forEach((i) => {
+			clearInterval(i);
+		});
 		this.conn = null;
 		this.peerClient && this.peerClient.destory();
 		this.peerClient = null;

@@ -1,4 +1,4 @@
-import Peer, { DataConnection } from "peerjs";
+import Peer, { DataConnection, PeerError } from "peerjs";
 import { ChatMessage, Role, RoomInfo, SocketMessage, User, UserInRoomInfo, GameSetting } from "@/interfaces/bace";
 import { GameOverRule, OperateType } from "@/enums/game";
 import { ChangeRoleOperate, ChatMessageType, SocketMsgType } from "@/enums/bace";
@@ -39,9 +39,10 @@ export class MonopolyHost {
 
 	private init(peer: Peer) {
 		const _this = this;
-		this.startHeartCheck();
+		// this.startHeartCheck();
 		peer.on("connection", (conn) => {
 			let clientUserId = "";
+			let isOnline = false;
 			conn.once("data", (data: any) => {
 				const _data: SocketMessage = JSON.parse(data);
 				const user = _data.data as User;
@@ -52,7 +53,8 @@ export class MonopolyHost {
 							if (!this.room) throw Error("在房间没创建时加入了房间");
 							clientUserId = user.userId;
 							this.clientList.set(user.userId, conn);
-							this.room.join(user, conn);
+							// this.room.join(user, conn);
+							isOnline = true;
 						}
 					} else {
 						conn.send(
@@ -89,28 +91,30 @@ export class MonopolyHost {
 							clientUserId = user.userId;
 							this.clientList.set(user.userId, conn);
 							this.room.join(user, conn);
+							isOnline = true;
 						}
 					}
 				}
 			});
 
-			const noHeartHandler = debounce(
-				() => {
-					console.log("🚀 ~ MonopolyHost ~ peer.on ~ noHeartHandler:", clientUserId);
-					if (!clientUserId) return;
-					_this.room.leave(clientUserId);
-					_this.clientList.delete(clientUserId);
-				},
-				20000,
-				true
-			);
+			// const noHeartHandler = debounce(
+			// 	() => {
+			// 		console.log("🚀 ~ MonopolyHost ~ peer.on ~ noHeartHandler:", clientUserId);
+			// 		if (!clientUserId) return;
+			// 		_this.room.leave(clientUserId);
+			// 		_this.clientList.delete(clientUserId);
+			// 	},
+			// 	20000,
+			// 	true
+			// );
 
 			conn.on("data", function (data: any) {
 				const socketMessage: SocketMessage = JSON.parse(data.toString());
 
 				switch (socketMessage.type) {
 					case SocketMsgType.Heart:
-						noHeartHandler.fn();
+						// noHeartHandler.fn();
+						_this.handleHeart(conn, socketMessage, clientUserId);
 						break;
 					case SocketMsgType.RoomChat:
 						_this.handleRoomChat(conn, socketMessage, clientUserId);
@@ -153,26 +157,39 @@ export class MonopolyHost {
 						break;
 					case SocketMsgType.LeaveRoom:
 						_this.handleLeaveRoom(conn, socketMessage, clientUserId);
-						noHeartHandler.cancel();
+						// noHeartHandler.cancel();
 						break;
 				}
 			});
 
 			conn.on("close", () => {
-				if (clientUserId) {
+				console.log("🚀 ~ MonopolyHost ~ conn.on ~ close:");
+				if (clientUserId && isOnline) {
+					isOnline = false;
 					this.room.leave(clientUserId);
 					this.clientList.delete(clientUserId);
-					noHeartHandler.cancel();
+					// noHeartHandler.cancel();
 				}
 			});
 
-			conn.on("iceStateChanged", (state) => {
-				if (clientUserId && (state === "closed" || state === "disconnected")) {
+			conn.on("error", (err) => {
+				console.log("🚀 ~ MonopolyHost ~ conn.on ~ error:", err.type);
+				if (clientUserId && isOnline && err.type === "not-open-yet") {
+					isOnline = false;
 					this.room.leave(clientUserId);
 					this.clientList.delete(clientUserId);
-					noHeartHandler.cancel();
+					// noHeartHandler.cancel();
 				}
 			});
+
+			// conn.on("iceStateChanged", (state) => {
+			// 	console.log("🚀 ~ MonopolyHost ~ conn.on ~ iceStateChanged:");
+			// 	if (clientUserId && (state === "closed" || state === "disconnected")) {
+			// 		this.room.leave(clientUserId);
+			// 		this.clientList.delete(clientUserId);
+			// 		// noHeartHandler.cancel();
+			// 	}
+			// });
 		});
 	}
 
@@ -224,6 +241,7 @@ export class MonopolyHost {
 	private startHeartCheck() {
 		this.intervalList.push(
 			setInterval(() => {
+				console.log("发送全局心跳广播");
 				this.broadcast(
 					JSON.stringify(<SocketMessage>{
 						type: SocketMsgType.Heart,
@@ -231,6 +249,16 @@ export class MonopolyHost {
 					})
 				);
 			}, 3000)
+		);
+	}
+
+	private handleHeart(socketClient: DataConnection, data: SocketMessage, clientUserId: string) {
+		socketClient.send(
+			JSON.stringify(<SocketMessage>{
+				type: SocketMsgType.Heart,
+				source: "server",
+				data: "",
+			})
 		);
 	}
 
@@ -690,9 +718,9 @@ class Room {
 
 		const handleWorkerReady = async () => {
 			if (!this.gameSetting.mapId || !this.gameProcess) return;
-			useLoading().showLoading("正在向服务器获取地图信息...")
+			useLoading().showLoading("正在向服务器获取地图信息...");
 			const mapInfo = await getMapById(this.gameSetting.mapId);
-			useLoading().showLoading("正在加载地图...")
+			useLoading().showLoading("正在加载地图...");
 			this.gameProcess.postMessage(<WorkerCommMsg>{
 				type: WorkerCommType.LoadGameInfo,
 				data: {
@@ -710,7 +738,7 @@ class Room {
 			for (let index = 0; index < data.userIdList.length; index++) {
 				const userId = data.userIdList[index];
 				const user = this.userList.get(userId);
-				user && user.socketClient.send(JSON.stringify(data.data));
+				user && this.sendToClient(user.socketClient, data.data.type, data.data.data);
 			}
 		};
 		const handleGameStart = () => {};
@@ -756,7 +784,7 @@ class Room {
 
 	/**
 	 * 向指定客户端发送信息
-	 * @param socketClient 要发送信息的客户端/或者用户id
+	 * @param DataConnection 要发送信息的客户端/或者用户id
 	 * @param type 发送的信息类型
 	 * @param data 发送的信息本体
 	 * @param msg 可以使客户端触发message组件的信息
@@ -776,7 +804,7 @@ class Room {
 			roomId,
 			msg,
 		};
-		socketClient.send(JSON.stringify(msgToSend));
+		if (socketClient.open) socketClient.send(JSON.stringify(msgToSend));
 	}
 
 	public destory() {

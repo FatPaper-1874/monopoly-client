@@ -894,6 +894,11 @@ export class GameProcess {
 		});
 		if (player) {
 			player.setIsOffline(false);
+			sendToUsers([userId], <SocketMessage>{
+				type: SocketMsgType.GameStart,
+				source: "server",
+				data: "",
+			});
 			const {
 				id: mapId,
 				name: mapName,
