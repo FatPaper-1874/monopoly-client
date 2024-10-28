@@ -58,7 +58,7 @@ function toRoomList() {
 .contianer {
 	width: 30rem;
 	height: 60%;
-	border-radius: 10.13rem;
+	border-radius: 0.8rem;
 	overflow: hidden;
 	background-color: var(--color-bg-light);
 	display: flex;
