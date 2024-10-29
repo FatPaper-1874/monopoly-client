@@ -752,7 +752,7 @@ class Room {
 			for (let index = 0; index < data.userIdList.length; index++) {
 				const userId = data.userIdList[index];
 				const user = this.userList.get(userId);
-				user && this.sendToClient(user.socketClient, data.data.type, data.data.data);
+				user && this.sendToClient(user.socketClient, data.data.type, data.data.data, data.data.msg);
 			}
 		};
 		const handleGameStart = () => {};
@@ -808,7 +808,7 @@ class Room {
 		socketClient: DataConnection,
 		type: SocketMsgType,
 		data: any,
-		msg?: { type: "success" | "warning" | "error" | "info"; content: string },
+		msg?: { type: "success" | "warning" | "error" | "info" | ""; content: string },
 		roomId?: string
 	) {
 		const msgToSend: SocketMessage = {
