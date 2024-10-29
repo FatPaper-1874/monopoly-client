@@ -25,7 +25,7 @@ function toBilibili() {
 
 <template>
 	<div class="login-extra">
-		<fp-popover placement="right" trigger="hover">
+		<!-- <fp-popover placement="right" trigger="hover">
 			<div @click="toAFD" class="login-extra-item about">
 				<FontAwesomeIcon icon="sack-dollar" />
 			</div>
@@ -62,7 +62,7 @@ function toBilibili() {
 			<template #content>
 				<div class="extra-content">点击看介绍视频</div>
 			</template>
-		</fp-popover>
+		</fp-popover> -->
 
 		<span class="version">v0.1.2</span>
 	</div>
