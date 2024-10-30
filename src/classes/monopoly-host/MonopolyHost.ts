@@ -47,7 +47,7 @@ export class MonopolyHost {
 				const _data: SocketMessage = JSON.parse(data);
 				const user = _data.data as User;
 				if (this.room.isStarted) {
-					if (this.room.isUserInRoomAndOffline(user.userId)) {
+					if (this.room.isUserInRoom(user.userId)) {
 						this.room.handleUserReconnect(user.userId, conn);
 						if (_data.type === SocketMsgType.JoinRoom) {
 							if (!this.room) throw Error("在房间没创建时加入了房间");
@@ -782,6 +782,10 @@ class Room {
 		const user = Array.from(this.userList.values()).find((u) => u.userId === userId);
 		if (!user) return false;
 		return user.isOffLine;
+	}
+
+	public isUserInRoom(userId: string) {
+		return this.userList.has(userId);
 	}
 
 	public emitOperationToWorker(userId: string, operateType: OperateType | string, ...data: any) {
