@@ -9,7 +9,7 @@ gltfLoader.setDRACOLoader(getDracoLoader());
 export function loadModel(name: string): Promise<GLTF> {
 	return new Promise<GLTF>((resolve, reject) => {
 		gltfLoader.load(
-			`https://fatpaper-1304992673.cos.ap-guangzhou.myqcloud.com/monopoly/static/${name}`,
+			`https://monopoly-static-1304992673.cos.ap-guangzhou.myqcloud.com/${name}`,
 			(glft: GLTF) => {
 				resolve(glft);
 			},
